@@ -141,6 +141,7 @@ namespace BalulaMoto.Runtime
                     else { tri.Add(ci); tri.Add(q); tri.Add(p); }
                 }
             }
+            Sanitize(v, "Caisse_" + s.Key);
             Mesh mesh = new Mesh { name = "Caisse_" + s.Key };
             mesh.SetVertices(v);
             mesh.SetTriangles(tri, 0);
@@ -176,7 +177,9 @@ namespace BalulaMoto.Runtime
                     float e = 2f / 6f;
                     float hw = Mathf.Lerp(hwBase, hwRoof, si * si);
                     float x = hw * Mathf.Sign(c) * Mathf.Pow(Mathf.Abs(c), e);
-                    float y = belt + (top - belt) * Mathf.Pow(si, e);
+                    // sin(π) vaut -8.7e-8 en float : sans Max(0), Pow(négatif, 1/3) donne NaN et Unity rejette tout
+                    // l'habitacle (« abnormal mesh bounds ») : les voitures n'avaient plus de vitres ni de toit
+                    float y = belt + (top - belt) * Mathf.Pow(Mathf.Max(0f, si), e);
                     v.Add(new Vector3(x, y, z));
                 }
             }
@@ -201,6 +204,7 @@ namespace BalulaMoto.Runtime
                     t.Add(bb); t.Add(d); t.Add(c);
                 }
             }
+            Sanitize(v, "Habitacle_" + s.Key);
             Mesh mesh = new Mesh { name = "Habitacle_" + s.Key };
             mesh.SetVertices(v);
             mesh.subMeshCount = 2;
@@ -209,6 +213,22 @@ namespace BalulaMoto.Runtime
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        /// <summary>Remplace les coordonnées invalides (NaN, infini) : un seul sommet invalide fait disparaître tout le maillage.</summary>
+        private static void Sanitize(List<Vector3> v, string name)
+        {
+            int bad = 0;
+            for (int i = 0; i < v.Count; i++)
+            {
+                Vector3 p = v[i];
+                if (float.IsNaN(p.x) || float.IsNaN(p.y) || float.IsNaN(p.z) || float.IsInfinity(p.x) || float.IsInfinity(p.y) || float.IsInfinity(p.z))
+                {
+                    v[i] = i > 0 ? v[i - 1] : Vector3.zero;
+                    bad++;
+                }
+            }
+            if (bad > 0) Debug.LogWarning("[BALULA] " + name + " : " + bad + " sommets invalides corrigés");
         }
 
         private static Mesh[] BodyMeshes(BodySpec s)
@@ -230,7 +250,8 @@ namespace BalulaMoto.Runtime
             if (carMats.TryGetValue(key, out m) && m != null) return m;
             m = new Material(Mats.Lit(c, smooth));
             if (m.HasProperty("_Metallic")) m.SetFloat("_Metallic", metallic);
-            m.enableInstancing = true;
+            // Pas d'instanciation GPU : sur certains téléphones Android (PowerVR, Adreno), les objets instanciés ne sont pas dessinés
+            m.enableInstancing = false;
             carMats[key] = m;
             return m;
         }
@@ -311,8 +332,31 @@ namespace BalulaMoto.Runtime
                     s.RoofY = 1.95f; s.RoofHalfW = 0.8f;
                     s.Pillars = new[] { s.WindTopZ - 0.62f };
                     break;
+                case AIVehicleType.Pickup:
+                    // Pick-up double cabine (générique) avec plateau arrière
+                    s.L = 5.3f; s.W = 1.85f; r = 0.38f; H = 1.85f;
+                    s.WheelZ = new[] { s.L * 0.5f - 0.95f, -s.L * 0.5f + 1.2f };
+                    s.Sill = 0.5f; s.ArchTop = 0.9f; s.ArchHalf = 0.48f;
+                    s.NoseLen = 0.32f; s.TailLen = 0.12f; s.NoseDrop = 0.1f; s.TailDrop = 0f;
+                    s.HoodY = 1.18f; s.BeltY = 1.22f; s.DeckY = 1.06f;
+                    s.WindBaseZ = s.L * 0.5f - 1.45f; s.WindTopZ = s.WindBaseZ - 0.42f; s.RoofEndZ = s.WindBaseZ - 1.5f; s.RearBaseZ = s.RoofEndZ - 0.06f;
+                    s.RoofY = 1.85f; s.RoofHalfW = 0.76f;
+                    s.Pillars = new[] { s.WindTopZ - 0.65f };
+                    break;
+                case AIVehicleType.QuatreQuatre:
+                    // 4x4 haut et carré (générique)
+                    s.L = 4.9f; s.W = 1.9f; r = 0.4f; H = 1.9f;
+                    s.WheelZ = new[] { s.L * 0.5f - 0.9f, -s.L * 0.5f + 1.0f };
+                    s.Sill = 0.52f; s.ArchTop = 0.95f; s.ArchHalf = 0.5f;
+                    s.NoseLen = 0.3f; s.TailLen = 0.12f; s.NoseDrop = 0.08f; s.TailDrop = 0f;
+                    s.HoodY = 1.2f; s.BeltY = 1.25f; s.DeckY = 1.25f;
+                    s.WindBaseZ = s.L * 0.5f - 1.2f; s.WindTopZ = s.WindBaseZ - 0.4f; s.RoofEndZ = -s.L * 0.5f + 0.12f; s.RearBaseZ = -s.L * 0.5f + 0.06f;
+                    s.RoofY = 1.9f; s.RoofHalfW = 0.82f;
+                    s.Pillars = new[] { s.WindTopZ - 0.85f, s.WindTopZ - 1.95f };
+                    break;
                 case AIVehicleType.CamionRemorque:
-                    // Cabine avancée seule (la caisse de chargement est ajoutée à part)
+                case AIVehicleType.CamionCiterne:
+                    // Cabine avancée seule (la caisse de chargement ou la citerne est ajoutée à part)
                     s.L = 2.35f; s.W = 2.45f; r = 0.5f; H = 3.0f;
                     s.WheelZ = new[] { 0.35f };
                     s.Sill = 0.6f; s.ArchTop = 1.12f; s.ArchHalf = 0.62f;
@@ -360,7 +404,7 @@ namespace BalulaMoto.Runtime
             Transform t = root.transform;
             float r, H;
             BodySpec s = SpecFor(type, out r, out H);
-            bool truck = type == AIVehicleType.CamionRemorque;
+            bool truck = type == AIVehicleType.CamionRemorque || type == AIVehicleType.CamionCiterne;
             float W = s.W;
             if (type == AIVehicleType.Berline)
             {
@@ -368,7 +412,7 @@ namespace BalulaMoto.Runtime
                 body = palette[rnd.Next(palette.Length)];
             }
             float cabZ = 0f, totalL = s.L;
-            if (truck) { totalL = 12f; cabZ = totalL * 0.5f - s.L * 0.5f; }
+            if (truck) { totalL = type == AIVehicleType.CamionCiterne ? 11f : 12f; cabZ = totalL * 0.5f - s.L * 0.5f; }
             length = totalL;
 
             Material paint = Paint(body, type == AIVehicleType.BusTransco || type == AIVehicleType.MinibusBlanc ? 0.15f : 0.35f);
@@ -389,7 +433,7 @@ namespace BalulaMoto.Runtime
             // Pare-chocs, calandre, phares, feux
             float frontLowY = BottomAt(s, s.L * 0.5f - 0.05f), frontTopY = TopAt(s, s.L * 0.5f - 0.05f);
             bool bigFront = type == AIVehicleType.BusTransco || type == AIVehicleType.MinibusBlanc || truck;
-            Material bumperMat = type == AIVehicleType.TaxiJaune || type == AIVehicleType.Berline ? Paint(ColorUtil.Shade(body, 0.92f)) : plastic;
+            Material bumperMat = type == AIVehicleType.TaxiJaune || type == AIVehicleType.Berline ? Paint(ColorUtil.Shade(body, 0.92f)) : (type == AIVehicleType.Pickup || type == AIVehicleType.QuatreQuatre ? chrome : plastic);
             MeshPart(t, "PareChocsAV", Prims.Cube, new[] { bumperMat }, new Vector3(0f, frontLowY + 0.08f, s.L * 0.5f + cabZ - 0.06f)).transform.localScale = new Vector3(W * 0.97f, 0.2f, 0.16f);
             if (!truck) MeshPart(t, "PareChocsAR", Prims.Cube, new[] { bumperMat }, new Vector3(0f, BottomAt(s, -s.L * 0.5f + 0.05f) + 0.08f, -s.L * 0.5f + 0.06f)).transform.localScale = new Vector3(W * 0.97f, 0.2f, 0.16f);
             float lampY = Mathf.Lerp(frontLowY, frontTopY, bigFront ? 0.35f : 0.62f);
@@ -482,6 +526,60 @@ namespace BalulaMoto.Runtime
                     GameObject pl = Prims.Label(t, "POLICE", new Vector3(0f, s.RoofY + 0.07f, barZ + 0.15f), 0.03f, Black, false);
                     pl.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
                     MeshPart(t, "ParBuffle", Prims.Cube, new[] { chrome }, new Vector3(0f, s.Sill + 0.25f, s.L * 0.5f + 0.1f)).transform.localScale = new Vector3(W * 0.8f, 0.45f, 0.06f);
+                    break;
+                }
+                case AIVehicleType.CamionCiterne:
+                {
+                    // Citerne à carburant (générique, aucune marque réelle) : réservoir elliptique, passerelle, échelle,
+                    // coffres à vannes, panneau orange de matière dangereuse et bande rouge
+                    float tFront = cabZ - s.L * 0.5f - 0.2f, tRear = -totalL * 0.5f + 0.15f, tLen = tFront - tRear, tz = (tFront + tRear) * 0.5f;
+                    float ty = r * 2f + 0.35f + 0.95f;
+                    Color tank = rnd.Next(4) == 0 ? new Color(0.78f, 0.79f, 0.81f) : new Color(0.95f, 0.95f, 0.94f);
+                    Material tankMat = Paint(tank, 0.55f, 0.75f);
+                    MeshPart(t, "Chassis", Prims.Cube, new[] { plastic }, new Vector3(0f, r + 0.15f, (tFront + tRear) * 0.5f)).transform.localScale = new Vector3(W * 0.7f, 0.3f, tLen + 0.2f);
+                    GameObject tankGo = MeshPart(t, "Citerne", Prims.Cylinder, new[] { tankMat }, new Vector3(0f, ty, tz));
+                    tankGo.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                    tankGo.transform.localScale = new Vector3(W * 0.96f, tLen * 0.5f - 0.35f, 1.9f);
+                    foreach (float e in new[] { -1f, 1f })
+                        MeshPart(t, "Fond", Prims.Sphere, new[] { tankMat }, new Vector3(0f, ty, tz + e * (tLen * 0.5f - 0.38f))).transform.localScale = new Vector3(W * 0.96f, 1.9f, 0.75f);
+                    foreach (float sx in new[] { -1f, 1f })
+                    {
+                        MeshPart(t, "BandeRouge", Prims.Cube, new[] { Paint(new Color(0.82f, 0.08f, 0.08f), 0.1f, 0.6f) }, new Vector3(sx * W * 0.485f, ty - 0.15f, tz)).transform.localScale = new Vector3(0.02f, 0.2f, tLen - 1.2f);
+                        MeshPart(t, "Coffre", Prims.Cube, new[] { chrome }, new Vector3(sx * (W * 0.5f - 0.2f), r * 2f + 0.15f, tz - 1.0f)).transform.localScale = new Vector3(0.4f, 0.45f, 1.6f);
+                        GameObject lbl = Prims.Label(t, "INFLAMMABLE", new Vector3(sx * (W * 0.5f + 0.01f), ty + 0.35f, tz), 0.06f, new Color(0.75f, 0.05f, 0.05f), false);
+                        lbl.transform.localRotation = Quaternion.Euler(0f, sx > 0f ? -90f : 90f, 0f);
+                    }
+                    MeshPart(t, "Passerelle", Prims.Cube, new[] { plastic }, new Vector3(0f, ty + 0.97f, tz)).transform.localScale = new Vector3(0.5f, 0.04f, tLen - 1.2f);
+                    foreach (float sx in new[] { -0.32f, 0.32f })
+                        MeshPart(t, "GardeCorps", Prims.Cube, new[] { chrome }, new Vector3(sx, ty + 1.25f, tz)).transform.localScale = new Vector3(0.03f, 0.03f, tLen - 1.4f);
+                    for (int k = 0; k < 3; k++)
+                        MeshPart(t, "TrouHomme", Prims.Cylinder, new[] { chrome }, new Vector3(0f, ty + 0.95f, tz - tLen * 0.3f + k * tLen * 0.3f)).transform.localScale = new Vector3(0.45f, 0.05f, 0.45f);
+                    MeshPart(t, "Echelle", Prims.Cube, new[] { chrome }, new Vector3(0.45f, ty - 0.1f, tRear - 0.08f)).transform.localScale = new Vector3(0.35f, 2.0f, 0.04f);
+                    // Panneau orange de danger (numéros génériques du transport de carburant)
+                    MeshPart(t, "PanneauDanger", Prims.Cube, new[] { Paint(new Color(1f, 0.5f, 0.05f), 0f, 0.4f) }, new Vector3(-0.4f, r * 2f + 0.55f, -totalL * 0.5f + 0.02f)).transform.localScale = new Vector3(0.4f, 0.3f, 0.02f);
+                    GameObject un = Prims.Label(t, "33\n1203", new Vector3(-0.4f, r * 2f + 0.55f, -totalL * 0.5f - 0.005f), 0.025f, Black, false);
+                    un.transform.localRotation = Quaternion.identity;
+                    break;
+                }
+                case AIVehicleType.Pickup:
+                {
+                    float bedStart = s.RearBaseZ - 0.08f, bedEnd = -s.L * 0.5f + 0.12f;
+                    MeshPart(t, "Plateau", Prims.Cube, new[] { plastic }, new Vector3(0f, s.DeckY + 0.006f, (bedStart + bedEnd) * 0.5f)).transform.localScale = new Vector3(W * 0.8f, 0.01f, bedStart - bedEnd);
+                    // Chargement fréquent : sacs de ciment ou de farine, bidons
+                    if (rnd.Next(3) > 0)
+                        for (int i = 0; i < 4 + rnd.Next(4); i++)
+                        {
+                            Vector3 sz = new Vector3(0.5f, 0.2f, 0.75f);
+                            Prims.Box(t, "Sac", new Vector3(((i % 2) - 0.5f) * 0.6f, s.DeckY + 0.12f + (i / 2) * 0.2f, bedEnd + 0.5f + (i % 3) * 0.1f), sz, i % 3 == 0 ? new Color(0.85f, 0.83f, 0.78f) : new Color(0.62f, 0.6f, 0.55f));
+                        }
+                    break;
+                }
+                case AIVehicleType.QuatreQuatre:
+                {
+                    MeshPart(t, "RoueSecours", Prims.Cylinder, new[] { plastic }, new Vector3(0f, s.Sill + 0.55f, -s.L * 0.5f - 0.1f)).transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                    t.Find("RoueSecours").localScale = new Vector3(0.72f, 0.12f, 0.72f);
+                    foreach (float sx in new[] { -1f, 1f })
+                        MeshPart(t, "Barres", Prims.Cube, new[] { plastic }, new Vector3(sx * s.RoofHalfW * 0.85f, s.RoofY + 0.05f, (s.WindTopZ + s.RoofEndZ) * 0.5f)).transform.localScale = new Vector3(0.04f, 0.05f, (s.WindTopZ - s.RoofEndZ) * 0.85f);
                     break;
                 }
                 case AIVehicleType.CamionRemorque:

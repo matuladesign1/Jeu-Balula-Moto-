@@ -46,7 +46,8 @@ namespace BalulaMoto.Runtime
                 cam = go.AddComponent<Camera>();
                 go.AddComponent<AudioListener>();
             }
-            cam.nearClipPlane = 0.08f;
+            // Plan proche un peu plus loin : meilleure précision de profondeur (routes et sol ne se mélangent plus au loin)
+            cam.nearClipPlane = 0.12f;
             cam.farClipPlane = 1800f;
             cam.fieldOfView = 62f;
             CameraRig rig = cam.gameObject.AddComponent<CameraRig>();

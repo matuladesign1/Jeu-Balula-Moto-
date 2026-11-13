@@ -139,10 +139,22 @@ namespace BalulaMoto.EditorTools
         private static void Plan(BalulaGame game)
         {
             steps.Clear();
-            steps.Add(() => { Header(); ShootMain("menu_garage"); return true; });
+            steps.Add(() =>
+            {
+                Header();
+                ShootMain("menu_garage");
+                foreach (HumanAvatar h in Compat.FindAll<HumanAvatar>())
+                    if (h != null && (h.transform.position - GarageScene.Origin).sqrMagnitude < 400f)
+                        Describe("Chauffeur du garage", h.gameObject, Camera.main != null ? Camera.main.transform.position : h.transform.position);
+                return true;
+            });
             steps.Add(() => { StartGame(game); return true; });
             Wait(25f, 60);
             steps.Add(() => { ShootAround(game, "depart"); return true; });
+            // Chantier le plus proche (route en travaux)
+            steps.Add(() => { TeleportToWorks(game); return true; });
+            Wait(10f, 30);
+            steps.Add(() => { ShootStreet(game, "chantier"); return true; });
             // Deux autres quartiers (grandes avenues) : la ville pleine se reconstruit autour du joueur
             for (int k = 0; k < 2; k++)
             {
@@ -189,6 +201,25 @@ namespace BalulaMoto.EditorTools
                               ", distance " + Vector3.Distance(from, pos).ToString("0") + " m");
         }
 
+        private static void TeleportToWorks(BalulaGame game)
+        {
+            ImportedWorld map = Compat.FindFirst<ImportedWorld>();
+            if (map == null || map.works == null || map.works.Count == 0 || game.Director == null) { report.AppendLine("Aucun chantier dans la carte."); return; }
+            Vector3 from = game.Director.Player != null ? game.Director.Player.transform.position : Vector3.zero;
+            WorkZone best = null;
+            float bd = float.MaxValue;
+            foreach (WorkZone z in map.works)
+            {
+                float d = (z.center - from).sqrMagnitude;
+                if (d < bd) { bd = d; best = z; }
+            }
+            Vector3 dir = new Vector3(best.dir.x, 0f, best.dir.z).normalized;
+            Vector3 right = Vector3.Cross(Vector3.up, dir);
+            Vector3 pos = best.center - dir * (best.length * 0.5f + 16f) + right * Mathf.Min(1.6f, best.width * 0.25f);
+            game.Director.SpawnPlayer(new Vector3(pos.x, 0.3f, pos.z), Quaternion.LookRotation(dir, Vector3.up));
+            report.AppendLine("Déplacement vers le chantier de « " + best.road + " » (" + best.length.ToString("0") + " m, largeur " + best.width.ToString("0.0") + " m) ; chantiers dans la carte : " + map.works.Count);
+        }
+
         // ------------------------------------------------------------------
         // Séries de photos
         // ------------------------------------------------------------------
@@ -215,7 +246,7 @@ namespace BalulaMoto.EditorTools
             int carShots = 0;
             foreach (AIVehicle v in cars)
             {
-                if (carShots >= 7) break;
+                if (carShots >= 12) break;
                 if (seen.Contains(v.Type)) continue;
                 seen.Add(v.Type);
                 carShots++;
@@ -257,6 +288,7 @@ namespace BalulaMoto.EditorTools
             {
                 Vector3 s = best.transform.position;
                 Shoot(tag + "_station_service", s + new Vector3(20f, 8f, -20f), s + Vector3.up * 2f);
+                Shoot(tag + "_station_pompes", s + Vector3.up * 1.7f + new Vector3(9f, 0f, 9f), s + Vector3.up * 1.2f);
                 report.AppendLine("Station-service « " + best.Label + " » à " + Mathf.Sqrt(bestD).ToString("0") + " m");
             }
 
@@ -304,6 +336,19 @@ namespace BalulaMoto.EditorTools
             PropertyInfo md = typeof(PlayerSettings).GetProperty("meshDeformation", BindingFlags.Public | BindingFlags.Static);
             report.AppendLine("Déformation des maillages (skinning) : " + (md != null ? md.GetValue(null, null).ToString() : "?"));
             report.AppendLine("Avatars disponibles : " + HumanLibrary.Available + " (hommes " + HumanLibrary.Load("Hommes").Length + ", femmes " + HumanLibrary.Load("Femmes").Length + ")");
+            report.AppendLine("Musique : " + (MusicPlayer.Instance != null ? (MusicPlayer.Instance.NowPlaying ?? "(pas encore)") : "lecteur absent") + " — volume réglé " + GameSettings.MusicVolume);
+            int huge = 0;
+            foreach (Renderer r in Compat.FindAll<Renderer>())
+            {
+                Bounds b = r.bounds;
+                bool bad = float.IsNaN(b.center.x) || float.IsNaN(b.extents.x) || float.IsInfinity(b.extents.x);
+                if (!bad && b.size.x < 1200f && b.size.z < 1200f) continue;
+                if (++huge > 25) continue;
+                Material m = r.sharedMaterial;
+                report.AppendLine("   Grand objet : " + r.name + " (" + r.GetType().Name + ") centre " + b.center.ToString("F0") + " taille " + b.size.ToString("F0") +
+                                  (m != null ? " — " + m.name + " couleur " + m.color : ""));
+            }
+            report.AppendLine("Objets de plus de 1,2 km ou à boîte invalide : " + huge);
         }
 
         private static void Counts(Vector3 p)

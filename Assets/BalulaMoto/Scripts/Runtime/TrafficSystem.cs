@@ -197,13 +197,17 @@ namespace BalulaMoto.Runtime
         {
             // Kinshasa : beaucoup de taxis jaunes, de minibus et de motos-taxis
             float r = Random.value;
-            if (r < 0.26f) return AIVehicleType.TaxiJaune;
-            if (r < 0.45f) return AIVehicleType.MinibusJaune;
-            if (r < 0.70f) return AIVehicleType.MotoTaxi;
-            if (r < 0.82f) return AIVehicleType.Berline;
-            if (r < 0.88f) return AIVehicleType.MinibusBlanc;
-            if (r < 0.94f) return AIVehicleType.BusTransco;
-            return AIVehicleType.CamionRemorque;
+            if (r < 0.21f) return AIVehicleType.TaxiJaune;
+            if (r < 0.37f) return AIVehicleType.MinibusJaune;
+            if (r < 0.58f) return AIVehicleType.MotoTaxi;
+            if (r < 0.67f) return AIVehicleType.Berline;
+            if (r < 0.72f) return AIVehicleType.MinibusBlanc;
+            if (r < 0.77f) return AIVehicleType.BusTransco;
+            if (r < 0.80f) return AIVehicleType.CamionRemorque;
+            if (r < 0.84f) return AIVehicleType.CamionCiterne;
+            if (r < 0.89f) return AIVehicleType.Pickup;
+            if (r < 0.95f) return AIVehicleType.QuatreQuatre;
+            return AIVehicleType.TricycleTaxi;
         }
 
         public AIVehicle Spawn(AIVehicleType type, TrafficPath path, float s, float cruise)
@@ -243,6 +247,8 @@ namespace BalulaMoto.Runtime
             switch (t)
             {
                 case AIVehicleType.CamionRemorque: return Random.Range(6f, 8f);
+                case AIVehicleType.CamionCiterne: return Random.Range(6f, 8.5f);
+                case AIVehicleType.TricycleTaxi: return Random.Range(7f, 9.5f);
                 case AIVehicleType.BusTransco: return Random.Range(9f, 11f);
                 case AIVehicleType.MotoTaxi: return Random.Range(11f, 14f);
                 default: return Random.Range(9.5f, 13f);
@@ -315,6 +321,9 @@ namespace BalulaMoto.Runtime
                 case AIVehicleType.MotoTaxi: return 2.1f;
                 case AIVehicleType.BusTransco: return 11f;
                 case AIVehicleType.CamionRemorque: return 13f;
+                case AIVehicleType.CamionCiterne: return 11.5f;
+                case AIVehicleType.TricycleTaxi: return 3f;
+                case AIVehicleType.Pickup: return 5.4f;
                 case AIVehicleType.MinibusJaune:
                 case AIVehicleType.MinibusBlanc: return 5.2f;
                 default: return 4.5f;
@@ -341,7 +350,7 @@ namespace BalulaMoto.Runtime
                 AIVehicleType[] types = new AIVehicleType[n];
                 float[] ss = new float[n];
                 float r0 = Random.value;
-                types[0] = r0 < 0.4f ? AIVehicleType.BusTransco : (r0 < 0.65f ? AIVehicleType.CamionRemorque : AIVehicleType.MinibusJaune);
+                types[0] = r0 < 0.35f ? AIVehicleType.BusTransco : (r0 < 0.5f ? AIVehicleType.CamionRemorque : (r0 < 0.65f ? AIVehicleType.CamionCiterne : AIVehicleType.MinibusJaune));
                 ss[0] = slot.S;
                 for (int k = 1; k < n; k++)
                 {
@@ -447,7 +456,7 @@ namespace BalulaMoto.Runtime
                     v.BrokenDown = true;
                     v.BreakdownTimer = Random.Range(25f, 60f);
                 }
-                float target = v.Cruise;
+                float target = Mathf.Min(v.Cruise, Roadworks.SpeedLimit(v.transform.position));
                 if (v.BrokenDown)
                 {
                     v.BreakdownTimer -= dt;
@@ -483,7 +492,7 @@ namespace BalulaMoto.Runtime
                 {
                     v.HonkCooldown = Random.Range(4f, 9f);
                     if (Player != null && (Player.transform.position - v.transform.position).sqrMagnitude < 60f * 60f)
-                        AmbientAudio.HonkAt(v.transform.position, v.Type == AIVehicleType.BusTransco || v.Type == AIVehicleType.CamionRemorque);
+                        AmbientAudio.HonkAt(v.transform.position, v.Type == AIVehicleType.BusTransco || v.Type == AIVehicleType.CamionRemorque || v.Type == AIVehicleType.CamionCiterne);
                 }
             }
             for (int i = 0; i < Walkers.Count; i++)

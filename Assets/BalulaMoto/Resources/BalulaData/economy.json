@@ -14,9 +14,9 @@
   "decoteVenteMax": 0.75,
   "tarifs": {
     "baseMoto": 500,
-    "parKmMoto": 450,
+    "parKmMoto": 400,
     "baseTricyclePassager": 300,
-    "parKmTricyclePassager": 180,
+    "parKmTricyclePassager": 150,
     "majorationNuit": 0.25,
     "majorationPluie": 0.2,
     "majorationPointe": 0.15,

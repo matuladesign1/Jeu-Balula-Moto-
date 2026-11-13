@@ -128,7 +128,8 @@ namespace BalulaMoto.EditorTools
                 if (m.HasProperty("_EmissionColor")) m.SetColor("_EmissionColor", Color.white * 2f);
                 m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             }
-            m.enableInstancing = true;
+            // Pas d'instanciation GPU : sur certains téléphones Android (PowerVR, Adreno), les objets instanciés ne sont pas dessinés
+            m.enableInstancing = false;
             EditorUtility.SetDirty(m);
         }
 
@@ -166,10 +167,11 @@ namespace BalulaMoto.EditorTools
         {
             PlayerSettings.companyName = "MATULA DESIGN";
             PlayerSettings.productName = "BALULA MOTO";
-            // Version 4.0 (garage, carte, ville pleine, personnages visibles, embouteillages)
-            PlayerSettings.bundleVersion = "4.0.0";
-            PlayerSettings.Android.bundleVersionCode = 40;
-            PlayerSettings.iOS.buildNumber = "40";
+            // Version 4.1 (personnages et véhicules enfin visibles, musique, stations-service, camions-citernes,
+            // petites courses, chantiers, caniveaux et bordures, terre marron foncé)
+            PlayerSettings.bundleVersion = "4.1.0";
+            PlayerSettings.Android.bundleVersionCode = 41;
+            PlayerSettings.iOS.buildNumber = "41";
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, BundleId);
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, BundleId);
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
@@ -180,6 +182,38 @@ namespace BalulaMoto.EditorTools
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64 | AndroidArchitecture.ARMv7;
             PlayerSettings.SplashScreen.backgroundColor = new Color(0.98f, 0f, 0f);
+            ConfigureAndroidGraphics();
+        }
+
+        /// <summary>
+        /// Affichage fiable sur les téléphones courants (PowerVR GE8320 des Tecno, Infinix, Itel, Redmi…) :
+        /// - OpenGL ES 3 seulement : les pilotes Vulkan de ces appareils dessinent mal ou pas du tout certains objets ;
+        /// - déformation des personnages par le processeur : l'animation des maillages par « compute shader »
+        ///   (réglage par défaut d'Unity 6) laisse les corps invisibles sur plusieurs GPU (seul le casque restait affiché) ;
+        /// - pas de « frame pacing » optimisé (bogue connu avec les maillages animés et les groupes de détails).
+        /// </summary>
+        private static void ConfigureAndroidGraphics()
+        {
+            PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.Android, false);
+            PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[] { GraphicsDeviceType.OpenGLES3 });
+            System.Reflection.PropertyInfo fp = typeof(PlayerSettings.Android).GetProperty("optimizedFramePacing", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            if (fp != null && fp.PropertyType == typeof(bool)) fp.SetValue(null, false, null);
+            bool cpu = false;
+            System.Reflection.PropertyInfo md = typeof(PlayerSettings).GetProperty("meshDeformation", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            if (md != null && md.PropertyType.IsEnum)
+            {
+                try
+                {
+                    md.SetValue(null, System.Enum.Parse(md.PropertyType, "CPU"), null);
+                    cpu = true;
+                }
+                catch (System.Exception e) { Debug.LogWarning("[BALULA] meshDeformation : " + e.Message); }
+            }
+            if (!cpu)
+            {
+                System.Reflection.PropertyInfo gs = typeof(PlayerSettings).GetProperty("gpuSkinning", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                if (gs != null) gs.SetValue(null, false, null);
+            }
         }
 
         private static string ConfigureIcon()

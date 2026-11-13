@@ -33,7 +33,7 @@ namespace BalulaMoto.Runtime
             return Label;
         }
 
-        public static InteractionPoint Create(Transform parent, InteractionKind kind, string vendorId, string label, Vector3 pos, float radius)
+        public static InteractionPoint Create(Transform parent, InteractionKind kind, string vendorId, string label, Vector3 pos, float radius, bool marker = true)
         {
             GameObject g = new GameObject("Interaction_" + kind);
             g.transform.SetParent(parent, false);
@@ -43,9 +43,12 @@ namespace BalulaMoto.Runtime
             ip.VendorId = vendorId;
             ip.Label = label;
             ip.Radius = radius;
-            // Repère au sol (cercle jaune) pour le retrouver facilement
-            GameObject ring = Prims.Cyl(g.transform, "Repere", new Vector3(0f, 0.05f, 0f), radius * 0.9f, 0.02f, new Color(1f, 0.8f, 0.1f));
-            ring.GetComponent<Renderer>().sharedMaterial = Mats.Unlit(new Color(1f, 0.82f, 0.15f));
+            // Repère au sol (cercle jaune) pour le retrouver facilement (pas sous l'auvent d'une vraie station)
+            if (marker)
+            {
+                GameObject ring = Prims.Cyl(g.transform, "Repere", new Vector3(0f, 0.05f, 0f), radius * 0.9f, 0.02f, new Color(1f, 0.8f, 0.1f));
+                ring.GetComponent<Renderer>().sharedMaterial = Mats.Unlit(new Color(1f, 0.82f, 0.15f));
+            }
             return ip;
         }
     }
@@ -253,6 +256,12 @@ namespace BalulaMoto.Runtime
         public bool isLandmark;
         public int weight;
         public string status;
+        /// <summary>Station-service : bord avant du terrain (au bord de la chaussée), orientation (degrés,
+        /// 0 = vers +Z, direction qui s'éloigne de la rue) et taille (largeur le long de la rue, profondeur).
+        /// Taille nulle = emplacement calculé au chargement.</summary>
+        public Vector3 stationOrigin;
+        public float stationYaw;
+        public Vector2 stationSize;
     }
 
     /// <summary>Boucle de circulation générée depuis une grande avenue OpenStreetMap (aller puis retour).</summary>

@@ -22,7 +22,7 @@ namespace BalulaMoto.Core
                 fare = r.baseMoto + r.parKmMoto * distanceKm;
             else
                 fare = (r.baseTricyclePassager + r.parKmTricyclePassager * distanceKm) * Math.Max(1, passengers);
-            if (kind == VehicleKind.Moto && passengers >= 2) fare *= 1.7;
+            if (kind == VehicleKind.Moto && passengers >= 2) fare *= 1.5;
             if (ctx != null)
             {
                 if (ctx.Night) fare *= 1.0 + r.majorationNuit;
@@ -93,18 +93,44 @@ namespace BalulaMoto.Core
             }
             ClientType type = types.Count > 0 ? types[rng.WeightedIndex(weights)] : null;
 
-            // Destination : pondérée par la popularité, ni trop près ni trop loin
+            // Destination : surtout des petites courses de quartier (comme à Kinshasa), parfois une course moyenne,
+            // rarement une longue. Distances « à vol d'oiseau » ; la distance routière ajoute environ 30 %.
+            //   courte  : 0,45 à 1,7 km (≈ 0,6 à 2,2 km de route)   — 65 % des clients
+            //   moyenne : 1,7 à 3,5 km (≈ 2,2 à 4,5 km de route)    — 25 %
+            //   longue  : 3,5 à 7 km   (≈ 4,5 à 9 km de route)      — 10 %
+            double[][] bands = { new[] { 450.0, 1700.0 }, new[] { 1700.0, 3500.0 }, new[] { 3500.0, 7000.0 } };
+            float roll = rng.Value();
+            int band = roll < 0.65f ? 0 : (roll < 0.9f ? 1 : 2);
             List<PlaceRef> candidates = new List<PlaceRef>();
             List<int> destWeights = new List<int>();
-            foreach (PlaceRef p in places)
+            for (int attempt = 0; attempt < 3 && candidates.Count == 0; attempt++)
             {
-                if (p == origin || p.Id == origin.Id) continue;
-                double d = origin.DistanceTo(p);
-                if (d < 250 || d > 30000) continue;
-                candidates.Add(p);
-                destWeights.Add(Math.Max(1, p.Weight));
+                // Si aucune destination dans la tranche choisie, on essaie la tranche la plus courte, puis la suivante
+                int b = attempt == 0 ? band : (attempt == 1 ? 0 : 1);
+                foreach (PlaceRef p in places)
+                {
+                    if (p == origin || p.Id == origin.Id) continue;
+                    double d = origin.DistanceTo(p);
+                    if (d < bands[b][0] || d > bands[b][1]) continue;
+                    candidates.Add(p);
+                    destWeights.Add(Math.Max(1, p.Weight));
+                }
             }
-            if (candidates.Count == 0) return null;
+            if (candidates.Count == 0)
+            {
+                // Secours : la destination la plus proche à plus de 300 m
+                PlaceRef best = null;
+                double bestD = double.MaxValue;
+                foreach (PlaceRef p in places)
+                {
+                    if (p == origin || p.Id == origin.Id) continue;
+                    double d = origin.DistanceTo(p);
+                    if (d >= 300 && d < bestD) { bestD = d; best = p; }
+                }
+                if (best == null) return null;
+                candidates.Add(best);
+                destWeights.Add(1);
+            }
             PlaceRef dest = candidates[rng.WeightedIndex(destWeights)];
 
             ClientRequest c = new ClientRequest();

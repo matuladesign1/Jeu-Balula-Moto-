@@ -160,6 +160,25 @@ namespace BalulaMoto.Runtime
             {
                 lg.localReferencePoint = new Vector3(0f, 0.9f, 0f);
                 lg.size = 1.9f;
+                LOD[] lods = lg.GetLODs();
+                bool changed = false;
+                for (int i = 0; i < lods.Length; i++)
+                {
+                    // Un seul niveau (maillage « hipoly » seul) : visible jusqu'à ~140 m au lieu de ~3 m
+                    float maxTh = i == lods.Length - 1 ? 0.012f : (lods.Length - i == 2 ? 0.07f : lods[i].screenRelativeTransitionHeight);
+                    if (lods[i].screenRelativeTransitionHeight > maxTh)
+                    {
+                        lods[i].screenRelativeTransitionHeight = maxTh;
+                        changed = true;
+                    }
+                }
+                if (changed)
+                {
+                    for (int i = 1; i < lods.Length; i++)
+                        if (lods[i].screenRelativeTransitionHeight >= lods[i - 1].screenRelativeTransitionHeight)
+                            lods[i].screenRelativeTransitionHeight = lods[i - 1].screenRelativeTransitionHeight * 0.5f;
+                    lg.SetLODs(lods);
+                }
             }
             foreach (SkinnedMeshRenderer smr in g.GetComponentsInChildren<SkinnedMeshRenderer>(true)) GenerousBounds(smr);
         }
@@ -226,7 +245,17 @@ namespace BalulaMoto.Runtime
             LODGroup lg = human.GetComponent<LODGroup>();
             if (lg == null) return;
             LOD[] lods = lg.GetLODs();
-            if (lods.Length < 3) return;
+            if (lods.Length < 3)
+            {
+                // Pas de maillage léger : le conducteur derrière les vitres n'est dessiné que jusqu'à ~45 m
+                if (lods.Length > 0 && lods[lods.Length - 1].screenRelativeTransitionHeight < 0.035f)
+                {
+                    lods[lods.Length - 1].screenRelativeTransitionHeight = 0.035f;
+                    if (lods.Length == 2 && lods[0].screenRelativeTransitionHeight <= 0.035f) lods[0].screenRelativeTransitionHeight = 0.07f;
+                    lg.SetLODs(lods);
+                }
+                return;
+            }
             for (int i = 0; i < lods.Length - 2; i++)
                 foreach (Renderer r in lods[i].renderers)
                     if (r != null) Object.Destroy(r.gameObject);

@@ -138,7 +138,8 @@ namespace BalulaMoto.Runtime
             if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c);
             if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", smoothness);
             if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", smoothness);
-            m.enableInstancing = true;
+            // Pas d'instanciation GPU : sur certains téléphones Android (PowerVR, Adreno), les objets instanciés ne sont pas dessinés
+            m.enableInstancing = false;
             cache[key] = m;
             return m;
         }

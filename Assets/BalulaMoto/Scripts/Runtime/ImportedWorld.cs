@@ -27,7 +27,20 @@ namespace BalulaMoto.Runtime
         public List<ImportedRoad> roads = new List<ImportedRoad>();
         /// <summary>Bâtiments OpenStreetMap : x, z = centre, y = rayon (les parcelles générées les évitent).</summary>
         public List<Vector3> buildingSpots = new List<Vector3>();
+        /// <summary>Routes en travaux (chaussée défoncée, barrières, sable, engins) choisies à l'import.</summary>
+        public List<WorkZone> works = new List<WorkZone>();
         [TextArea(3, 12)] public string report;
+    }
+
+    /// <summary>Portion de route en travaux : centre, direction de la rue, longueur et largeur de chaussée.</summary>
+    [System.Serializable]
+    public class WorkZone
+    {
+        public string road;
+        public Vector3 center;
+        public Vector3 dir;
+        public float length;
+        public float width;
     }
 
     /// <summary>Axe d'une rue importée (portion dans la zone de la carte).</summary>
@@ -36,6 +49,8 @@ namespace BalulaMoto.Runtime
     {
         public string name;
         public float width;
+        /// <summary>Revêtement (BalulaMoto.Core.SurfaceKind).</summary>
+        public int surface;
         public int rank;
         public List<Vector2> pts = new List<Vector2>();
     }

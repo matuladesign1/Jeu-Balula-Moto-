@@ -42,6 +42,8 @@ namespace BalulaMoto.Runtime
             Cam.Sensitivity = GameSettings.CameraSensitivity;
             Env = WorldEnvironment.Create(Cam.transform);
             new GameObject("AmbianceSonore").AddComponent<AmbientAudio>();
+            // Musique de fond originale (rumba, sebene, ndombolo), réglable dans les paramètres
+            MusicPlayer.Create();
 
             worldRoot = new GameObject("Monde").transform;
             Traffic = TrafficManager.Create(worldRoot);
@@ -55,6 +57,8 @@ namespace BalulaMoto.Runtime
             if (HumanLibrary.Available) CrowdSystem.Create(worldRoot, CrowdSystem.CollectLanes(World, imported));
             // Ville pleine : parcelles clôturées, boutiques, panneaux publicitaires le long de toutes les rues
             if (imported != null) CityFill.Create(worldRoot, imported);
+            // Routes en travaux (barrières, sable, pelleteuse, ouvriers) construites autour du joueur
+            if (imported != null) Roadworks.Create(worldRoot, imported);
             // Plan de la ville pour la mini-carte et la carte plein écran
             CityMap.Build(imported, World);
             Cam.SetMenuOrbit(World.MenuCenter, 70f);

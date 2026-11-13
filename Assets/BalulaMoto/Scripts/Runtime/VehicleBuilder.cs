@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace BalulaMoto.Runtime
 {
-    public enum AIVehicleType { TaxiJaune, MinibusJaune, BusTransco, MinibusBlanc, PoliceKabasele, CamionRemorque, MotoTaxi, Berline }
+    public enum AIVehicleType { TaxiJaune, MinibusJaune, BusTransco, MinibusBlanc, PoliceKabasele, CamionRemorque, MotoTaxi, Berline, CamionCiterne, Pickup, QuatreQuatre, TricycleTaxi }
 
     /// <summary>Personnage (maquette) : membres articulés pour les gestes simples.</summary>
     public class HumanFigure : MonoBehaviour
@@ -530,6 +530,10 @@ namespace BalulaMoto.Runtime
                 case AIVehicleType.PoliceKabasele: L = 5.6f; W = 2.0f; H = 2.55f; r = 0.38f; body = new Color(0.08f, 0.11f, 0.24f); break;
                 case AIVehicleType.CamionRemorque: L = 12f; W = 2.5f; H = 3.4f; r = 0.5f; body = new Color(0.55f, 0.1f, 0.1f); break;
                 case AIVehicleType.MotoTaxi: L = 2.0f; W = 0.75f; H = 1.6f; r = 0.3f; body = ColorUtil.Hex(Prints[rnd.Next(Prints.Length)]); break;
+                case AIVehicleType.CamionCiterne: L = 11f; W = 2.5f; H = 3.3f; r = 0.5f; body = rnd.Next(3) == 0 ? new Color(0.85f, 0.12f, 0.1f) : new Color(0.93f, 0.93f, 0.92f); break;
+                case AIVehicleType.Pickup: L = 5.3f; W = 1.85f; H = 1.85f; r = 0.38f; body = new[] { new Color(0.94f, 0.94f, 0.93f), new Color(0.7f, 0.71f, 0.73f), new Color(0.1f, 0.1f, 0.11f), new Color(0.55f, 0.08f, 0.08f) }[rnd.Next(4)]; break;
+                case AIVehicleType.QuatreQuatre: L = 4.9f; W = 1.9f; H = 1.9f; r = 0.4f; body = new[] { new Color(0.07f, 0.07f, 0.08f), new Color(0.95f, 0.95f, 0.95f), new Color(0.45f, 0.47f, 0.5f), new Color(0.1f, 0.15f, 0.3f) }[rnd.Next(4)]; break;
+                case AIVehicleType.TricycleTaxi: L = 2.9f; W = 1.3f; H = 1.95f; r = 0.27f; body = new[] { new Color(0.97f, 0.78f, 0.1f), new Color(0.1f, 0.5f, 0.2f), new Color(0.12f, 0.3f, 0.7f) }[rnd.Next(3)]; break;
                 default: L = 4.4f; W = 1.75f; H = 1.45f; r = 0.32f; body = rnd.Next(2) == 0 ? new Color(0.85f, 0.86f, 0.88f) : new Color(0.15f, 0.16f, 0.18f); break;
             }
             length = L;
@@ -564,6 +568,42 @@ namespace BalulaMoto.Runtime
                 }
                 brakeLights.Add(Lamp(t, "Stop", new Vector3(0f, 0.85f, -0.95f), new Vector3(0.12f, 0.06f, 0.04f), RedLight));
                 AddTrafficBody(root, new Vector3(0.6f, 1.6f, 2.0f), new Vector3(0f, 0.8f, 0f));
+                return root;
+            }
+
+            if (type == AIVehicleType.TricycleTaxi)
+            {
+                // Tricycle-taxi : une roue avant, deux roues arrière, cabine à toit de bâche, banquette arrière
+                wheels.Add(TrafficWheel(t, new Vector3(0f, r, 1.05f), r, 0.12f));
+                foreach (float sx in new[] { -1f, 1f }) wheels.Add(TrafficWheel(t, new Vector3(sx * 0.55f, r, -0.85f), r, 0.14f));
+                Prims.Box(t, "Plancher", new Vector3(0f, 0.42f, -0.15f), new Vector3(1.22f, 0.08f, 1.9f), Black);
+                Prims.Box(t, "Avant", new Vector3(0f, 0.75f, 0.85f), new Vector3(0.7f, 0.6f, 0.5f), body, false, 0.6f);
+                Prims.Tube(t, "Fourche", new Vector3(0f, 1.05f, 0.95f), new Vector3(0f, r, 1.05f), 0.06f, Chrome);
+                Prims.Tube(t, "Guidon", new Vector3(-0.38f, 1.12f, 0.75f), new Vector3(0.38f, 1.12f, 0.75f), 0.03f, Black);
+                Prims.Box(t, "ParBrise", new Vector3(0f, 1.4f, 0.98f), new Vector3(1.0f, 0.55f, 0.03f), new Color(0.15f, 0.22f, 0.26f), false, 0.9f);
+                foreach (float sx in new[] { -1f, 1f })
+                {
+                    Prims.Tube(t, "MontantAV", new Vector3(sx * 0.58f, 0.75f, 0.95f), new Vector3(sx * 0.58f, 1.85f, 0.75f), 0.04f, Black);
+                    Prims.Tube(t, "MontantAR", new Vector3(sx * 0.6f, 0.46f, -1.05f), new Vector3(sx * 0.6f, 1.85f, -1.05f), 0.04f, Black);
+                    Prims.Box(t, "CoteBas", new Vector3(sx * 0.62f, 0.62f, -0.5f), new Vector3(0.04f, 0.38f, 1.15f), body, false, 0.6f);
+                }
+                Prims.Box(t, "Toit", new Vector3(0f, 1.9f, -0.15f), new Vector3(1.3f, 0.07f, 2.15f), body, false, 0.3f);
+                Prims.Box(t, "Banquette", new Vector3(0f, 0.72f, -0.75f), new Vector3(1.1f, 0.14f, 0.5f), Black);
+                Prims.Box(t, "Dossier", new Vector3(0f, 1.0f, -1.0f), new Vector3(1.1f, 0.5f, 0.1f), Black);
+                Prims.Box(t, "SiegeConducteur", new Vector3(0f, 0.85f, 0.25f), new Vector3(0.45f, 0.12f, 0.45f), Black);
+                Prims.Box(t, "Phare", new Vector3(0f, 1.0f, 1.11f), new Vector3(0.18f, 0.12f, 0.03f), new Color(0.9f, 0.9f, 0.85f));
+                GameObject drv = BuildHuman(t, new Vector3(0f, 0.86f, 0.25f), "chauffeur", true, seed, false);
+                HumanLibrary.SetupRider(drv, Anchor(t, "MainGauche", new Vector3(-0.32f, 1.12f, 0.73f)), Anchor(t, "MainDroite", new Vector3(0.32f, 1.12f, 0.73f)),
+                    Anchor(t, "PiedGauche", new Vector3(-0.17f, 0.47f, 0.55f)), Anchor(t, "PiedDroit", new Vector3(0.17f, 0.47f, 0.55f)), 4f);
+                HumanLibrary.MakeStatic(drv, true);
+                if (GameSettings.Quality > 0 && rnd.Next(2) == 0)
+                {
+                    GameObject p1 = BuildHuman(t, new Vector3(-0.28f, 0.79f, -0.75f), rnd.Next(2) == 0 ? "pagne" : "civil", true, seed + 5, false);
+                    HumanLibrary.MakeStatic(p1, true);
+                }
+                brakeLights.Add(Lamp(t, "Stop", new Vector3(-0.5f, 0.6f, -1.1f), new Vector3(0.12f, 0.08f, 0.04f), RedLight));
+                brakeLights.Add(Lamp(t, "Stop", new Vector3(0.5f, 0.6f, -1.1f), new Vector3(0.12f, 0.08f, 0.04f), RedLight));
+                AddTrafficBody(root, new Vector3(1.3f, 1.9f, 2.9f), new Vector3(0f, 0.95f, 0f));
                 return root;
             }
 

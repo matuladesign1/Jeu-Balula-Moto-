@@ -391,12 +391,24 @@ namespace BalulaMoto.EditorTools
             SetShadows(lod2, false);
             SetShadows(lod3, false);
             List<LOD> lods = new List<LOD>();
-            // Seuils (hauteur à l'écran) : très près = haute définition (passagers), jusqu'à ~15 m = moyenne,
-            // ~45 m = légère, au-delà = très légère, puis masqué
-            if (lod0.Count > 0) lods.Add(new LOD(0.5f, lod0.ToArray()));
-            if (lod1.Count > 0) lods.Add(new LOD(0.1f, lod1.ToArray()));
-            if (lod2.Count > 0) lods.Add(new LOD(0.035f, lod2.ToArray()));
-            if (lod3.Count > 0) lods.Add(new LOD(0.008f, lod3.ToArray()));
+            // Seuils (hauteur relative à l'écran) choisis selon les niveaux réellement présents dans le FBX.
+            // Les avatars du projet n'ont souvent que le maillage « hipoly » : avec l'ancien seuil fixe de 0,5 pour
+            // ce niveau, le corps n'était dessiné que s'il occupait la moitié de l'écran (au-delà de ~3 m, seuls le
+            // casque ou le foulard restaient visibles). Le dernier niveau est toujours masqué très loin (~140 m).
+            List<Renderer[]> present = new List<Renderer[]>();
+            foreach (List<Renderer> l in new[] { lod0, lod1, lod2, lod3 }) if (l.Count > 0) present.Add(l.ToArray());
+            float[][] table =
+            {
+                new[] { 0.012f },
+                new[] { 0.07f, 0.012f },
+                new[] { 0.14f, 0.045f, 0.012f },
+                new[] { 0.25f, 0.1f, 0.035f, 0.012f }
+            };
+            if (present.Count > 0)
+            {
+                float[] th = table[present.Count - 1];
+                for (int i = 0; i < present.Count; i++) lods.Add(new LOD(th[i], present[i]));
+            }
             if (lods.Count == 0)
             {
                 Object.DestroyImmediate(root);

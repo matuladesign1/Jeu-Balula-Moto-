@@ -187,6 +187,13 @@ namespace BalulaMoto.Runtime
             set { PlayerPrefs.SetFloat("balula_volume", Mathf.Clamp01(value)); }
         }
 
+        /// <summary>Volume de la musique de fond (0 = coupée).</summary>
+        public static float MusicVolume
+        {
+            get { return PlayerPrefs.GetFloat("balula_musique", 0.6f); }
+            set { PlayerPrefs.SetFloat("balula_musique", Mathf.Clamp01(value)); }
+        }
+
         public static float CameraSensitivity
         {
             get { return PlayerPrefs.GetFloat("balula_sensibilite", 1f); }

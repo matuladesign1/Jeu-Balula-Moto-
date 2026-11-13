@@ -392,20 +392,23 @@ namespace BalulaMoto.Runtime
     // =====================================================================
     public class SettingsPanel : UIPanel
     {
-        private Text lang, quality, volume, sensitivity, help;
+        private Text lang, quality, volume, music, sensitivity, help, device;
         private static readonly string[] Languages = { "Francais", "Lingala", "Mixte" };
 
         protected override void Build()
         {
-            Frame("Paramètres", 1300, 860, true);
-            UIKit.VList(content, 18f, 10);
+            Frame("Paramètres", 1300, 980, true);
+            UIKit.VList(content, 14f, 10);
             lang = Line("Langue des dialogues", () => Cycle(-1), () => Cycle(1));
             quality = Line("Qualité graphique", () => { GameSettings.Quality = GameSettings.Quality - 1; Apply(); }, () => { GameSettings.Quality = GameSettings.Quality + 1; Apply(); });
-            volume = Line("Volume", () => { GameSettings.Volume = GameSettings.Volume - 0.1f; Apply(); }, () => { GameSettings.Volume = GameSettings.Volume + 0.1f; Apply(); });
+            volume = Line("Volume général", () => { GameSettings.Volume = GameSettings.Volume - 0.1f; Apply(); }, () => { GameSettings.Volume = GameSettings.Volume + 0.1f; Apply(); });
+            music = Line("Musique", () => { GameSettings.MusicVolume = GameSettings.MusicVolume - 0.1f; Apply(); }, () => { GameSettings.MusicVolume = GameSettings.MusicVolume + 0.1f; Apply(); });
             sensitivity = Line("Sensibilité caméra", () => { GameSettings.CameraSensitivity = GameSettings.CameraSensitivity - 0.2f; Apply(); }, () => { GameSettings.CameraSensitivity = GameSettings.CameraSensitivity + 0.2f; Apply(); });
             help = Line("Aide au démarrage", () => { GameSettings.ShowHelp = !GameSettings.ShowHelp; Apply(); }, () => { GameSettings.ShowHelp = !GameSettings.ShowHelp; Apply(); });
-            Text note = UIKit.Label(content, "Langue : Français, Lingala, ou Mixte (chaque client parle sa langue). Les achats réels, s'ils sont ajoutés un jour, passeront uniquement par la boutique officielle de la plateforme (Google Play / App Store).", 22, UIKit.TextDim, TextAnchor.MiddleLeft);
-            UIKit.Size(note, 110f);
+            Text note = UIKit.Label(content, "Langue : Français, Lingala, ou Mixte (chaque client parle sa langue). Musique : morceaux originaux du jeu (0 % = coupée). Les achats réels, s'ils sont ajoutés un jour, passeront uniquement par la boutique officielle de la plateforme (Google Play / App Store).", 22, UIKit.TextDim, TextAnchor.MiddleLeft);
+            UIKit.Size(note, 96f);
+            device = UIKit.Label(content, "", 20, UIKit.TextDim, TextAnchor.MiddleLeft);
+            UIKit.Size(device, 60f);
         }
 
         private Text Line(string label, UnityAction minus, UnityAction plus)
@@ -449,6 +452,9 @@ namespace BalulaMoto.Runtime
             string l = GameSettings.Language;
             lang.text = l == "Francais" ? "Français" : l;
             quality.text = GameSettings.QualityLabel(GameSettings.Quality);
+            music.text = GameSettings.MusicVolume <= 0.001f ? "Coupée" : Mathf.RoundToInt(GameSettings.MusicVolume * 100f) + " %";
+            device.text = "Appareil : " + SystemInfo.deviceModel + " — " + SystemInfo.graphicsDeviceName + " (" + SystemInfo.graphicsDeviceType + ") — " +
+                          SystemInfo.systemMemorySize + " Mo — version " + Application.version + (MusicPlayer.Instance != null && !string.IsNullOrEmpty(MusicPlayer.Instance.NowPlaying) ? " — musique : " + MusicPlayer.Instance.NowPlaying : "");
             volume.text = Mathf.RoundToInt(GameSettings.Volume * 100f) + " %";
             sensitivity.text = GameSettings.CameraSensitivity.ToString("0.0");
             help.text = GameSettings.ShowHelp ? "Oui" : "Non";
@@ -484,11 +490,12 @@ namespace BalulaMoto.Runtime
                 "<b>Pont Maréchal (Matadi)</b> : maquette de jeu. Longueur 722 m et travée centrale 520 m d'après des sources publiques ; hauteurs, largeur et relief estimés, à vérifier.\n\n" +
                 "<b>Photos de référence</b> : fournies par le créateur (bibliothèque REF-KIN, REF-KCE). Les photos portant un filigrane (CoinAfrique, CnK, Radio Okapi, comptes de réseaux sociaux) restent la propriété de leurs auteurs : elles servent uniquement de référence de modélisation et ne sont pas intégrées au jeu.\n\n" +
                 "<b>Personnages 3D</b> : avatars et animations « Microsoft Rocketbox » (© 2020 Microsoft, licence MIT — github.com/microsoft/Microsoft-Rocketbox), textures réduites pour téléphone ; foulards, bassines, casques et accessoires créés pour le jeu.\n\n" +
-                "<b>Affiches publicitaires et garage</b> : marques fictives (Unités Mbote, Mayi Malamu, Banque Lisanga…) et textures créées pour le jeu ; toute ressemblance avec une marque réelle serait fortuite. Les parcelles, boutiques et immeubles placés entre les rues sont génériques et ne représentent pas des bâtiments réels.\n\n" +
+                "<b>Affiches publicitaires, stations-service et garage</b> : marques fictives (Unités Mbote, Mayi Malamu, Banque Lisanga, carburant « BALULA ÉNERGIE »…) et textures créées pour le jeu ; toute ressemblance avec une marque réelle serait fortuite. Les parcelles, boutiques et immeubles placés entre les rues sont génériques et ne représentent pas des bâtiments réels.\n\n" +
                 "<b>Lieux du créateur</b> : positions issues des liens Google Maps fournis par le créateur (coordonnées uniquement, aucune image reprise).\n\n" +
                 "<b>Véhicules</b> : les modèles sont inspirés de véhicules réels du marché congolais. Les noms de marques (TVS, Bajaj, Honda, Yamaha, Haojue…) appartiennent à leurs propriétaires ; ce jeu n'est ni affilié ni approuvé par eux. Les caractéristiques indiquées « à vérifier » sont des estimations.\n\n" +
                 "<b>Police et amendes</b> : situations et montants fictifs, à but ludique. Le jeu ne représente pas de corruption et n'encourage aucune infraction.\n\n" +
-                "<b>Sons</b> : sons de synthèse générés par le jeu. Aucune musique commerciale n'est utilisée.\n\n" +
+                "<b>Musique</b> : quatre morceaux instrumentaux originaux composés pour le jeu (« Sebene ya Balula », « Nzela Malamu », « Butu ya Kin », « Ndombolo ya Moto »), entièrement générés par programme (guitares, basse, batterie, congas de synthèse) : aucun échantillon, aucune chanson existante, aucune musique commerciale.\n\n" +
+                "<b>Sons</b> : moteurs, klaxons et ambiance de rue synthétisés par le jeu.\n\n" +
                 "<b>Économie</b> : prix en francs congolais (FC). Taux et prix de référence datés dans les fichiers de données ; ils évoluent et doivent être mis à jour.\n\n" +
                 "<b>Achats</b> : aucun paiement réel dans cette version. Tout achat futur passera par la boutique officielle de la plateforme ; le jeu ne demande jamais de carte bancaire.";
         }

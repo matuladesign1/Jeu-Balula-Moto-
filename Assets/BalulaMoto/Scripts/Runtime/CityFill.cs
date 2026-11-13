@@ -152,6 +152,8 @@ namespace BalulaMoto.Runtime
             {
                 Renderer rd = child.GetComponent<Renderer>();
                 if (rd == null) continue;
+                // Le sol reste toujours dessiné (sinon le ciel apparaîtrait sous l'horizon au loin)
+                if (child.name.StartsWith("Sol")) continue;
                 Bounds bd = rd.bounds;
                 if (bd.size.x > 1500f || bd.size.z > 1500f) continue;
                 chunks.Add(new KeyValuePair<Renderer, Bounds>(rd, bd));
@@ -169,6 +171,7 @@ namespace BalulaMoto.Runtime
                 }
             foreach (InteractionPoint ip in InteractionPoint.All)
                 if (ip != null) keep.Add(new Keep { C = new Vector2(ip.transform.position.x, ip.transform.position.z), R = ip.Radius + 6f });
+            foreach (FuelStations.Zone z in FuelStations.Zones) keep.Add(new Keep { C = z.C, R = z.R + 2f });
             foreach (ClientStop cs in ClientStop.All)
                 if (cs != null) keep.Add(new Keep { C = new Vector2(cs.transform.position.x, cs.transform.position.z), R = 6f });
             foreach (LandmarkPin lp in FindObjectsByType<LandmarkPin>(FindObjectsSortMode.None))

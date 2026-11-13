@@ -99,7 +99,7 @@ namespace BalulaMoto.Core
                 case SurfaceKind.NidsDePoule: g = 0.82f; break;
                 case SurfaceKind.Poussiere: g = 0.68f; break;
                 case SurfaceKind.Boue: g = 0.45f; break;
-                case SurfaceKind.Travaux: g = 0.72f; break;
+                case SurfaceKind.Travaux: g = 0.64f; break;
                 case SurfaceKind.Caniveau: g = 0.55f; break;
                 default: g = 1.0f; break;
             }
@@ -122,7 +122,7 @@ namespace BalulaMoto.Core
                 case SurfaceKind.NidsDePoule: return 0.035f;
                 case SurfaceKind.Poussiere: return 0.030f;
                 case SurfaceKind.Boue: return 0.090f;
-                case SurfaceKind.Travaux: return 0.045f;
+                case SurfaceKind.Travaux: return 0.075f;
                 case SurfaceKind.Caniveau: return 0.250f;
                 default: return 0.015f;
             }
@@ -138,7 +138,7 @@ namespace BalulaMoto.Core
                 case SurfaceKind.NidsDePoule: return 0.65f;
                 case SurfaceKind.Poussiere: return 0.12f;
                 case SurfaceKind.Boue: return 0.30f;
-                case SurfaceKind.Travaux: return 0.35f;
+                case SurfaceKind.Travaux: return 0.62f;
                 case SurfaceKind.Caniveau: return 0.85f;
                 default: return 0f;
             }
@@ -155,7 +155,7 @@ namespace BalulaMoto.Core
                 case SurfaceKind.NidsDePoule: return 2.6f;
                 case SurfaceKind.Poussiere: return 1.5f;
                 case SurfaceKind.Boue: return 1.8f;
-                case SurfaceKind.Travaux: return 2.0f;
+                case SurfaceKind.Travaux: return 2.4f;
                 case SurfaceKind.Caniveau: return 4.0f;
                 default: return 1.0f;
             }

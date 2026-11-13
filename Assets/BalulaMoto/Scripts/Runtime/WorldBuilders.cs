@@ -490,6 +490,14 @@ namespace BalulaMoto.Runtime
     /// <summary>Construit le contexte de jeu à partir d'une carte importée d'OpenStreetMap.</summary>
     public static class ImportedWorldAdapter
     {
+        private static long StationPrice()
+        {
+            BalulaGame g = BalulaGame.Instance;
+            if (g == null || g.Db == null) return 0;
+            BalulaMoto.Core.FuelVendorDef v = g.Db.FuelVendor("station");
+            return v != null ? v.prixLitre : 0;
+        }
+
         public static WorldContext Build(ImportedWorld map, Transform root, TrafficManager traffic)
         {
             WorldContext w = new WorldContext { Name = map.worldName, IsTestTrack = false, Attribution = map.attribution, SpeedLimitKmh = 60f };
@@ -499,7 +507,12 @@ namespace BalulaMoto.Runtime
                 PlaceRef pr = WorldGeo.Place(p.id, p.name, p.district, p.category, p.position, Mathf.Max(1, p.weight), p.isStop);
                 w.Places.Add(pr);
                 if (p.isStop && stops < 80) { ClientStop.Create(root, pr, false); stops++; }
-                if (p.isFuel) InteractionPoint.Create(root, InteractionKind.StationService, "station", p.name, p.position, 10f);
+                if (p.isFuel)
+                {
+                    // Vraie station (auvent, pompes, boutique, totem) au bord de la rue ; « faire le plein » sous l'auvent
+                    Vector3 service = FuelStations.Build(root, p, map, StationPrice());
+                    InteractionPoint.Create(root, InteractionKind.StationService, "station", p.name, service, 10f, false);
+                }
                 if (p.isLandmark) LandmarkPin.Create(root, p.id, p.name, p.status, p.position);
             }
             // Arrêts informels (comme à Kinshasa : devant les marchés, gares, hôpitaux, écoles, églises, magasins),
