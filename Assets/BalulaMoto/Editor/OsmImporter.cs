@@ -802,7 +802,7 @@ namespace BalulaMoto.EditorTools
             int idx = 0;
             // Terre marron foncé, en dalles de 1 km découpées en carrés de 50 m : une seule face géante était
             // calculée « dans le brouillard » sur téléphone (brouillard aux sommets) et paraissait bleu-gris clair.
-            Material soil = Mat(mats, "Sol", shader, new Color(0.28f, 0.195f, 0.13f), matAsset, ref firstMat);
+            Material soil = Mat(mats, "Sol", shader, new Color(0.24f, 0.165f, 0.11f), matAsset, ref firstMat);
             float gx0 = mid.x - (size.x + 400f) * 0.5f, gx1 = mid.x + (size.x + 400f) * 0.5f;
             float gz0 = mid.y - (size.y + 400f) * 0.5f, gz1 = mid.y + (size.y + 400f) * 0.5f;
             int tiles = 0;

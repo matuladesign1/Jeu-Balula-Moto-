@@ -33,7 +33,8 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
 - **Courses** : surtout des petites courses de 1 à 2 km (65 %), des moyennes (25 %) et quelques longues (10 %, jamais plus de 9 km de route environ) ; prix au kilomètre un peu réduit.
 - **Routes en travaux** (une quarantaine, réparties dans la ville) : chaussée défoncée (sable, gravier, bosses), barrières rouge et blanc, cônes, tas de sable qui mordent sur la route, pelleteuse, panneaux « TRAVAUX — RALENTIR », ouvriers ; la circulation y roule au pas.
 - **Caniveaux** en béton des deux côtés des rues goudronnées et des grandes avenues, **accotements** de terre tassée, **bordures peintes rouge et blanc** sur les boulevards. Rouler dans un caniveau secoue et freine la moto.
-- **Terre marron foncé** : le sol est découpé en dalles (sur téléphone, un sol d'une seule pièce apparaissait bleu-gris clair, noyé dans le brouillard) ; les rues en terre sont plus foncées.
+- **Terre marron foncé, sans reflets** : le sol est découpé en dalles (sur téléphone, un sol d'une seule pièce apparaissait bleu-gris clair, noyé dans le brouillard) ; le sol, les routes et les caniveaux de la carte sont mats (ils brillaient comme du plastique et reflétaient le ciel, ce qui éclaircissait la terre).
+- **Textes 3D** (plaques, enseignes, inscriptions des camions, panneaux) : ils ne se voient plus à travers les véhicules et les murs, ni à l'envers depuis l'autre côté.
 - **« Tunnels »** : les bâtiments OpenStreetMap posés en travers d'une chaussée (on roulait à travers leurs murs) ne sont plus construits.
 - **Paramètres** : le modèle du téléphone et sa carte graphique sont affichés en bas (utile pour me signaler un problème d'affichage).
 
