@@ -1,0 +1,463 @@
+{
+  "repliques": [
+    {
+      "cle": "salut_client",
+      "quartier": "",
+      "fr": [
+        "Bonjour chauffeur !",
+        "Wewa ! Tu es libre ?",
+        "Chauffeur, attends-moi !"
+      ],
+      "ln": [
+        "Mbote chauffeur !",
+        "Wewa ! Ozali libre ?",
+        "Chauffeur, zela ngai !"
+      ]
+    },
+    {
+      "cle": "demande_prix",
+      "quartier": "",
+      "fr": [
+        "Chauffeur, tu me prends à combien pour {dest} ?",
+        "Combien jusqu'à {dest} ?",
+        "On va à {dest}, c'est combien ?"
+      ],
+      "ln": [
+        "Chauffeur, kende na {dest}. Ezali boni ?",
+        "{dest}, ntalo boni ?",
+        "Tokende na {dest}, boni ?"
+      ]
+    },
+    {
+      "cle": "demande_prix",
+      "quartier": "Victoire",
+      "fr": [
+        "Laisse-moi au rond-point Victoire, à côté de la place des artistes. Combien ?"
+      ],
+      "ln": [
+        "Kitisa ngai na rond-point Victoire. Boni ?"
+      ]
+    },
+    {
+      "cle": "demande_prix",
+      "quartier": "Matonge",
+      "fr": [
+        "Chauffeur, kende na Matonge. C'est combien ?"
+      ],
+      "ln": [
+        "Chauffeur, kende na Matonge. Boni ?"
+      ]
+    },
+    {
+      "cle": "demande_prix",
+      "quartier": "Limete",
+      "fr": [
+        "Combien jusqu'à Limete, vers la 7e Rue ?"
+      ],
+      "ln": [
+        "Limete, 7e Rue, boni ?"
+      ]
+    },
+    {
+      "cle": "demande_prix",
+      "quartier": "Gombe",
+      "fr": [
+        "Je vais vers la Gare Centrale, sur le boulevard. Tu prends combien ?"
+      ],
+      "ln": [
+        "Nakei na Gare Centrale. Boni ?"
+      ]
+    },
+    {
+      "cle": "demande_prix_marchandises",
+      "quartier": "",
+      "fr": [
+        "J'ai des colis pour {dest}, tu prends à combien ?",
+        "Mes marchandises vont à {dest}. C'est combien avec les sacs ?"
+      ],
+      "ln": [
+        "Nazali na biloko, {dest} ezali boni ?",
+        "Biloko na ngai ekei na {dest}. Boni ?"
+      ]
+    },
+    {
+      "cle": "demande_prix_groupe",
+      "quartier": "",
+      "fr": [
+        "On est {n}, pour {dest} c'est combien ?",
+        "Nous sommes {n}. {dest}, combien ?"
+      ],
+      "ln": [
+        "Tozali {n}, {dest} boni ?"
+      ]
+    },
+    {
+      "cle": "chauffeur_propose",
+      "quartier": "",
+      "fr": [
+        "{prix} francs.",
+        "Ça fait {prix}.",
+        "Pour toi, {prix}."
+      ],
+      "ln": [
+        "Ezali {prix}.",
+        "{prix}, ndeko."
+      ]
+    },
+    {
+      "cle": "contre_offre",
+      "quartier": "",
+      "fr": [
+        "Fais-moi {prix}.",
+        "C'est trop cher, chauffeur. {prix}.",
+        "Baisse un peu le prix : {prix}."
+      ],
+      "ln": [
+        "Kitisa moke : {prix}.",
+        "{prix}, okei ?",
+        "Ntalo ezali makasi. {prix}."
+      ]
+    },
+    {
+      "cle": "contre_offre_insiste",
+      "quartier": "",
+      "fr": [
+        "Je t'ai dit {prix}, c'est mon dernier prix.",
+        "Allez, {prix} et on part."
+      ],
+      "ln": [
+        "Nalobi {prix}, ezali ntalo ya suka."
+      ]
+    },
+    {
+      "cle": "accepte",
+      "quartier": "",
+      "fr": [
+        "D'accord, on y va.",
+        "Ça va, je monte."
+      ],
+      "ln": [
+        "Malamu, tokende.",
+        "Ee, to kende !"
+      ]
+    },
+    {
+      "cle": "accepte_content",
+      "quartier": "",
+      "fr": [
+        "Merci chauffeur, tu es gentil !",
+        "C'est un bon prix, on y va !"
+      ],
+      "ln": [
+        "Matondo chauffeur, ozali malamu !"
+      ]
+    },
+    {
+      "cle": "accepte_monte",
+      "quartier": "",
+      "fr": [
+        "D'accord, monte !",
+        "C'est bon, monte."
+      ],
+      "ln": [
+        "Yaka, to kende !",
+        "Malamu, mata !"
+      ]
+    },
+    {
+      "cle": "part_trop_cher",
+      "quartier": "",
+      "fr": [
+        "Laisse, c'est trop cher. Je prends un autre.",
+        "Non, non, tu exagères !"
+      ],
+      "ln": [
+        "Tika, ezali ntalo mingi. Nakozwa mosusu."
+      ]
+    },
+    {
+      "cle": "part_patience",
+      "quartier": "",
+      "fr": [
+        "On perd le temps là, je pars.",
+        "Bon, je vais chercher une autre moto."
+      ],
+      "ln": [
+        "Tozali kobunga ntango, nakei."
+      ]
+    },
+    {
+      "cle": "refus_chauffeur",
+      "quartier": "",
+      "fr": [
+        "Désolé, je ne vais pas par là.",
+        "Pas cette fois, cherche une autre moto."
+      ],
+      "ln": [
+        "Pardon, nakei kuna te."
+      ]
+    },
+    {
+      "cle": "monte",
+      "quartier": "",
+      "fr": [
+        "Monte, tiens-toi bien !",
+        "Installe-toi, on part."
+      ],
+      "ln": [
+        "Mata, simba malamu !"
+      ]
+    },
+    {
+      "cle": "conduite_rapide",
+      "quartier": "",
+      "fr": [
+        "Doucement, chauffeur !",
+        "Hé, on n'est pas pressés à ce point !"
+      ],
+      "ln": [
+        "Malembe chauffeur !",
+        "Kende malembe !"
+      ]
+    },
+    {
+      "cle": "freinage_brusque",
+      "quartier": "",
+      "fr": [
+        "Aïe ! Freine doucement !",
+        "Attention, chauffeur !"
+      ],
+      "ln": [
+        "Keba chauffeur !"
+      ]
+    },
+    {
+      "cle": "collision",
+      "quartier": "",
+      "fr": [
+        "Mais tu veux nous tuer ?!",
+        "Fais attention !"
+      ],
+      "ln": [
+        "Keba ! Olingi koboma biso ?"
+      ]
+    },
+    {
+      "cle": "nids_de_poule",
+      "quartier": "",
+      "fr": [
+        "Ces trous-là... Doucement !",
+        "La route est mauvaise ici."
+      ],
+      "ln": [
+        "Nzela oyo ezali mabe, malembe."
+      ]
+    },
+    {
+      "cle": "pluie_moto",
+      "quartier": "",
+      "fr": [
+        "Il pleut, je suis tout mouillé !",
+        "Cette pluie-là..."
+      ],
+      "ln": [
+        "Mbula ezali kobeta !"
+      ]
+    },
+    {
+      "cle": "embouteillage",
+      "quartier": "",
+      "fr": [
+        "Il y a embouteillage, passe par la petite avenue.",
+        "Ça bouche encore..."
+      ],
+      "ln": [
+        "Embouteillage ezali, leka na nzela ya moke."
+      ]
+    },
+    {
+      "cle": "feu_rouge",
+      "quartier": "",
+      "fr": [
+        "Chauffeur, le feu était rouge !"
+      ],
+      "ln": [
+        "Feu ezalaki rouge !"
+      ]
+    },
+    {
+      "cle": "arrivee",
+      "quartier": "",
+      "fr": [
+        "Arrête ici, merci.",
+        "C'est ici, chauffeur."
+      ],
+      "ln": [
+        "Telema awa, matondo.",
+        "Ezali awa."
+      ]
+    },
+    {
+      "cle": "paiement",
+      "quartier": "",
+      "fr": [
+        "Voici {prix}.",
+        "Tiens, {prix}."
+      ],
+      "ln": [
+        "Zwa {prix}."
+      ]
+    },
+    {
+      "cle": "paiement_content",
+      "quartier": "",
+      "fr": [
+        "Voici {prix}. Merci, tu conduis bien !"
+      ],
+      "ln": [
+        "Zwa {prix}. Matondo, ozali kokumba malamu !"
+      ]
+    },
+    {
+      "cle": "paiement_mecontent",
+      "quartier": "",
+      "fr": [
+        "Tiens {prix}. Ta conduite là, non !"
+      ],
+      "ln": [
+        "Zwa {prix}. Kokumba na yo ezali malamu te."
+      ]
+    },
+    {
+      "cle": "pourboire",
+      "quartier": "",
+      "fr": [
+        "Tiens {prix}, et garde la monnaie !"
+      ],
+      "ln": [
+        "Zwa {prix}, bomba monnaie."
+      ]
+    },
+    {
+      "cle": "paie_moins",
+      "quartier": "",
+      "fr": [
+        "Avec cette conduite, je te donne seulement {prix}."
+      ],
+      "ln": [
+        "Na kokumba boye, nakopesa yo kaka {prix}."
+      ]
+    },
+    {
+      "cle": "police_stop",
+      "quartier": "",
+      "fr": [
+        "Chauffeur ! Arrête-toi là !",
+        "Toi, à moto ! Range-toi !"
+      ],
+      "ln": [
+        "Chauffeur ! Telema awa !"
+      ]
+    },
+    {
+      "cle": "police_controle",
+      "quartier": "",
+      "fr": [
+        "Bonjour. Les documents du véhicule, s'il te plaît."
+      ],
+      "ln": [
+        "Mbote. Pesa mikanda ya motuka."
+      ]
+    },
+    {
+      "cle": "police_infraction",
+      "quartier": "",
+      "fr": [
+        "Tu as commis une infraction : {infraction}."
+      ],
+      "ln": []
+    },
+    {
+      "cle": "police_amende",
+      "quartier": "",
+      "fr": [
+        "L'amende est de {prix}. Tu paies ici et on te donne la quittance."
+      ],
+      "ln": []
+    },
+    {
+      "cle": "police_avertissement",
+      "quartier": "",
+      "fr": [
+        "Bon, ça va pour cette fois. Sois prudent."
+      ],
+      "ln": [
+        "Malamu, mbala oyo eleki. Keba !"
+      ]
+    },
+    {
+      "cle": "police_fuite",
+      "quartier": "",
+      "fr": [
+        "Il fuit ! Rattrapez-le !"
+      ],
+      "ln": []
+    },
+    {
+      "cle": "kadafi",
+      "quartier": "",
+      "fr": [
+        "Essence ! Bouteille d'un litre, c'est {prix}.",
+        "Venez, essence ezali awa !"
+      ],
+      "ln": [
+        "Essence ezali awa ! Litre moko {prix}."
+      ]
+    },
+    {
+      "cle": "station",
+      "quartier": "",
+      "fr": [
+        "Bienvenue à la station. On fait le plein ?"
+      ],
+      "ln": []
+    },
+    {
+      "cle": "point_vente",
+      "quartier": "",
+      "fr": [
+        "Carburant au litre, prix du dépôt."
+      ],
+      "ln": []
+    },
+    {
+      "cle": "atelier",
+      "quartier": "",
+      "fr": [
+        "Mbote ! On regarde la moto ?",
+        "Le mécanicien du quartier est là, qu'est-ce qui ne va pas ?"
+      ],
+      "ln": [
+        "Mbote ndeko ! Tosala nini lelo ?"
+      ]
+    },
+    {
+      "cle": "panne_seche",
+      "quartier": "",
+      "fr": [
+        "Plus d'essence... Il faut trouver un Kadafi."
+      ],
+      "ln": [
+        "Essence esili..."
+      ]
+    },
+    {
+      "cle": "garage",
+      "quartier": "",
+      "fr": [
+        "Bienvenue au garage MATULA."
+      ],
+      "ln": []
+    }
+  ]
+}

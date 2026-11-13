@@ -1,0 +1,119 @@
+# BALULA MOTO — compilation de l'APK Android dans le cloud (GitHub Actions), sans Unity sur votre ordinateur.
+#
+# À faire une seule fois : dans le dépôt GitHub, Settings > Secrets and variables > Actions > New repository secret
+#   UNITY_USERNAME : l'adresse e-mail de votre compte Unity (compte gratuit, licence Personal)
+#   UNITY_PASSWORD : le mot de passe de ce compte
+# Ensuite : onglet Actions > « Construire l'APK Android » > Run workflow. L'APK est publié dans « Releases ».
+name: Construire l'APK Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      carte_osm:
+        description: "Importer la vraie carte de Kinshasa (OpenStreetMap)"
+        type: boolean
+        default: true
+  push:
+    branches: [ main ]
+    paths:
+      - 'Assets/**'
+      - 'Packages/**'
+      - 'ProjectSettings/**'
+      - 'scripts/**'
+      - '.github/workflows/build-android.yml'
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Vérifier les identifiants Unity
+        env:
+          U: ${{ secrets.UNITY_USERNAME }}
+          P: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [ -z "$U" ] || [ -z "$P" ]; then
+            echo "::error title=Secrets Unity manquants::Ajoutez UNITY_USERNAME et UNITY_PASSWORD dans Settings > Secrets and variables > Actions (voir Docs/COMPILER_APK.md)."
+            exit 1
+          fi
+
+      - name: Libérer de l'espace disque
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: false
+
+      - name: Récupérer le projet
+        uses: actions/checkout@v4
+
+      - name: Cache Unity (Library)
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/**') }}-${{ hashFiles('Assets/BalulaMoto/ThirdParty/**') }}
+          restore-keys: |
+            Library-Android-
+
+      - name: Installer Unity 6 (module Android)
+        id: unity-setup
+        uses: RageAgainstThePixel/unity-setup@v3
+        with:
+          unity-version: '6000.0'
+          build-targets: Android
+          cache-installation: true
+
+      - name: Activer la licence Unity Personal
+        uses: RageAgainstThePixel/activate-unity-license@v3
+        with:
+          license: 'personal'
+          username: ${{ secrets.UNITY_USERNAME }}
+          password: ${{ secrets.UNITY_PASSWORD }}
+
+      - name: Télécharger la carte de Kinshasa (OpenStreetMap, ODbL)
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.carte_osm }}
+        run: bash scripts/fetch_osm.sh osm/kinshasa.osm
+
+      - name: Construire l'APK
+        run: |
+          mkdir -p build
+          OSM_ARGS=""
+          if [ -s osm/kinshasa.osm ]; then OSM_ARGS="-balulaOsm $GITHUB_WORKSPACE/osm/kinshasa.osm"; fi
+          "$UNITY_EDITOR_PATH" -batchmode -nographics -logFile - \
+            -projectPath "$GITHUB_WORKSPACE" -buildTarget Android \
+            -executeMethod BalulaMoto.EditorTools.BalulaSetup.BuildAndroidCI \
+            -customBuildPath "$GITHUB_WORKSPACE/build/BalulaMoto.apk" $OSM_ARGS
+          ls -la build
+          test -s build/BalulaMoto.apk
+
+      - name: Publier l'APK (artefact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BalulaMoto-APK
+          path: build/*.apk
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Publier l'APK (Releases, téléchargeable depuis le téléphone)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: BALULA MOTO — APK n°${{ github.run_number }}
+          body: |
+            APK Android compilé automatiquement depuis Unity (commit ${{ github.sha }}).
+            Installation : télécharger BalulaMoto.apk sur le téléphone, puis autoriser l'installation d'applications de sources inconnues.
+            Personnages 3D : Microsoft Rocketbox (licence MIT). Carte : © les contributeurs d'OpenStreetMap (ODbL).
+          files: build/BalulaMoto.apk
+          make_latest: true

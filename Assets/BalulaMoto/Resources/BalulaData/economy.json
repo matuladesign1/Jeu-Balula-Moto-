@@ -1,0 +1,397 @@
+{
+  "tauxUsdCdf": 2265.0,
+  "sourceTaux": "Banque centrale du Congo, taux indicatif du 30 octobre 2026 : 2 265,16 CDF pour 1 USD (rapporté par l'ACP le 7 novembre 2026). À mettre à jour.",
+  "facteurPrixVehicules": 1.0,
+  "facteurRemunerationMissions": 1.0,
+  "facteurUsure": 12.0,
+  "facteurConsommation": 7.0,
+  "intervalleVidangeKm": 250.0,
+  "minutesJeuParSeconde": 1.0,
+  "argentDepartCarriere": 15000,
+  "argentDepartLibre": 25000000,
+  "etatDepartCarriere": 72.0,
+  "decoteVenteMin": 0.35,
+  "decoteVenteMax": 0.75,
+  "tarifs": {
+    "baseMoto": 500,
+    "parKmMoto": 450,
+    "baseTricyclePassager": 300,
+    "parKmTricyclePassager": 180,
+    "majorationNuit": 0.25,
+    "majorationPluie": 0.2,
+    "majorationPointe": 0.15,
+    "majorationMarchandises": 0.35,
+    "minimum": 1000,
+    "arrondi": 500,
+    "facteurDetour": 1.3,
+    "vitesseMoyenneKmh": 22.0
+  },
+  "carburant": [
+    {
+      "id": "station",
+      "nom": "Station-service",
+      "prixLitre": 2640,
+      "risqueQualite": 0.0,
+      "litresMin": 0.0,
+      "description": "Prix à la pompe fixé pour Kinshasa : 2 640 FC/L (nouvelle structure des prix du 16 avril 2026, ACP)."
+    },
+    {
+      "id": "point_vente",
+      "nom": "Point de vente carburant",
+      "prixLitre": 2900,
+      "risqueQualite": 0.02,
+      "litresMin": 0.0,
+      "description": "Dépôt de quartier, légèrement plus cher que la pompe (valeur de jeu)."
+    },
+    {
+      "id": "kadafi",
+      "nom": "Kadafi (vente au détail)",
+      "prixLitre": 3500,
+      "risqueQualite": 0.08,
+      "litresMin": 1.0,
+      "description": "Revendeur en bouteilles et bidons. À Kinshasa, le litre chez les « Kadhafi » est passé de 3 000 à 4 000 FC en mars 2026 (ACP). Qualité variable."
+    }
+  ],
+  "atelier": [
+    {
+      "id": "moteur",
+      "nom": "Réparer le moteur",
+      "composant": "moteur",
+      "prixMoto": 60000,
+      "prixTricycle": 120000,
+      "parRoue": false,
+      "description": "Remise en état selon l'usure."
+    },
+    {
+      "id": "pneus",
+      "nom": "Changer les pneus",
+      "composant": "pneus",
+      "prixMoto": 25000,
+      "prixTricycle": 30000,
+      "parRoue": true,
+      "description": "Prix par roue."
+    },
+    {
+      "id": "freins",
+      "nom": "Réparer les freins",
+      "composant": "freins",
+      "prixMoto": 15000,
+      "prixTricycle": 30000,
+      "parRoue": false,
+      "description": "Plaquettes, mâchoires, câbles."
+    },
+    {
+      "id": "vidange",
+      "nom": "Faire la vidange",
+      "composant": "vidange",
+      "prixMoto": 12000,
+      "prixTricycle": 20000,
+      "parRoue": false,
+      "description": "Huile et filtre."
+    },
+    {
+      "id": "suspension",
+      "nom": "Entretenir les suspensions",
+      "composant": "suspension",
+      "prixMoto": 30000,
+      "prixTricycle": 50000,
+      "parRoue": false,
+      "description": "Amortisseurs et fourche."
+    },
+    {
+      "id": "lavage",
+      "nom": "Nettoyer le véhicule",
+      "composant": "proprete",
+      "prixMoto": 2000,
+      "prixTricycle": 4000,
+      "parRoue": false,
+      "description": "Lavage complet."
+    },
+    {
+      "id": "carrosserie",
+      "nom": "Réparer les dégâts de collision",
+      "composant": "carrosserie",
+      "prixMoto": 50000,
+      "prixTricycle": 120000,
+      "parRoue": false,
+      "description": "Tôlerie, carénages, rétroviseurs."
+    },
+    {
+      "id": "revision",
+      "nom": "Contrôle général",
+      "composant": "tous",
+      "prixMoto": 25000,
+      "prixTricycle": 40000,
+      "parRoue": false,
+      "description": "Remet chaque élément à au moins 60 %."
+    }
+  ],
+  "ameliorations": [
+    {
+      "id": "moteur",
+      "nom": "Préparation moteur",
+      "effet": "Puissance",
+      "bonusParNiveau": 0.07,
+      "prixNiveau1Moto": 150000,
+      "prixNiveau1Tricycle": 300000,
+      "multiplicateurNiveau": 2.2,
+      "niveauMax": 3,
+      "description": "+7 % de puissance par niveau."
+    },
+    {
+      "id": "acceleration",
+      "nom": "Démultiplication courte",
+      "effet": "Accélération",
+      "bonusParNiveau": 0.1,
+      "prixNiveau1Moto": 90000,
+      "prixNiveau1Tricycle": 180000,
+      "multiplicateurNiveau": 2.2,
+      "niveauMax": 3,
+      "description": "+10 % de motricité au démarrage par niveau."
+    },
+    {
+      "id": "freinage",
+      "nom": "Freins renforcés",
+      "effet": "Freinage",
+      "bonusParNiveau": 0.1,
+      "prixNiveau1Moto": 60000,
+      "prixNiveau1Tricycle": 120000,
+      "multiplicateurNiveau": 2.2,
+      "niveauMax": 3,
+      "description": "+10 % de décélération par niveau."
+    },
+    {
+      "id": "suspension",
+      "nom": "Suspensions renforcées",
+      "effet": "Confort et stabilité",
+      "bonusParNiveau": 0.08,
+      "prixNiveau1Moto": 80000,
+      "prixNiveau1Tricycle": 160000,
+      "multiplicateurNiveau": 2.2,
+      "niveauMax": 3,
+      "description": "+8 % de confort par niveau."
+    },
+    {
+      "id": "pneus",
+      "nom": "Pneus haute adhérence",
+      "effet": "Adhérence",
+      "bonusParNiveau": 0.06,
+      "prixNiveau1Moto": 70000,
+      "prixNiveau1Tricycle": 140000,
+      "multiplicateurNiveau": 2.2,
+      "niveauMax": 3,
+      "description": "+6 % d'adhérence par niveau."
+    },
+    {
+      "id": "transmission",
+      "nom": "Transmission longue",
+      "effet": "Vitesse maximale",
+      "bonusParNiveau": 0.04,
+      "prixNiveau1Moto": 120000,
+      "prixNiveau1Tricycle": 240000,
+      "multiplicateurNiveau": 2.2,
+      "niveauMax": 3,
+      "description": "+4 % de vitesse maximale par niveau."
+    },
+    {
+      "id": "consommation",
+      "nom": "Réglage de carburation",
+      "effet": "Consommation",
+      "bonusParNiveau": 0.06,
+      "prixNiveau1Moto": 50000,
+      "prixNiveau1Tricycle": 100000,
+      "multiplicateurNiveau": 2.2,
+      "niveauMax": 3,
+      "description": "-6 % de consommation par niveau."
+    }
+  ],
+  "personnalisation": [
+    {
+      "id": "peinture",
+      "nom": "Peinture principale",
+      "type": "couleur",
+      "prix": 45000,
+      "options": [
+        "Bleu roi|#1E4FBF",
+        "Rouge|#C62828",
+        "Noir|#151515",
+        "Blanc|#F5F5F5",
+        "Jaune taxi|#F2C200",
+        "Vert|#2E7D32",
+        "Bleu ciel RDC|#007FFF",
+        "Orange|#EF6C00",
+        "Gris|#757575"
+      ]
+    },
+    {
+      "id": "peinture2",
+      "nom": "Couleur secondaire (bandes, bas de caisse)",
+      "type": "couleur2",
+      "prix": 25000,
+      "options": [
+        "Vert lime|#B8F23A",
+        "Noir|#111111",
+        "Blanc|#F5F5F5",
+        "Jaune|#F2C200",
+        "Rouge|#D32F2F",
+        "Bleu|#0D47A1"
+      ]
+    },
+    {
+      "id": "autocollants",
+      "nom": "Autocollants",
+      "type": "autocollant",
+      "prix": 15000,
+      "options": [
+        "Aucun",
+        "Drapeau RDC",
+        "Léopards",
+        "Wewa Kin",
+        "Kin la belle",
+        "Nzambe azali bolingo"
+      ]
+    },
+    {
+      "id": "jantes",
+      "nom": "Jantes",
+      "type": "jantes",
+      "prix": 40000,
+      "options": [
+        "Alliage argent",
+        "Alliage noir",
+        "Rayons chromés",
+        "Alliage doré"
+      ]
+    },
+    {
+      "id": "pneus_style",
+      "nom": "Style de pneus",
+      "type": "pneus",
+      "prix": 30000,
+      "options": [
+        "Route",
+        "Mixte à crampons",
+        "Tout-terrain"
+      ]
+    },
+    {
+      "id": "selle",
+      "nom": "Selle",
+      "type": "selle",
+      "prix": 12000,
+      "options": [
+        "Noire",
+        "Marron",
+        "Rouge",
+        "Motif léopard"
+      ]
+    },
+    {
+      "id": "retroviseurs",
+      "nom": "Rétroviseurs",
+      "type": "retroviseurs",
+      "prix": 8000,
+      "options": [
+        "Standard",
+        "Ronds chromés",
+        "Sport"
+      ]
+    },
+    {
+      "id": "phares",
+      "nom": "Phares",
+      "type": "phares",
+      "prix": 20000,
+      "options": [
+        "Halogène",
+        "LED blanche",
+        "LED + feux de jour"
+      ]
+    },
+    {
+      "id": "accessoires",
+      "nom": "Accessoires",
+      "type": "accessoire",
+      "prix": 15000,
+      "options": [
+        "Porte-bagages renforcé",
+        "Sacoches",
+        "Pare-brise",
+        "Klaxon puissant",
+        "Gilet du chauffeur"
+      ]
+    },
+    {
+      "id": "protections",
+      "nom": "Protections",
+      "type": "protection",
+      "prix": 18000,
+      "options": [
+        "Pare-carter",
+        "Barres de protection",
+        "Protège-mains",
+        "Garde-boue long"
+      ]
+    },
+    {
+      "id": "decorations",
+      "nom": "Décorations",
+      "type": "decoration",
+      "prix": 10000,
+      "options": [
+        "Franges colorées",
+        "Petit drapeau RDC",
+        "Néons"
+      ]
+    },
+    {
+      "id": "plaque",
+      "nom": "Plaque personnalisée (fictive)",
+      "type": "plaque",
+      "prix": 5000,
+      "options": [
+        "BLM-2026-KN",
+        "WEWA-243-KN",
+        "MATULA-01",
+        "KIN-LA-BELLE"
+      ]
+    }
+  ],
+  "amendes": [
+    {
+      "id": "feu_rouge",
+      "libelle": "Franchissement d'un feu rouge",
+      "montant": 25000
+    },
+    {
+      "id": "exces_vitesse",
+      "libelle": "Excès de vitesse",
+      "montant": 15000
+    },
+    {
+      "id": "conduite_dangereuse",
+      "libelle": "Conduite dangereuse",
+      "montant": 20000
+    },
+    {
+      "id": "sans_phare",
+      "libelle": "Circulation de nuit sans phare",
+      "montant": 10000
+    },
+    {
+      "id": "documents",
+      "libelle": "Documents du véhicule non en règle",
+      "montant": 30000
+    },
+    {
+      "id": "refus_obtemperer",
+      "libelle": "Refus d'obtempérer",
+      "montant": 50000
+    }
+  ],
+  "documents": {
+    "prix": 35000,
+    "dureeJours": 30,
+    "description": "Permis, assurance, vignette et autorisation taxi-moto (fictifs)"
+  }
+}

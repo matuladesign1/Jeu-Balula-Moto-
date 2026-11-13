@@ -1,0 +1,469 @@
+{
+  "references": [
+    {
+      "id": "REF-KIN-001",
+      "fichier": "1000325129.jpg",
+      "categorie": "Véhicule joueur",
+      "sujet": "Moto TVS HLX 150 bleue (moto de départ)",
+      "statut": "ASSOCIÉE — cahier des charges §5",
+      "source": "Filigrane « CoinAfrique »",
+      "elementsVisibles": [
+        "Réservoir bleu avec bandes vert lime et blanches, logo TVS",
+        "Marquage « HLX 150 » sur le flanc",
+        "Carénage de phare bleu avec petit saute-vent fumé",
+        "Rétroviseurs noirs sur tiges",
+        "Garde-boue avant bleu",
+        "Jantes en alliage argent à branches doubles",
+        "Pneus à crampons mixtes",
+        "Fourche télescopique",
+        "Deux amortisseurs arrière à ressort chromé",
+        "Moteur monocylindre argent, carter gris",
+        "Échappement noir et chromé à droite",
+        "Selle noire biplace longue",
+        "Porte-bagages tubulaire noir et poignée passager",
+        "Feu arrière rouge, clignotants orange",
+        "Garde-chaîne, cadre noir, béquille"
+      ],
+      "usage": "Modèle 3D de la moto de départ (proportions : longueur 2,04 m, empattement 1,295 m).",
+      "droits": "Photo tierce (filigrane visible) : référence de modélisation uniquement — ne pas l'intégrer comme texture ni la publier sans autorisation. Logos et publicités visibles : à remplacer par des marques fictives dans la version commerciale, sauf accord.",
+      "lieuId": "",
+      "vehiculeId": "tvs_hlx150"
+    },
+    {
+      "id": "REF-KIN-002",
+      "fichier": "1000325128.jpg",
+      "categorie": "Véhicule joueur",
+      "sujet": "Tricycle passagers jaune et noir (9 vues)",
+      "statut": "ASSOCIÉE — cahier des charges §5",
+      "source": "Aucun filigrane visible",
+      "elementsVisibles": [
+        "Neuf vues : 3/4 avant, face, 3/4 avant opposée, deux profils, 3/4 arrière, arrière",
+        "Carrosserie jaune, bas de caisse noir",
+        "Toit plat jaune à rebord",
+        "Pare-brise, calandre noire, phare avant",
+        "Portes latérales noires vitrées sur la cabine arrière",
+        "Roue avant unique avec garde-boue jaune, deux roues arrière",
+        "Petite vitre arrière, feux arrière"
+      ],
+      "usage": "Plans de modélisation (vues orthogonales) du tricycle de départ.",
+      "droits": "Photo fournie par le créateur, sans filigrane visible : référence de modélisation — vérifier les droits avant toute diffusion.",
+      "lieuId": "",
+      "vehiculeId": "tricycle_jaune_kin"
+    },
+    {
+      "id": "REF-KIN-003",
+      "fichier": "1000325525.jpg",
+      "categorie": "Véhicule magasin",
+      "sujet": "Tricycle Bajaj RE noir et jaune",
+      "statut": "ASSOCIÉE — liste de modèles §6",
+      "source": "Image de catalogue constructeur (sans filigrane)",
+      "elementsVisibles": [
+        "Marquage « RE » en face avant",
+        "Badge d'homologation indien (version export à vérifier)",
+        "Capote noire souple, face avant jaune",
+        "Pare-brise avec essuie-glace",
+        "Deux phares ronds, clignotants, rétroviseurs ronds",
+        "Cabine ouverte, sièges marron"
+      ],
+      "usage": "Modèle 3D du Bajaj RE pour le magasin.",
+      "droits": "Image constructeur : référence uniquement. Logos et publicités visibles : à remplacer par des marques fictives dans la version commerciale, sauf accord.",
+      "lieuId": "",
+      "vehiculeId": "bajaj_re"
+    },
+    {
+      "id": "REF-KIN-004",
+      "fichier": "1000333360.jpg",
+      "categorie": "Lieu",
+      "sujet": "Tour de l'Échangeur de Limete, rond-point et boulevard Lumumba",
+      "statut": "PROPOSÉE — correspond à la référence « Tour de l'Échangeur » ; à confirmer par le créateur",
+      "source": "Aucun filigrane visible",
+      "elementsVisibles": [
+        "Tour en béton gris à fût nervuré et plateforme supérieure en encorbellement, antenne",
+        "Rampe d'accès menant au pied de la tour",
+        "Statue sur piédestal au centre de la place (une statue de Patrice Lumumba y a été érigée en 2002 selon les sources)",
+        "Pelouses, palmiers, allées",
+        "Boulevard à plusieurs voies de part et d'autre",
+        "Minibus jaunes, taxis, motos",
+        "Hangars industriels à toits bleus et immeuble résidentiel en arrière-plan"
+      ],
+      "usage": "Modélisation de la tour (≈ 210 m), de la place, du rond-point et des abords.",
+      "droits": "Photo fournie par le créateur, sans filigrane visible : référence de modélisation — vérifier les droits avant toute diffusion.",
+      "lieuId": "tour-echangeur",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-005",
+      "fichier": "1000333396.jpg",
+      "categorie": "Lieu",
+      "sujet": "Place piétonne avec monument central et statue dorée, très fréquentée",
+      "statut": "PROPOSÉE — Espace Victoire / place des artistes (sources : œuvre d'Alfred Liyolo et statue de Luambo Makiadi au rond-point Victoire) ; à confirmer par le créateur",
+      "source": "Filigrane « CnK »",
+      "elementsVisibles": [
+        "Dallage clair en damier",
+        "Monument central allongé en gradins",
+        "Statue dorée sur piédestal",
+        "Grands bacs à plantes circulaires",
+        "Barrières métalliques",
+        "Parasols et tentes de vendeurs",
+        "Enseignes de téléphonie et grands panneaux publicitaires",
+        "Minibus jaunes et blancs, tricycles, motos, foule dense"
+      ],
+      "usage": "Modélisation de la place, du monument, de la foule et des commerces.",
+      "droits": "Photo tierce (filigrane visible) : référence de modélisation uniquement — ne pas l'intégrer comme texture ni la publier sans autorisation. Logos et publicités visibles : à remplacer par des marques fictives dans la version commerciale, sauf accord.",
+      "lieuId": "espace-victoire",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-006",
+      "fichier": "1000333399.jpg",
+      "categorie": "Lieu",
+      "sujet": "Grand carrefour avec grande roue et monument blanc",
+      "statut": "PROPOSÉE — environnement de la Gare Centrale / boulevard du 30 Juin (indication du créateur : la Grande Roue est près de la Gare) ; à confirmer",
+      "source": "Filigrane « CnK »",
+      "elementsVisibles": [
+        "Grande roue blanche sur un terre-plein",
+        "Monument blanc en gradins sur îlot central",
+        "Carrefour à voies multiples, trafic dense de taxis jaunes et bus",
+        "Immeuble en construction avec grues et grands panneaux publicitaires",
+        "Bâtiments administratifs, toits bleus, palmiers et jardins"
+      ],
+      "usage": "Modélisation de la Place de la Gare, de la Grande Roue et des bâtiments voisins.",
+      "droits": "Photo tierce (filigrane visible) : référence de modélisation uniquement — ne pas l'intégrer comme texture ni la publier sans autorisation. Logos et publicités visibles : à remplacer par des marques fictives dans la version commerciale, sauf accord.",
+      "lieuId": "place-gare",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-007",
+      "fichier": "1000333408.jpg",
+      "categorie": "Bâtiment",
+      "sujet": "Tour ocre à volumes en gradins (immeuble Sozacom)",
+      "statut": "PROPOSÉE — correspond à la référence « Sozacom » ; à confirmer",
+      "source": "Filigrane partiel en bas à gauche",
+      "elementsVisibles": [
+        "Tour d'environ 22 niveaux à compter sur photos",
+        "Façade ocre-orangé, volumes en gradins aux angles arrondis",
+        "Bandeaux horizontaux de fenêtres",
+        "Marquise courbe au-dessus de l'entrée",
+        "Équipements techniques au sommet",
+        "Passage piéton, palmier, taxi jaune, piétons"
+      ],
+      "usage": "Modélisation de la tour (besoin d'autres façades).",
+      "droits": "Photo tierce (filigrane visible) : référence de modélisation uniquement — ne pas l'intégrer comme texture ni la publier sans autorisation.",
+      "lieuId": "sozacom",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-008",
+      "fichier": "1000333409.jpg",
+      "categorie": "Route",
+      "sujet": "Boulevard à 2 × 3 voies avec la Tour de l'Échangeur en perspective",
+      "statut": "PROPOSÉE — boulevard Lumumba (perspective vers la tour) ; à confirmer",
+      "source": "Aucun filigrane visible",
+      "elementsVisibles": [
+        "Séparateur central en béton peint rouge et blanc",
+        "Bordures de trottoir rouge et blanc",
+        "Lampadaires, pylône de télécommunication",
+        "Grands panneaux publicitaires",
+        "Minibus jaunes Mercedes, minibus blancs, motos-taxis avec passagers, berlines",
+        "Immeuble ocre à droite"
+      ],
+      "usage": "Profil en travers du boulevard Lumumba, mobilier urbain et trafic.",
+      "droits": "Photo fournie par le créateur, sans filigrane visible : référence de modélisation — vérifier les droits avant toute diffusion. Logos et publicités visibles : à remplacer par des marques fictives dans la version commerciale, sauf accord.",
+      "lieuId": "bd-lumumba",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-009",
+      "fichier": "1000333411.jpg",
+      "categorie": "Route / mobilier",
+      "sujet": "Feux tricolores et passerelle piétonne en arc",
+      "statut": "À IDENTIFIER — lieu à préciser par le créateur",
+      "source": "Filigrane « @calebtshileu »",
+      "elementsVisibles": [
+        "Potence de feux orange avec deux têtes de feux tricolores",
+        "Passage pour piétons zébré",
+        "Passerelle piétonne en arc métallique avec bandeau publicitaire rouge",
+        "Séparateur bas rouge et blanc à bornes",
+        "Chantier et engins sur le côté",
+        "Minibus jaune, camions, piétons"
+      ],
+      "usage": "Feux de circulation fonctionnels et passerelles piétonnes.",
+      "droits": "Photo tierce (filigrane visible) : référence de modélisation uniquement — ne pas l'intégrer comme texture ni la publier sans autorisation. Logos et publicités visibles : à remplacer par des marques fictives dans la version commerciale, sauf accord.",
+      "lieuId": "",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-010",
+      "fichier": "1000333442.jpg",
+      "categorie": "Bâtiment",
+      "sujet": "Façade extérieure d'un grand stade circulaire",
+      "statut": "PROPOSÉE — Stade des Martyrs ; à confirmer",
+      "source": "Aucun filigrane visible",
+      "elementsVisibles": [
+        "Structure circulaire en béton à piliers verticaux et gradins en porte-à-faux",
+        "Bandeaux publicitaires en partie haute",
+        "Sol sablonneux, végétation basse",
+        "Bordures peintes bleu et blanc, rouge et blanc"
+      ],
+      "usage": "Modélisation de l'enveloppe extérieure du stade et de ses abords.",
+      "droits": "Photo fournie par le créateur, sans filigrane visible : référence de modélisation — vérifier les droits avant toute diffusion. Logos et publicités visibles : à remplacer par des marques fictives dans la version commerciale, sauf accord.",
+      "lieuId": "stade-martyrs",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-011",
+      "fichier": "1000333443.jpg",
+      "categorie": "Route",
+      "sujet": "Grand boulevard rectiligne vers le fleuve",
+      "statut": "À IDENTIFIER — lieu à préciser par le créateur",
+      "source": "Aucun filigrane visible",
+      "elementsVisibles": [
+        "2 × 3 voies avec terre-plein central",
+        "Lampadaires à double crosse",
+        "Trottoirs larges dallés",
+        "Immeubles de 8 à 10 niveaux, tour vitrée bleue",
+        "Villas à toits rouges",
+        "Fleuve et rive opposée à l'horizon",
+        "Taxis jaunes"
+      ],
+      "usage": "Profil type d'un grand boulevard de la Gombe (à rattacher au bon lieu).",
+      "droits": "Photo fournie par le créateur, sans filigrane visible : référence de modélisation — vérifier les droits avant toute diffusion.",
+      "lieuId": "",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-012",
+      "fichier": "1000333445.jpg",
+      "categorie": "Bâtiment",
+      "sujet": "Bâtiment institutionnel blanc à bandes verticales colorées",
+      "statut": "PROPOSÉE — Palais du Peuple ; à confirmer",
+      "source": "Aucun filigrane visible",
+      "elementsVisibles": [
+        "Bâtiment horizontal d'environ 5 niveaux à fenêtres régulières",
+        "Bandes verticales colorées sur la partie centrale",
+        "Grand lampadaire à couronne de globes",
+        "Jardinières aux couleurs du drapeau de la RDC",
+        "Boulevard avec double ligne jaune",
+        "Agent en uniforme bleu"
+      ],
+      "usage": "Modélisation de la façade et de l'esplanade côté boulevard.",
+      "droits": "Photo fournie par le créateur, sans filigrane visible : référence de modélisation — vérifier les droits avant toute diffusion.",
+      "lieuId": "palais-peuple",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-013",
+      "fichier": "1000333444.jpg",
+      "categorie": "Bâtiment",
+      "sujet": "Vue aérienne d'un bâtiment circulaire doré et de son esplanade",
+      "statut": "PROPOSÉE — Centre culturel et artistique pour les pays d'Afrique centrale, boulevard Triomphal ; à confirmer",
+      "source": "Filigrane « CnK services »",
+      "elementsVisibles": [
+        "Bâtiment circulaire doré à façade à lames verticales",
+        "Blocs rectangulaires dorés attenants",
+        "Esplanade, scène et gradins colorés",
+        "Boulevard large rectiligne",
+        "Grande esplanade sableuse et bâtiment à toit bleu de l'autre côté",
+        "Quartiers résidentiels"
+      ],
+      "usage": "Implantation, volumes et abords du Centre culturel.",
+      "droits": "Photo tierce (filigrane visible) : référence de modélisation uniquement — ne pas l'intégrer comme texture ni la publier sans autorisation.",
+      "lieuId": "ccapac",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-014",
+      "fichier": "1000333466.jpg",
+      "categorie": "Mobilier urbain",
+      "sujet": "Robot roulage (agent de circulation robotisé)",
+      "statut": "ASSOCIÉE — référence « Robots roulages » ; carrefour à préciser",
+      "source": "Filigrane « Radio Okapi / Ph. John... » (photo de presse)",
+      "elementsVisibles": [
+        "Robot humanoïde gris métallique, tête carrée",
+        "Écran sur le torse, bras articulés",
+        "Drapeau de la RDC drapé autour du corps",
+        "Cabine sur mâts rayés rouge et blanc avec auvent",
+        "Socle tronconique peint de chevrons rouge et blanc"
+      ],
+      "usage": "Modèle animé synchronisé avec les feux.",
+      "droits": "Photo tierce (filigrane visible) : référence de modélisation uniquement — ne pas l'intégrer comme texture ni la publier sans autorisation.",
+      "lieuId": "",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-015",
+      "fichier": "1000333476.jpg",
+      "categorie": "Véhicule PNJ",
+      "sujet": "Bus de police « Kabasele »",
+      "statut": "ASSOCIÉE — référence « Bus de police Kabasele »",
+      "source": "Aucun filigrane visible",
+      "elementsVisibles": [
+        "Fourgon haut bleu nuit",
+        "Inscription blanche « KABASELE » sur le flanc",
+        "Bandes rouge et jaune",
+        "Grilles aux vitres",
+        "Rampe lumineuse « POLICE » sur le toit",
+        "Pare-buffle chromé, jantes acier",
+        "Plaque visible (à rendre illisible dans le jeu)"
+      ],
+      "usage": "Modèle 3D du bus de police pour les contrôles et poursuites scénarisées.",
+      "droits": "Photo fournie par le créateur, sans filigrane visible : référence de modélisation — vérifier les droits avant toute diffusion.",
+      "lieuId": "",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-016",
+      "fichier": "1000333467.jpg",
+      "categorie": "Véhicule PNJ",
+      "sujet": "Autobus Transco blanc",
+      "statut": "ASSOCIÉE — référence « Bus de transport de Kinshasa »",
+      "source": "Filigrane partiel en bas à droite",
+      "elementsVisibles": [
+        "Autobus blanc à deux portes",
+        "Bandes ondulées bleu, jaune et rouge",
+        "Logo TRANSCO, girouette lumineuse « L01 », numéro 777",
+        "Inscription « ENTRÉE »",
+        "Carrosserie de marque visible"
+      ],
+      "usage": "Modèle de bus urbain pour la circulation.",
+      "droits": "Photo tierce (filigrane visible) : référence de modélisation uniquement — ne pas l'intégrer comme texture ni la publier sans autorisation. Logos et publicités visibles : à remplacer par des marques fictives dans la version commerciale, sauf accord.",
+      "lieuId": "",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-017",
+      "fichier": "1000333469.jpg",
+      "categorie": "Véhicule PNJ / voirie",
+      "sujet": "Minibus jaunes Mercedes et caniveau ouvert",
+      "statut": "ASSOCIÉE — référence « Bus de transport de Kinshasa »",
+      "source": "Aucun filigrane visible",
+      "elementsVisibles": [
+        "Minibus jaunes Mercedes (portes arrière, logo étoile) — appelés « esprit de mort » à Kinshasa",
+        "Inscriptions peintes à la main, rouille",
+        "Chaussée dégradée, déchets",
+        "Caniveau maçonné ouvert avec dalle"
+      ],
+      "usage": "Minibus de circulation ; modèle de caniveau et de chaussée dégradée.",
+      "droits": "Photo fournie par le créateur, sans filigrane visible : référence de modélisation — vérifier les droits avant toute diffusion. Logos et publicités visibles : à remplacer par des marques fictives dans la version commerciale, sauf accord.",
+      "lieuId": "",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-018",
+      "fichier": "1000333468.jpg",
+      "categorie": "Véhicule PNJ",
+      "sujet": "Minibus blancs Hyundai à livrée arc-en-ciel « Esprit de vie »",
+      "statut": "ASSOCIÉE — référence « Bus de transport de Kinshasa »",
+      "source": "Aucun filigrane visible",
+      "elementsVisibles": [
+        "Minibus blancs alignés",
+        "Livrée arc-en-ciel avec texte « Esprit de vie »",
+        "Feux arrière, plaques"
+      ],
+      "usage": "Modèle de minibus pour la circulation.",
+      "droits": "Photo fournie par le créateur, sans filigrane visible : référence de modélisation — vérifier les droits avant toute diffusion. Logos et publicités visibles : à remplacer par des marques fictives dans la version commerciale, sauf accord.",
+      "lieuId": "",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KIN-019",
+      "fichier": "1000333475.jpg",
+      "categorie": "Véhicule PNJ / rue",
+      "sujet": "Taxis jaunes (citadines) et rue commerçante",
+      "statut": "ASSOCIÉE — circulation (taxis)",
+      "source": "Aucun filigrane visible",
+      "elementsVisibles": [
+        "Citadines compactes jaunes, numéro de taxi peint sur la portière",
+        "Enseignes de commerces de quartier, parasol",
+        "Chaussée dégradée, bas-côté en terre"
+      ],
+      "usage": "Modèle de taxi jaune ; ambiance de rue commerçante.",
+      "droits": "Photo fournie par le créateur, sans filigrane visible : référence de modélisation — vérifier les droits avant toute diffusion. Logos et publicités visibles : à remplacer par des marques fictives dans la version commerciale, sauf accord.",
+      "lieuId": "",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-KCE-001",
+      "fichier": "1000334194.jpg",
+      "categorie": "Infrastructure (Kongo Central)",
+      "sujet": "Pont Maréchal (pont suspendu de Matadi) sur le fleuve Congo",
+      "statut": "ASSOCIÉE — nom et lieu fournis par le créateur (légende « Le pont Maréchal à Matadi »)",
+      "source": "Filigrane TikTok « @mr.ubuntu28 »",
+      "elementsVisibles": [
+        "Pont suspendu à deux pylônes en portique (deux fûts reliés par une traverse haute)",
+        "Câbles porteurs et suspentes verticales",
+        "Tablier à poutre de rigidité en treillis métallique gris",
+        "Fleuve Congo, berges rocheuses et végétation",
+        "Collines habitées sur la rive gauche (côté Matadi)",
+        "Ciel dégagé, relief montagneux au loin"
+      ],
+      "usage": "Zone jouable « Matadi — Pont Maréchal » (maquette) et futur modèle 3D détaillé du pont. Longueur 722 m et travée centrale 520 m d'après des sources publiques ; hauteurs, largeur et relief à vérifier.",
+      "droits": "Photo tierce (filigrane visible) : référence de modélisation uniquement — ne pas l'intégrer comme texture ni la publier sans autorisation de son auteur.",
+      "lieuId": "pont-marechal-matadi",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-APP-001",
+      "fichier": "1000339497.jpg",
+      "categorie": "Identité visuelle",
+      "sujet": "Logo de l'application BALULA MOTO : tricycle jaune et noir, chauffeur casqué en gilet haute visibilité, fond rouge",
+      "statut": "ASSOCIÉE — logo fourni par le créateur",
+      "source": "Fourni par le créateur (MATULA DESIGN)",
+      "elementsVisibles": [
+        "Tricycle à cabine jaune et noire, toit noir, sièges marron",
+        "Chauffeur casqué, gilet jaune fluo à bandes réfléchissantes",
+        "Phare rond chromé, clignotant orange",
+        "Fond rouge uni"
+      ],
+      "usage": "Icône de l'application (Android / iOS), écran d'accueil et écran de démarrage (Art/IconeApplication_1024.png, Art/Ecran_Demarrage_1920x1080.png).",
+      "droits": "Fourni par le créateur. Aucune marque visible ; la forme du tricycle rappelle un modèle commercial : à garder générique pour la version commerciale.",
+      "lieuId": "",
+      "vehiculeId": "tricycle_jaune_kin"
+    },
+    {
+      "id": "REF-UX-001",
+      "fichier": "1000333359.jpg",
+      "categorie": "Exemple de jeu (style visé)",
+      "sujet": "Prise en charge d'une passagère sur le trottoir, vue à la troisième personne, tricycle à l'arrêt le long du trottoir",
+      "statut": "ASSOCIÉE — exemple fourni par le créateur (jeu tiers)",
+      "source": "Capture d'écran d'un jeu de simulation de tricycle (éditeur tiers, non identifié)",
+      "elementsVisibles": [
+        "Prise en charge d'une passagère sur le trottoir, vue à la troisième personne, tricycle à l'arrêt le long du trottoir"
+      ],
+      "usage": "Référence d'ergonomie : disposition du HUD et des commandes tactiles, caméras, prise en charge des clients. Appliquée dans HudView.cs (disposition), sans reprendre aucun élément graphique.",
+      "droits": "Captures d'un jeu tiers : inspiration de disposition uniquement — ne reproduire ni icônes, ni textures, ni personnages, ni décors.",
+      "lieuId": "",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-UX-002",
+      "fichier": "1000333358.jpg",
+      "categorie": "Exemple de jeu (style visé)",
+      "sujet": "HUD : jauge de carburant segmentée en haut à gauche, pause en haut à droite, flèches de direction rondes en bas à gauche, pédales frein/accélérateur en bas à droite, klaxon rond à droite",
+      "statut": "ASSOCIÉE — exemple fourni par le créateur (jeu tiers)",
+      "source": "Capture d'écran d'un jeu de simulation de tricycle (éditeur tiers, non identifié)",
+      "elementsVisibles": [
+        "HUD : jauge de carburant segmentée en haut à gauche, pause en haut à droite, flèches de direction rondes en bas à gauche, pédales frein/accélérateur en bas à droite, klaxon rond à droite"
+      ],
+      "usage": "Référence d'ergonomie : disposition du HUD et des commandes tactiles, caméras, prise en charge des clients. Appliquée dans HudView.cs (disposition), sans reprendre aucun élément graphique.",
+      "droits": "Captures d'un jeu tiers : inspiration de disposition uniquement — ne reproduire ni icônes, ni textures, ni personnages, ni décors.",
+      "lieuId": "",
+      "vehiculeId": ""
+    },
+    {
+      "id": "REF-UX-003",
+      "fichier": "1000333357.jpg",
+      "categorie": "Exemple de jeu (style visé)",
+      "sujet": "Vue intérieure (première personne / cabine) avec le passager visible, mêmes commandes tactiles",
+      "statut": "ASSOCIÉE — exemple fourni par le créateur (jeu tiers)",
+      "source": "Capture d'écran d'un jeu de simulation de tricycle (éditeur tiers, non identifié)",
+      "elementsVisibles": [
+        "Vue intérieure (première personne / cabine) avec le passager visible, mêmes commandes tactiles"
+      ],
+      "usage": "Référence d'ergonomie : disposition du HUD et des commandes tactiles, caméras, prise en charge des clients. Appliquée dans HudView.cs (disposition), sans reprendre aucun élément graphique.",
+      "droits": "Captures d'un jeu tiers : inspiration de disposition uniquement — ne reproduire ni icônes, ni textures, ni personnages, ni décors.",
+      "lieuId": "",
+      "vehiculeId": ""
+    }
+  ]
+}
