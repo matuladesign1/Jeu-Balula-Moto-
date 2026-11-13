@@ -141,7 +141,8 @@ namespace BalulaMoto.Runtime
                 wheels.Add(new WheelState { Anchor = new Vector3(0f, anchorY, wb * 0.55f), Radius = r, Travel = travel, Steers = true, Front = true });
                 wheels.Add(new WheelState { Anchor = new Vector3(-track, anchorY, -wb * 0.45f), Radius = r, Travel = travel, Drives = true, Left = true });
                 wheels.Add(new WheelState { Anchor = new Vector3(track, anchorY, -wb * 0.45f), Radius = r, Travel = travel, Drives = true, Right = true });
-                Body.centerOfMass = new Vector3(0f, 0.62f, -wb * 0.12f);
+                // Tricycle (Bajaj RE, TVS King…) : moteur et réservoir sous la banquette arrière, centre de gravité bas
+                Body.centerOfMass = new Vector3(0f, 0.55f, -wb * 0.12f);
             }
             for (int i = 0; i < wheels.Count && rig != null && i < rig.Wheels.Count; i++)
             {
@@ -322,7 +323,9 @@ namespace BalulaMoto.Runtime
                     Vector3 tire = wFwd * longF + wSide * latF;
                     float mag = tire.magnitude;
                     if (mag > maxFriction && mag > 0.001f) tire *= maxFriction / mag;
-                    Body.AddForceAtPosition(tire, hit.point + up * 0.1f);
+                    // Tricycle : les efforts des pneus sont appliqués un peu plus haut pour qu'il ne bascule pas
+                    // à chaque virage serré (un vrai trois-roues reste à plat, la caisse roule à peine sur ses ressorts).
+                    Body.AddForceAtPosition(tire, hit.point + up * (moto ? 0.1f : 0.28f));
 
                     // Secousses : nids-de-poule, caniveaux, chocs de suspension
                     float bump = SurfaceInfo.Bumpiness(w.Surface);
@@ -355,13 +358,15 @@ namespace BalulaMoto.Runtime
             Grounded = groundedCount > 0;
             if (wheels.Count > 0) CurrentSurface = wheels[wheels.Count - 1].Grounded ? wheels[wheels.Count - 1].Surface : wheels[0].Surface;
 
-            // --- Barre anti-roulis arrière (tricycle)
+            // --- Barre anti-roulis arrière (tricycle) : relève le côté le plus enfoncé et tire l'autre vers le bas.
+            // (Le signe était inversé : la barre enfonçait davantage le côté déjà comprimé, si bien que le tricycle
+            // se couchait sur un côté dès le démarrage.)
             if (!moto && wheels.Count == 3)
             {
                 WheelState l = wheels[1], rr = wheels[2];
                 float anti = (l.Compression - rr.Compression) * springK * 0.8f;
-                if (l.Grounded) Body.AddForceAtPosition(-up * anti, transform.TransformPoint(l.Anchor));
-                if (rr.Grounded) Body.AddForceAtPosition(up * anti, transform.TransformPoint(rr.Anchor));
+                if (l.Grounded) Body.AddForceAtPosition(up * anti, transform.TransformPoint(l.Anchor));
+                if (rr.Grounded) Body.AddForceAtPosition(-up * anti, transform.TransformPoint(rr.Anchor));
             }
 
             // --- Traînée aérodynamique
@@ -381,11 +386,18 @@ namespace BalulaMoto.Runtime
                     Body.AddTorque(transform.right * (pitch * 25f - pitchRate * 5f), ForceMode.Acceleration);
                 }
             }
-            else if (!moto && Vector3.Dot(up, Vector3.up) > 0.9f)
+            else if (!moto && Vector3.Dot(up, Vector3.up) > 0.82f)
             {
+                // Un tricycle ne s'incline pas comme une moto : il reste à plat (aide au roulis et à l'amortissement)
                 float roll = Vector3.Dot(axis, fwd);
                 float rollRate = Vector3.Dot(Body.angularVelocity, fwd);
-                Body.AddTorque(fwd * (roll * 6f - rollRate * 2.5f), ForceMode.Acceleration);
+                Body.AddTorque(fwd * (roll * 22f - rollRate * 5f), ForceMode.Acceleration);
+                if (Grounded)
+                {
+                    float pitch = Vector3.Dot(axis, transform.right);
+                    float pitchRate = Vector3.Dot(Body.angularVelocity, transform.right);
+                    Body.AddTorque(transform.right * (pitch * 6f - pitchRate * 2.5f), ForceMode.Acceleration);
+                }
             }
 
             // --- Télémétrie

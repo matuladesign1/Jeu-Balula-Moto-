@@ -25,6 +25,39 @@ namespace BalulaMoto.Runtime
         public static bool Ready { get { return Texture != null; } }
         public static string Name = "Kinshasa";
 
+        /// <summary>Nom d'une rue ou d'une rivière à écrire sur la carte (position en coordonnées de texture, angle en degrés).</summary>
+        public struct RoadLabel { public string Name; public Vector2 UV; public float Angle; public int Rank; public bool Water; }
+        public static readonly List<RoadLabel> RoadLabels = new List<RoadLabel>();
+        private static readonly Color32 WaterCol = new Color32(52, 104, 150, 255);
+
+        private static void AddLabels(ImportedRoad r, bool water, HashSet<long> seen)
+        {
+            if (string.IsNullOrEmpty(r.name) || r.pts.Count < 2) return;
+            float total = 0f;
+            for (int i = 0; i < r.pts.Count - 1; i++) total += Vector2.Distance(r.pts[i], r.pts[i + 1]);
+            if (total < 35f) return;
+            float step = 380f, next = Mathf.Min(total * 0.5f, step * 0.5f), acc = 0f;
+            for (int i = 0; i < r.pts.Count - 1; i++)
+            {
+                Vector2 a = r.pts[i], b = r.pts[i + 1];
+                float len = Vector2.Distance(a, b);
+                while (len > 0.01f && next <= acc + len)
+                {
+                    Vector2 p = Vector2.Lerp(a, b, (next - acc) / len);
+                    next += step;
+                    // Une même rue est découpée en plusieurs tronçons dans OpenStreetMap : un seul nom par zone de 170 m
+                    long key = (((long)Mathf.FloorToInt(p.x / 170f) & 0xffff) << 40) ^ (((long)Mathf.FloorToInt(p.y / 170f) & 0xffff) << 24) ^ (uint)(r.name.GetHashCode() & 0xffffff);
+                    if (!seen.Add(key)) continue;
+                    Vector2 d = (b - a) / len;
+                    float ang = Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg;
+                    if (ang > 90f) ang -= 180f;
+                    else if (ang < -90f) ang += 180f;
+                    RoadLabels.Add(new RoadLabel { Name = CityFill.ShortName(r.name), UV = new Vector2((p.x - MinX) / Size, (p.y - MinZ) / Size), Angle = ang, Rank = water ? 6 : r.rank, Water = water });
+                }
+                acc += len;
+            }
+        }
+
         private static readonly Color32 Ground = new Color32(34, 40, 46, 255);
         private static readonly Color32 BuildingCol = new Color32(58, 64, 72, 255);
         private static readonly Color32 MinorRoad = new Color32(150, 156, 164, 255);
@@ -120,6 +153,10 @@ namespace BalulaMoto.Runtime
             {
                 foreach (Vector3 b in map.buildingSpots)
                     Disc(px, res, (b.x - MinX) / mpp, (b.z - MinZ) / mpp, Mathf.Max(0.6f, b.y * 0.75f / mpp), BuildingCol);
+                // Rivières et canaux (tracés réels)
+                if (map.waterways != null)
+                    foreach (ImportedRoad w in map.waterways)
+                        Polyline(px, res, w.pts, mpp, Mathf.Max(0.9f, w.width / mpp * 0.5f), WaterCol);
                 // Rues : d'abord les petites, puis les grandes par-dessus (bordure sombre puis remplissage)
                 for (int pass = 0; pass < 3; pass++)
                     foreach (ImportedRoad r in map.roads)
@@ -140,6 +177,16 @@ namespace BalulaMoto.Runtime
                     foreach (Vector3 p in tp.Points) pts.Add(new Vector2(p.x, p.z));
                     Polyline(px, res, pts, mpp, Mathf.Max(1.5f, 4f / mpp), Street);
                 }
+            }
+
+            // Noms des rues, avenues et rivières (ceux d'OpenStreetMap ; une rue sans nom dans les données reste sans nom)
+            RoadLabels.Clear();
+            if (map != null)
+            {
+                HashSet<long> seen = new HashSet<long>();
+                foreach (ImportedRoad r in map.roads) if (r.rank >= 2) AddLabels(r, false, seen);
+                if (map.waterways != null) foreach (ImportedRoad w in map.waterways) AddLabels(w, true, seen);
+                RoadLabels.Sort((a, b) => b.Rank.CompareTo(a.Rank));
             }
 
             Texture2D t = new Texture2D(res, res, TextureFormat.RGBA32, true);

@@ -25,6 +25,13 @@ namespace BalulaMoto.Runtime
         }
 
         private ImportedWorld map;
+        // Plaques de rue aux carrefours (noms réels d'OpenStreetMap), rangées par case
+        private struct SignSpot { public Vector2 P, DirA, DirB; public string A, B; public float HwA, HwB; }
+        private readonly Dictionary<long, List<SignSpot>> signGrid = new Dictionary<long, List<SignSpot>>();
+        // Lumières de la case en cours de construction (ampoules, fenêtres) et flaques de lumière au sol
+        private LightMesh curLum, curHalo;
+        public int SignCount { get; private set; }
+        public int PoleCount { get; private set; }
         private const float CellSize = 100f;
         private readonly Dictionary<long, List<Seg>> roadGrid = new Dictionary<long, List<Seg>>();
         // Rues à moins de 70 m d'une case : celles dont les parcelles (jusqu'à 3 rangées) peuvent tomber dans la case
@@ -139,6 +146,7 @@ namespace BalulaMoto.Runtime
                         }
                 }
             }
+            BuildSigns();
             foreach (Vector3 b in map.buildingSpots)
             {
                 long key = Key(new Vector2(b.x, b.z));
@@ -160,9 +168,195 @@ namespace BalulaMoto.Runtime
             }
         }
 
+        private static long PKey(Vector2 p)
+        {
+            return ((long)Mathf.RoundToInt(p.x * 4f) << 32) ^ (uint)Mathf.RoundToInt(p.y * 4f);
+        }
+
+        /// <summary>Abrège le type de voie pour tenir sur une plaque (« Avenue Kasa-Vubu » → « Av. Kasa-Vubu »).</summary>
+        public static string ShortName(string n)
+        {
+            if (string.IsNullOrEmpty(n)) return n;
+            string[][] rep = { new[] { "Avenue ", "Av. " }, new[] { "Boulevard ", "Bd " }, new[] { "avenue ", "Av. " }, new[] { "boulevard ", "Bd " } };
+            foreach (string[] r in rep) if (n.StartsWith(r[0])) return r[1] + n.Substring(r[0].Length);
+            return n;
+        }
+
+        /// <summary>Carrefours entre deux rues portant des noms différents : une plaque bleue par rue.</summary>
+        private void BuildSigns()
+        {
+            Dictionary<long, List<Seg>> nodes = new Dictionary<long, List<Seg>>();
+            for (int r = 0; r < map.roads.Count; r++)
+            {
+                ImportedRoad road = map.roads[r];
+                if (road.rank < 2 || string.IsNullOrEmpty(road.name)) continue;
+                for (int i = 0; i < road.pts.Count; i++)
+                {
+                    long k = PKey(road.pts[i]);
+                    List<Seg> l;
+                    if (!nodes.TryGetValue(k, out l)) { l = new List<Seg>(); nodes[k] = l; }
+                    l.Add(new Seg { Road = r, Index = i });
+                }
+            }
+            foreach (KeyValuePair<long, List<Seg>> kv in nodes)
+            {
+                if (kv.Value.Count < 2) continue;
+                Seg a = kv.Value[0], b = a;
+                bool found = false;
+                foreach (Seg o in kv.Value)
+                    if (map.roads[o.Road].name != map.roads[a.Road].name) { b = o; found = true; break; }
+                if (!found) continue;
+                ImportedRoad ra = map.roads[a.Road], rb = map.roads[b.Road];
+                SignSpot sp = new SignSpot { P = ra.pts[a.Index], A = ra.name, B = rb.name, HwA = ra.width * 0.5f, HwB = rb.width * 0.5f, DirA = DirAt(ra, a.Index), DirB = DirAt(rb, b.Index) };
+                if (Mathf.Abs(Cross(sp.DirA, sp.DirB)) < 0.35f) continue; // rues presque parallèles : pas un vrai coin
+                long cell = Key(sp.P);
+                List<SignSpot> list;
+                if (!signGrid.TryGetValue(cell, out list)) { list = new List<SignSpot>(); signGrid[cell] = list; }
+                bool dup = false;
+                foreach (SignSpot o in list)
+                    if ((o.P - sp.P).sqrMagnitude < 35f * 35f && ((o.A == sp.A && o.B == sp.B) || (o.A == sp.B && o.B == sp.A))) { dup = true; break; }
+                if (!dup) list.Add(sp);
+            }
+        }
+
+        private static Vector2 DirAt(ImportedRoad r, int i)
+        {
+            Vector2 d = r.pts[Mathf.Min(i + 1, r.pts.Count - 1)] - r.pts[Mathf.Max(i - 1, 0)];
+            return d.sqrMagnitude > 1e-6f ? d.normalized : Vector2.right;
+        }
+
+        private static bool OnRoad(Vector2 p, List<Sg> near, float margin)
+        {
+            foreach (Sg sg in near) if (PointSeg(p, sg.A, sg.B) < sg.Hw + margin) return true;
+            return false;
+        }
+
+        /// <summary>Poteaux électriques avec fils et lampadaire, le long de toutes les rues de la case.</summary>
+        private void StreetFurniture(Rect bounds, List<int> roadsHere, List<Sg> near, MeshData md, GameObject go)
+        {
+            const float Step = 42f;
+            GameObject col = null;
+            foreach (int ri in roadsHere)
+            {
+                ImportedRoad road = map.roads[ri];
+                if (road.rank < 2 || road.pts.Count < 2) continue;
+                float[] cum = Cum(ri);
+                float total = cum[cum.Length - 1];
+                if (total < 25f) continue;
+                float side = (Hash(ri, 3, 1, 9) & 1) == 0 ? 1f : -1f;
+                bool avenue = road.rank >= 5;
+                float off = road.width * 0.5f + 1.75f;
+                float h = avenue ? 9f : 7.6f;
+                int poleColor = avenue ? Concrete : Trunk;
+                for (float sd = Step * 0.5f; sd < total; sd += Step)
+                {
+                    Vector2 p2, dir;
+                    At(ri, cum, sd, out p2, out dir);
+                    Vector2 nrm = new Vector2(-dir.y, dir.x) * side;
+                    Vector2 q = p2 + nrm * off;
+                    if (!bounds.Contains(q)) continue;
+                    if (OnRoad(q, near, 0.7f)) continue;
+                    bool blocked = false;
+                    foreach (Keep k in keep) if ((k.C - q).sqrMagnitude < k.R * k.R) { blocked = true; break; }
+                    if (blocked) continue;
+                    Vector3 b = new Vector3(q.x, 0f, q.y), r = new Vector3(dir.x, 0f, dir.y), f = new Vector3(nrm.x, 0f, nrm.y), u = Vector3.up;
+                    md.Box(b + u * (h * 0.5f), r, u, f, new Vector3(0.11f, h * 0.5f, 0.11f), poleColor, poleColor);
+                    md.Box(b + u * (h - 0.45f), r, u, f, new Vector3(0.05f, 0.05f, 0.85f), Trunk, Trunk);
+                    // Bras et lampe au-dessus de la chaussée
+                    float arm = Mathf.Min(2.6f, off - 0.4f);
+                    md.Box(b + u * (h - 1.5f) - f * (arm * 0.5f), r, u, f, new Vector3(0.04f, 0.04f, arm * 0.5f), 20, 20);
+                    Vector3 lamp = b + u * (h - 1.58f) - f * arm;
+                    if (curLum != null) curLum.Box(lamp, new Vector3(0.16f, 0.06f, 0.3f), new Color32(255, 218, 150, 255));
+                    if (curHalo != null)
+                    {
+                        float rad = avenue ? 15f : 11f;
+                        Vector3 g = b - f * (arm + 1.2f);
+                        curHalo.Pool(new Vector3(g.x, 0.1f, g.z), rad, avenue ? new Color32(255, 205, 140, 255) : new Color32(230, 180, 115, 255));
+                    }
+                    // Fils jusqu'au poteau suivant (deux fils, légère flèche)
+                    if (sd + Step < total)
+                    {
+                        Vector2 p3, dir3;
+                        At(ri, cum, sd + Step, out p3, out dir3);
+                        Vector2 q3 = p3 + new Vector2(-dir3.y, dir3.x) * side * off;
+                        Vector3 b3 = new Vector3(q3.x, 0f, q3.y), f3 = new Vector3(-dir3.y, 0f, dir3.x) * side;
+                        foreach (float w in new[] { -0.75f, 0.75f })
+                        {
+                            Vector3 w0 = b + u * (h - 0.38f) + f * w, w1 = b3 + u * (h - 0.38f) + f3 * w;
+                            Vector3 mid = (w0 + w1) * 0.5f - u * 0.55f;
+                            Wire(md, w0, mid);
+                            Wire(md, mid, w1);
+                        }
+                    }
+                    if (col == null) { col = new GameObject("Poteaux"); col.transform.SetParent(go.transform, false); }
+                    AddBox(col, b + u * 1.5f, new Vector3(0.3f, 3f, 0.3f));
+                    PoleCount++;
+                }
+            }
+        }
+
+        private static void Wire(MeshData md, Vector3 a, Vector3 b)
+        {
+            Vector3 t = Vector3.up * 0.03f;
+            md.Quad(a - t, a + t, b + t, b - t, 8);
+            md.Quad(b - t, b + t, a + t, a - t, 8);
+        }
+
+        /// <summary>Plaques bleues à lettres blanches au coin des rues (un poteau, une plaque par rue).</summary>
+        private void Signs(long cellKey, List<Sg> near, MeshData md, Transform parent)
+        {
+            List<SignSpot> list;
+            if (!signGrid.TryGetValue(cellKey, out list)) return;
+            foreach (SignSpot sp in list)
+            {
+                // Coin du carrefour : en retrait des deux chaussées ; on essaie les quatre coins
+                Vector2 q = Vector2.zero;
+                bool ok = false;
+                foreach (Vector2 sg in new[] { new Vector2(1f, 1f), new Vector2(-1f, 1f), new Vector2(1f, -1f), new Vector2(-1f, -1f) })
+                {
+                    // Décomposition dans le repère (non orthogonal) des deux rues
+                    float det = Cross(sp.DirA, sp.DirB);
+                    float da = sg.x * (sp.HwB + 1.3f) / Mathf.Abs(det), db = sg.y * (sp.HwA + 1.3f) / Mathf.Abs(det);
+                    q = sp.P + sp.DirA * da + sp.DirB * db;
+                    if ((q - sp.P).sqrMagnitude > 28f * 28f) continue;
+                    if (OnRoad(q, near, 0.5f)) continue;
+                    ok = true;
+                    break;
+                }
+                if (!ok) continue;
+                Vector3 b = new Vector3(q.x, 0f, q.y), u = Vector3.up;
+                md.Box(b + u * 1.45f, Vector3.right, u, Vector3.forward, new Vector3(0.035f, 1.45f, 0.035f), 20, 20);
+                Plate(md, parent, b + u * 2.68f, sp.DirA, sp.A);
+                Plate(md, parent, b + u * 2.36f, sp.DirB, sp.B);
+                SignCount++;
+            }
+        }
+
+        private void Plate(MeshData md, Transform parent, Vector3 center, Vector2 dir2, string name)
+        {
+            string text = ShortName(name);
+            if (text.Length > 26) text = text.Substring(0, 25) + "…";
+            Vector3 r = new Vector3(dir2.x, 0f, dir2.y), f = new Vector3(-dir2.y, 0f, dir2.x), u = Vector3.up;
+            float hw = Mathf.Clamp(0.05f * text.Length + 0.12f, 0.35f, 1.5f);
+            md.Box(center, r, u, f, new Vector3(hw + 0.03f, 0.15f, 0.012f), 18, 18);   // liseré blanc
+            md.Box(center, r, u, f, new Vector3(hw, 0.125f, 0.016f), 6, 6);            // plaque bleue
+            md.Panel(center - u * 0.15f - f * 0.001f, r, f, hw + 0.03f, 0.012f, 18);
+            GameObject l = Prims.Label(parent, text, center, 0.0185f, Color.white, true);
+            l.name = "Plaque";
+            l.transform.rotation = Quaternion.LookRotation(f, u);
+            foreach (Transform face in l.transform)
+            {
+                face.localPosition = face.localRotation * new Vector3(0f, 0f, -0.02f);
+                face.gameObject.layer = Night.DetailLayer;
+            }
+            l.layer = Night.DetailLayer;
+        }
+
         private void CollectKeepClear()
         {
             keepReady = true;
+            if (map != null && map.clearZones != null)
+                foreach (Vector3 z in map.clearZones) keep.Add(new Keep { C = new Vector2(z.x, z.z), R = z.y });
             if (map != null)
                 foreach (ImportedPlace p in map.places)
                 {
@@ -563,6 +757,8 @@ namespace BalulaMoto.Runtime
                 }
 
             MeshData md = new MeshData();
+            curLum = new LightMesh();
+            curHalo = GameSettings.Quality == 0 ? null : new LightMesh();
             // 1) Panneaux publicitaires sur les avenues (une chance par segment, tirage stable)
             List<int> roadsHere = new List<int>();
             HashSet<int> roadSeen = new HashSet<int>();
@@ -690,6 +886,14 @@ namespace BalulaMoto.Runtime
                     }
             }
 
+            // 3) Poteaux électriques, fils, lampadaires et plaques de rue
+            StreetFurniture(bounds, roadsHere, near, md, go);
+            Signs(cellKey, near, md, go.transform);
+            curLum.Emit(go.transform, "Lumieres", Night.LightMaterial);
+            if (curHalo != null) curHalo.Emit(go.transform, "Halos", Night.HaloMaterial);
+            curLum = null;
+            curHalo = null;
+
             if (md.V.Count > 0)
             {
                 Mesh mesh = new Mesh { name = "Parcelles_" + cx + "_" + cz };
@@ -730,6 +934,13 @@ namespace BalulaMoto.Runtime
             md.Box(c - r * hw + u * (H * 0.5f), r, u, f, new Vector3(T * 0.5f, H * 0.5f, hd), wall, Cap);
             md.Box(c + r * hw + u * (H * 0.5f), r, u, f, new Vector3(T * 0.5f, H * 0.5f, hd), wall, Cap);
 
+            // Ampoule au portail (côté rue)
+            if (curLum != null)
+            {
+                Vector3 gb = front + r * (gx + gw + 0.25f) + u * (H + 0.12f) - f * 0.05f;
+                curLum.Box(gb, new Vector3(0.08f, 0.08f, 0.08f), new Color32(255, 230, 180, 200));
+                if (curHalo != null) curHalo.Pool(new Vector3(gb.x, 0.09f, gb.z) - f * 1.4f, 3.6f, new Color32(150, 125, 85, 255));
+            }
             // Maison au fond de la parcelle
             bool storey2 = rnd.Next(5) == 0;
             float mw = w * (0.55f + (float)rnd.NextDouble() * 0.2f), mdp = d * (0.38f + (float)rnd.NextDouble() * 0.14f);
@@ -747,6 +958,16 @@ namespace BalulaMoto.Runtime
                     bool door = fl == 0 && i == nwin / 2;
                     float wy = fl * 3.1f + (door ? 1.05f : 1.6f), whalf = door ? 1.05f : 0.6f;
                     md.Panel(face + r * wx + u * wy, r, u, door ? 0.5f : 0.55f, whalf, door ? Trunk : Window);
+                    // Courant dans la parcelle : fenêtres éclairées la nuit (pas toutes, et pas toutes au même moment)
+                    if (curLum != null && !door && rnd.Next(100) < 62)
+                        curLum.Panel(face - f * 0.025f + r * wx + u * wy, r, u, 0.5f, 0.55f, WindowLight(rnd));
+                    if (curLum != null && door)
+                    {
+                        // Ampoule au-dessus de la porte, et sa lumière dans la cour
+                        Vector3 bulb = face - f * 0.12f + r * wx + u * 2.35f;
+                        curLum.Box(bulb, new Vector3(0.07f, 0.07f, 0.07f), new Color32(255, 235, 190, 255));
+                        if (curHalo != null) curHalo.Pool(new Vector3(bulb.x, 0.09f, bulb.z) - f * 1.6f, 4.2f, new Color32(190, 160, 110, 255));
+                    }
                 }
             if (storey2)
             {
@@ -810,6 +1031,17 @@ namespace BalulaMoto.Runtime
             int color = WallFirst + rnd.Next(WallCount);
             Vector3 bc = c - f * (hd - bd * 0.5f);
             md.Box(bc + u * (bh * 0.5f), r, u, f, new Vector3(bw * 0.5f, bh * 0.5f, bd * 0.5f), color, Concrete);
+            if (curLum != null)
+            {
+                // Boutique éclairée la nuit : enseigne lumineuse sur la façade et fenêtres des étages
+                System.Random lr = new System.Random(Hash(Mathf.RoundToInt(c2.x * 3f), Mathf.RoundToInt(c2.y * 3f), floors, 5));
+                Vector3 sf = bc - f * (bd * 0.5f + 0.06f);
+                curLum.Panel(sf + u * 2.95f, r, u, bw * 0.38f, 0.07f, new Color32(255, 240, 215, 255));
+                if (curHalo != null) curHalo.Pool(new Vector3(sf.x, 0.09f, sf.z) - f * 2.2f, 6.5f, new Color32(200, 175, 130, 255));
+                for (int fl = 1; fl < floors; fl++)
+                    for (float wx = -bw * 0.5f + 1.6f; wx < bw * 0.5f - 1f; wx += 3f)
+                        if (lr.Next(100) < 55) curLum.Panel(sf + r * wx + u * (fl * fh + 1.7f), r, u, 0.55f, 0.6f, WindowLight(lr));
+            }
             // Acrotère
             md.Box(bc + u * (bh + 0.2f), r, u, f, new Vector3(bw * 0.5f, 0.2f, bd * 0.5f), Concrete, Cap);
             Vector3 face = bc - f * (bd * 0.5f + 0.02f);
@@ -849,6 +1081,15 @@ namespace BalulaMoto.Runtime
                 AddBox(col, new Vector3(-hw, H * 0.5f, hd - yard * 0.5f), new Vector3(T, H, yard));
                 AddBox(col, new Vector3(hw, H * 0.5f, hd - yard * 0.5f), new Vector3(T, H, yard));
             }
+        }
+
+        private static Color32 WindowLight(System.Random rnd)
+        {
+            int k = rnd.Next(10);
+            byte a = (byte)(110 + rnd.Next(146));
+            if (k < 6) return new Color32(255, 214, 140, a);   // ampoule chaude
+            if (k < 8) return new Color32(235, 240, 255, a);   // tube blanc
+            return new Color32(150, 190, 255, a);              // télévision
         }
 
         private static GameObject ParcelCollider(Transform parent, Vector3 c, Vector3 f)

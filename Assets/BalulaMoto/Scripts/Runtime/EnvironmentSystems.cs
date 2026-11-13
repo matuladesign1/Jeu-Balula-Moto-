@@ -175,6 +175,8 @@ namespace BalulaMoto.Runtime
                 LampsOn = lamps;
                 foreach (Renderer r in StreetLamps) Mats.SetLamp(r, new Color(1f, 0.82f, 0.5f), lamps, 2.2f);
             }
+            // Lumières de la ville et phares (shaders BalulaMoto/Lumiere et Halo) : fondu d'environ 6 secondes
+            Night.Set(Mathf.MoveTowards(Night.Level, lamps ? 1f : 0f, Mathf.Max(dt, 0.001f) * 0.16f));
             foreach (Material m in WetMaterials) Mats.SetWetness(m, Wetness);
 
             // Pluie et orage

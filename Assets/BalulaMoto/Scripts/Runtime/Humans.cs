@@ -60,8 +60,13 @@ namespace BalulaMoto.Runtime
             new[] { "Business_Male_05", "Homme — costume" },
             new[] { "Wood_Male_01", "Homme — artisan" },
             new[] { "Construction_Male_03", "Homme — chantier" },
+            new[] { "Male_Adult_09", "Homme — t-shirt" },
+            new[] { "Male_Adult_10", "Homme — survêtement" },
             new[] { "Business_Female_01", "Femme — tailleur" },
-            new[] { "Female_Party_02", "Femme — sortie" }
+            new[] { "Female_Party_02", "Femme — sortie" },
+            new[] { "Female_Adult_02", "Femme — jupe" },
+            new[] { "Female_Adult_11", "Femme — robe" },
+            new[] { "Female_Adult_15", "Femme — chemisier" }
         };
 
         public static GameObject FindPrefab(string avatarId)

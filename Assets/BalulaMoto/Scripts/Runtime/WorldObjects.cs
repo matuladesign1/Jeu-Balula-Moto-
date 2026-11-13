@@ -269,6 +269,8 @@ namespace BalulaMoto.Runtime
     public class ImportedPath
     {
         public string name;
+        /// <summary>Avenue ou rue goudronnée (circulation plus dense).</summary>
+        public bool major;
         public List<Vector3> points = new List<Vector3>();
     }
 }

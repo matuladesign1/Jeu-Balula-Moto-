@@ -354,6 +354,289 @@ namespace BalulaMoto.EditorTools
 
         private bool InRange(Vector2 p) { return p.sqrMagnitude <= radius * radius; }
 
+        // ------------------------------------------------------------------
+        // Monuments (modèles 3D fournis par MATULA DESIGN) : terrain clôturé de barreaux de fer, arbres à l'intérieur
+        // ------------------------------------------------------------------
+        private class Enclosure
+        {
+            public string Id, Name, Model;
+            public Vector2 C, X;           // centre et direction du grand axe du modèle
+            public float Hx, Hz;           // demi-emprise du terrain clôturé
+            public float Corner;           // rayon des angles (Hx = Hz = Corner : terrain rond)
+            public float ModelHx, ModelHz; // demi-emprise du modèle (les arbres restent autour)
+            public float Yaw, Sink;
+            public string Note;
+
+            public Vector2 Z { get { return new Vector2(-X.y, X.x); } }
+
+            /// <summary>Distance signée au bord du terrain (négative à l'intérieur).</summary>
+            public float Signed(Vector2 p)
+            {
+                Vector2 d = p - C;
+                float lx = Mathf.Abs(Vector2.Dot(d, X)) - (Hx - Corner), lz = Mathf.Abs(Vector2.Dot(d, Z)) - (Hz - Corner);
+                float outside = new Vector2(Mathf.Max(lx, 0f), Mathf.Max(lz, 0f)).magnitude;
+                return outside + Mathf.Min(Mathf.Max(lx, lz), 0f) - Corner;
+            }
+
+            /// <summary>Contour du terrain (points tous les « step » mètres environ, sens direct).</summary>
+            public List<Vector2> Outline(float step)
+            {
+                List<Vector2> pts = new List<Vector2>();
+                float sx = Hx - Corner, sz = Hz - Corner;
+                Vector2[] corners = { new Vector2(sx, sz), new Vector2(-sx, sz), new Vector2(-sx, -sz), new Vector2(sx, -sz) };
+                for (int k = 0; k < 4; k++)
+                {
+                    int n = Mathf.Max(2, Mathf.CeilToInt(Corner * Mathf.PI * 0.5f / step));
+                    for (int i = 0; i < n; i++)
+                    {
+                        float a = (k * 90f + 90f * i / n) * Mathf.Deg2Rad;
+                        Vector2 l = corners[k] + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * Corner;
+                        pts.Add(C + X * l.x + Z * l.y);
+                    }
+                    // Côté droit jusqu'à l'angle suivant
+                    Vector2 from = corners[k] + new Vector2(Mathf.Cos((k + 1) * 90f * Mathf.Deg2Rad), Mathf.Sin((k + 1) * 90f * Mathf.Deg2Rad)) * Corner;
+                    Vector2 nc = corners[(k + 1) % 4];
+                    Vector2 to = nc + new Vector2(Mathf.Cos((k + 1) * 90f * Mathf.Deg2Rad), Mathf.Sin((k + 1) * 90f * Mathf.Deg2Rad)) * Corner;
+                    float len = Vector2.Distance(from, to);
+                    int m = Mathf.FloorToInt(len / step);
+                    for (int i = 0; i < m; i++)
+                    {
+                        Vector2 l = Vector2.Lerp(from, to, i / (float)Mathf.Max(1, m));
+                        if (i == 0) continue;
+                        pts.Add(C + X * l.x + Z * l.y);
+                    }
+                }
+                return pts;
+            }
+        }
+        private readonly List<Enclosure> enclosures = new List<Enclosure>();
+
+        /// <summary>Distance du point au bord de la chaussée la plus proche (négative sur une chaussée).</summary>
+        private static float RoadClearance(Dictionary<long, List<Vector4>> grid, Dictionary<long, List<float>> hws, Vector2 p)
+        {
+            float best = 999f;
+            int gx = Mathf.FloorToInt(p.x / 50f), gz = Mathf.FloorToInt(p.y / 50f);
+            for (int dz = -1; dz <= 1; dz++)
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    long key = ((long)(gx + dx) << 32) ^ (uint)(gz + dz);
+                    List<Vector4> l;
+                    if (!grid.TryGetValue(key, out l)) continue;
+                    List<float> h = hws[key];
+                    for (int i = 0; i < l.Count; i++)
+                    {
+                        Vector2 a = new Vector2(l[i].x, l[i].y), b = new Vector2(l[i].z, l[i].w), ab = b - a;
+                        float t = ab.sqrMagnitude > 1e-6f ? Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude) : 0f;
+                        float d = Vector2.Distance(p, a + ab * t) - h[i];
+                        if (d < best) best = d;
+                    }
+                }
+            return best;
+        }
+
+        /// <summary>Mur ou barre de p0 à p1 (section rectangulaire : épaisseur le long de n, de y0 à y1), avec dessus.</summary>
+        private static void Bar(MeshBatch mb, Vector2 p0, Vector2 p1, Vector2 n, float thick, float y0, float y1)
+        {
+            Vector2 h = n * (thick * 0.5f);
+            Vector3 a0 = V3(p0 + h, y0), a1 = V3(p0 + h, y1), b0 = V3(p1 + h, y0), b1 = V3(p1 + h, y1);
+            Vector3 c0 = V3(p0 - h, y0), c1 = V3(p0 - h, y1), d0 = V3(p1 - h, y0), d1 = V3(p1 - h, y1);
+            Vector3 n3 = new Vector3(n.x, 0f, n.y);
+            Vector2 uv = Vector2.zero;
+            mb.QuadFacing(a0, a1, b1, b0, uv, uv, uv, uv, n3);
+            mb.QuadFacing(c0, c1, d1, d0, uv, uv, uv, uv, -n3);
+            mb.QuadFacing(a1, c1, d1, b1, uv, uv, uv, uv, Vector3.up);
+            Vector3 along = V3(p1 - p0, 0f).normalized;
+            mb.QuadFacing(a0, a1, c1, c0, uv, uv, uv, uv, -along);
+            mb.QuadFacing(b0, b1, d1, d0, uv, uv, uv, uv, along);
+        }
+
+        /// <summary>Poteau vertical de section carrée.</summary>
+        private static void Post(MeshBatch mb, Vector2 p, float half, float y0, float y1)
+        {
+            Bar(mb, p - new Vector2(half, 0f), p + new Vector2(half, 0f), new Vector2(0f, 1f), half * 2f, y0, y1);
+        }
+
+        /// <summary>Arbre stylisé (tronc + houppier à facettes), comme ceux des parcelles.</summary>
+        private static void Tree(MeshBatch trunk, MeshBatch leaves, Vector2 p, float h, float r)
+        {
+            Post(trunk, p, 0.17f, 0f, h);
+            Vector3 c = V3(p, h + r * 0.45f);
+            Vector3 rx = new Vector3(r, 0f, 0f), ry = new Vector3(0f, r * 0.8f, 0f), rz = new Vector3(0f, 0f, r);
+            Vector2 uv = Vector2.zero;
+            for (int sx = -1; sx <= 1; sx += 2)
+                for (int sy = -1; sy <= 1; sy += 2)
+                    for (int sz = -1; sz <= 1; sz += 2)
+                    {
+                        Vector3 a = c + rx * sx, b = c + ry * sy, d = c + rz * sz;
+                        Vector3 outward = new Vector3(sx, sy, sz);
+                        leaves.QuadFacing(a, b, d, d, uv, uv, uv, uv, outward);
+                    }
+        }
+
+        /// <summary>Grand axe d'un contour (direction dans le plan), par l'analyse de ses points.</summary>
+        private static Vector2 MainAxis(List<Vector2> pts, out Vector2 center)
+        {
+            Vector2 mn = pts[0], mx = pts[0];
+            foreach (Vector2 q in pts) { mn = Vector2.Min(mn, q); mx = Vector2.Max(mx, q); }
+            center = (mn + mx) * 0.5f;
+            float sxx = 0f, szz = 0f, sxz = 0f;
+            foreach (Vector2 q in pts)
+            {
+                Vector2 d = q - center;
+                sxx += d.x * d.x; szz += d.y * d.y; sxz += d.x * d.y;
+            }
+            float ang = 0.5f * Mathf.Atan2(2f * sxz, sxx - szz);
+            return new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
+        }
+
+        private void PlanMonuments(OsmData d, GameDatabase db, Dictionary<long, List<Vector4>> carriage, Dictionary<long, List<float>> carriageHw, StringBuilder report)
+        {
+            enclosures.Clear();
+            foreach (LocationDef loc in db.Locations)
+            {
+                if (!loc.HasCoordinates || (loc.id != "stade-martyrs" && loc.id != "tour-echangeur")) continue;
+                double fx, fz;
+                GeoProjection.ToLocal(loc.lat, loc.lon, originLat, originLon, out fx, out fz);
+                Vector2 p = new Vector2((float)fx, (float)fz);
+                if (!InRange(p)) { report.Append("Monument « ").Append(loc.nom).Append(" » : hors de la zone importée, non posé.\n"); continue; }
+                Enclosure e = new Enclosure { Id = loc.id, Name = loc.nom, C = p, X = new Vector2(1f, 0f) };
+                if (loc.id == "stade-martyrs")
+                {
+                    e.Model = "StadeMartyrs";
+                    e.ModelHx = 100f; e.ModelHz = 91f; e.Sink = 0.19f;
+                    // Orientation et centre réels : contour du stade dans OpenStreetMap (terrain ou enceinte le plus grand à proximité)
+                    float bestSize = 0f;
+                    foreach (OsmWay w in d.Ways)
+                    {
+                        string lv, bv;
+                        bool stadium = (w.Tags.TryGetValue("leisure", out lv) && (lv == "stadium" || lv == "pitch" || lv == "track")) || (w.Tags.TryGetValue("building", out bv) && (bv == "stadium" || bv == "grandstand"));
+                        if (!stadium || w.Refs.Count < 4) continue;
+                        bool complete;
+                        List<Vector2> pts = Points(d, w, out complete);
+                        if (!complete || pts.Count < 4) continue;
+                        Vector2 wc;
+                        Vector2 axis = MainAxis(pts, out wc);
+                        if ((wc - p).sqrMagnitude > 170f * 170f) continue;
+                        float size = 0f;
+                        foreach (Vector2 q in pts) size = Mathf.Max(size, (q - wc).magnitude);
+                        if (size < 40f || size <= bestSize) continue;
+                        bestSize = size;
+                        e.X = axis;
+                        e.C = wc;
+                        e.Note = "orientation et centre pris sur le contour OpenStreetMap n° " + w.Id + " (rayon " + size.ToString("0") + " m)";
+                    }
+                    if (bestSize <= 0f) e.Note = "aucun contour de stade dans OpenStreetMap : orientation est-ouest par défaut, à vérifier";
+                    e.Hx = e.ModelHx + 15f; e.Hz = e.ModelHz + 15f; e.Corner = 45f;
+                }
+                else
+                {
+                    e.Model = "TourEchangeur";
+                    e.ModelHx = 22f; e.ModelHz = 22f;
+                    // Terrain rond, aussi grand que le permettent les chaussées de l'échangeur
+                    float clear = RoadClearance(carriage, carriageHw, p);
+                    float r = Mathf.Clamp(clear - 2.5f, 26f, 46f);
+                    e.Hx = e.Hz = e.Corner = r;
+                    e.Note = "terrain rond de " + r.ToString("0") + " m de rayon (chaussée la plus proche à " + clear.ToString("0") + " m du centre) ; orientation du modèle non vérifiée";
+                }
+                // Unity fait tourner l'axe X local vers (cos, -sin) : angle qui aligne le grand axe du modèle sur e.X
+                e.Yaw = Mathf.Atan2(-e.X.y, e.X.x) * Mathf.Rad2Deg;
+                enclosures.Add(e);
+            }
+        }
+
+        private bool InEnclosure(List<Vector2> pts, Vector2 center)
+        {
+            foreach (Enclosure e in enclosures)
+            {
+                if (e.Signed(center) < 1.5f) return true;
+                foreach (Vector2 q in pts) if (e.Signed(q) < 1.5f) return true;
+            }
+            return false;
+        }
+
+        /// <summary>Clôture de barreaux de fer espacés sur un muret, portail, pelouse et arbres autour du monument.</summary>
+        private void BuildEnclosure(Enclosure e, Dictionary<string, MeshBatch> decor, Dictionary<string, MeshBatch> areas, List<Vector4> fenceBoxes,
+                                    Dictionary<long, List<Vector4>> carriage, Dictionary<long, List<float>> carriageHw, StringBuilder report)
+        {
+            List<Vector2> outline = e.Outline(2.6f);
+            int n = outline.Count;
+            MeshBatch iron = Batch(decor, e.Id + "_grille"), wall = Batch(decor, e.Id + "_socle"), trunk = Batch(decor, e.Id + "_tronc"), leaves = Batch(decor, e.Id + "_feuilles");
+            // Portail : face à la chaussée la plus proche
+            int gate = 0;
+            float gateD = float.MaxValue;
+            bool[] open = new bool[n];
+            for (int i = 0; i < n; i++)
+            {
+                Vector2 mid = (outline[i] + outline[(i + 1) % n]) * 0.5f;
+                float c = RoadClearance(carriage, carriageHw, mid);
+                open[i] = c < 1.6f; // une chaussée passe ici : pas de clôture en travers
+                if (c >= 1.6f && c < gateD) { gateD = c; gate = i; }
+            }
+            int gates = 0, opened = 0;
+            for (int k = -1; k <= 1; k++) open[(gate + k + n) % n] = true;
+            float fenceLen = 0f;
+            for (int i = 0; i < n; i++)
+            {
+                Vector2 a = outline[i], b = outline[(i + 1) % n];
+                Vector2 dir = b - a;
+                float len = dir.magnitude;
+                if (len < 0.2f) continue;
+                dir /= len;
+                Vector2 nrm = new Vector2(-dir.y, dir.x);
+                bool prevOpen = open[(i - 1 + n) % n];
+                if (open[i])
+                {
+                    opened++;
+                    // Piliers de part et d'autre d'une ouverture
+                    if (!prevOpen) { Post(wall, a, 0.3f, 0f, 2.9f); gates++; }
+                    if (!open[(i + 1) % n]) Post(wall, b, 0.3f, 0f, 2.9f);
+                    continue;
+                }
+                fenceLen += len;
+                Bar(wall, a, b, nrm, 0.3f, 0f, 0.45f);            // muret
+                Post(iron, a, 0.06f, 0.45f, 2.55f);               // poteau
+                Bar(iron, a, b, nrm, 0.05f, 0.6f, 0.65f);         // lisse basse
+                Bar(iron, a, b, nrm, 0.05f, 2.2f, 2.25f);         // lisse haute
+                // Barreaux espacés : on voit les arbres et le monument à travers
+                int bars = Mathf.Max(1, Mathf.RoundToInt(len / 0.17f));
+                Vector2 uv = Vector2.zero;
+                Vector3 n3 = new Vector3(nrm.x, 0f, nrm.y);
+                for (int k = 1; k < bars; k++)
+                {
+                    Vector2 q = Vector2.Lerp(a, b, k / (float)bars);
+                    Vector2 w = dir * 0.0125f;
+                    Vector3 q0 = V3(q - w, 0.45f), q1 = V3(q - w, 2.42f), q2 = V3(q + w, 2.42f), q3 = V3(q + w, 0.45f);
+                    iron.QuadFacing(q0, q1, q2, q3, uv, uv, uv, uv, n3);
+                    iron.QuadFacing(q0, q1, q2, q3, uv, uv, uv, uv, -n3);
+                }
+                Vector2 m2 = (a + b) * 0.5f;
+                fenceBoxes.Add(new Vector4(m2.x, m2.y, Mathf.Atan2(dir.x, dir.y) * Mathf.Rad2Deg, len + 0.1f));
+            }
+            // Pelouse du terrain
+            Vector2Int cell = Cell(e.C);
+            List<Vector2> lawn = new List<Vector2>(outline);
+            if (Triangulator.Area(lawn) < 0f) lawn.Reverse();
+            Batch(areas, cell.x + "_" + cell.y + "_vert").Polygon(lawn, 0.016f);
+            // Arbres entre la clôture et le monument
+            System.Random rnd = new System.Random(e.Id.GetHashCode() & 0xffff);
+            int wanted = Mathf.RoundToInt(fenceLen / 9f) + 6, trees = 0;
+            for (int attempt = 0; attempt < wanted * 14 && trees < wanted; attempt++)
+            {
+                float lx = ((float)rnd.NextDouble() * 2f - 1f) * e.Hx, lz = ((float)rnd.NextDouble() * 2f - 1f) * e.Hz;
+                Vector2 q = e.C + e.X * lx + e.Z * lz;
+                if (e.Signed(q) > -3.2f) continue;
+                // Hors de l'emprise du modèle (ellipse) et hors des chaussées
+                float ex = lx / (e.ModelHx + 3.5f), ez = lz / (e.ModelHz + 3.5f);
+                if (ex * ex + ez * ez < 1f) continue;
+                if (RoadClearance(carriage, carriageHw, q) < 2.5f) continue;
+                Tree(trunk, leaves, q, 3.2f + (float)rnd.NextDouble() * 2.4f, 2.3f + (float)rnd.NextDouble() * 1.5f);
+                trees++;
+            }
+            report.Append("Monument « ").Append(e.Name).Append(" » : modèle ").Append(e.Model).Append(" posé à (").Append(e.C.x.ToString("0")).Append(", ").Append(e.C.y.ToString("0"))
+                  .Append("), angle ").Append(e.Yaw.ToString("0")).Append("° — ").Append(e.Note).Append(". Clôture de barreaux : ").Append(fenceLen.ToString("0")).Append(" m, ")
+                  .Append(gates).Append(" ouverture(s), ").Append(trees).Append(" arbres.\n");
+        }
+
         private List<Vector2> Points(OsmData d, OsmWay w, out bool complete)
         {
             List<Vector2> pts = new List<Vector2>(w.Refs.Count);
@@ -395,6 +678,15 @@ namespace BalulaMoto.EditorTools
             List<Vector3> buildingSpots = new List<Vector3>();
             Vector3 spawn = Vector3.zero;
             float spawnHeading = 0f, bestSpawn = float.MaxValue;
+            // Ponts (bridge=* dans OpenStreetMap), cours d'eau, monuments, lumières des bâtiments
+            List<Vector4> bridgeSegs = new List<Vector4>();
+            List<float> bridgeHw = new List<float>();
+            int bridgeWays = 0, waterWays = 0, skippedLand = 0, litWindows = 0;
+            float bridgeLen = 0f, waterLen = 0f;
+            Dictionary<string, MeshBatch> decor = new Dictionary<string, MeshBatch>();
+            Dictionary<string, LightMesh> lights = new Dictionary<string, LightMesh>();
+            List<Vector4> fenceBoxes = new List<Vector4>();
+            List<ImportedRoad> waterAxes = new List<ImportedRoad>();
 
             // ---------------- Routes ----------------
             foreach (OsmWay w in d.Ways)
@@ -415,6 +707,9 @@ namespace BalulaMoto.EditorTools
                 int rank;
                 if (!RoadRank.TryGetValue(hw.Replace("_link", ""), out rank)) rank = 2;
                 float y = 0.03f + rank * 0.004f;
+                string bridgeTag;
+                bool isBridge = w.Tags.TryGetValue("bridge", out bridgeTag) && bridgeTag != "no";
+                if (isBridge) bridgeWays++;
                 for (int i = 0; i < pts.Count - 1; i++)
                 {
                     Vector2 a = pts[i], b = pts[i + 1];
@@ -423,6 +718,7 @@ namespace BalulaMoto.EditorTools
                     float len = dir.magnitude;
                     if (len < 0.05f) continue;
                     dir /= len;
+                    if (isBridge) { bridgeSegs.Add(new Vector4(a.x, a.y, b.x, b.y)); bridgeHw.Add(width * 0.5f); }
                     Vector2 left = new Vector2(-dir.y, dir.x) * (width * 0.5f);
                     Vector2 a2 = i > 0 ? a - dir * Mathf.Min(width * 0.5f, len * 0.5f) : a;
                     Vector2 b2 = i < pts.Count - 2 ? b + dir * Mathf.Min(width * 0.5f, len * 0.5f) : b;
@@ -498,7 +794,8 @@ namespace BalulaMoto.EditorTools
                 ImportedRoad axis = trafficCandidates[k].Value;
                 List<Vector2> lane = new List<Vector2>(axis.pts);
                 float off = Mathf.Clamp(axis.width * 0.25f, 1.2f, 1.9f);
-                ImportedPath ip = new ImportedPath { name = string.IsNullOrEmpty(axis.name) ? "Rue" : axis.name };
+                bool pavedAxis = axis.surface == (int)SurfaceKind.Goudron || axis.surface == (int)SurfaceKind.GoudronDegrade;
+                ImportedPath ip = new ImportedPath { name = string.IsNullOrEmpty(axis.name) ? "Rue" : axis.name, major = axis.rank >= 5 || pavedAxis };
                 AddLane(ip.points, lane, off);
                 lane.Reverse();
                 AddLane(ip.points, lane, off);
@@ -580,8 +877,39 @@ namespace BalulaMoto.EditorTools
                 }
             }
 
+            // ---------------- Monuments : emplacement, terrain clôturé ----------------
+            PlanMonuments(d, db, carriage, carriageHw, report);
+            foreach (Enclosure e in enclosures) BuildEnclosure(e, decor, areas, fenceBoxes, carriage, carriageHw, report);
+
             // ---------------- Bords des rues goudronnées : caniveaux, bordures (rouge et blanc sur les boulevards), accotements ----------------
             Dictionary<string, MeshBatch> edges = new Dictionary<string, MeshBatch>();
+            // Ponts : parapets de béton et garde-corps des deux côtés, sauf là où une autre chaussée croise
+            for (int bi = 0; bi < bridgeSegs.Count; bi++)
+            {
+                Vector2 a = new Vector2(bridgeSegs[bi].x, bridgeSegs[bi].y), b = new Vector2(bridgeSegs[bi].z, bridgeSegs[bi].w);
+                Vector2 dir = b - a;
+                float len = dir.magnitude;
+                if (len < 1f) continue;
+                dir /= len;
+                Vector2 nrm = new Vector2(-dir.y, dir.x);
+                bridgeLen += len;
+                int steps = Mathf.Max(1, Mathf.CeilToInt(len / 2f));
+                foreach (float side in new[] { 1f, -1f })
+                {
+                    Vector2 off = nrm * side * (bridgeHw[bi] + 0.5f);
+                    for (int k = 0; k < steps; k++)
+                    {
+                        Vector2 p0 = Vector2.Lerp(a, b, k / (float)steps) + off, p1 = Vector2.Lerp(a, b, (k + 1) / (float)steps) + off;
+                        Vector2 bmid = (p0 + p1) * 0.5f;
+                        if (!InRange(bmid) || RoadClearance(carriage, carriageHw, bmid) < 0.35f) continue;
+                        Vector2Int pc = Cell(bmid);
+                        MeshBatch pb = Batch(edges, pc.x + "_" + pc.y + "_pont");
+                        Bar(pb, p0, p1, nrm, 0.28f, 0f, 0.85f);
+                        Bar(pb, p0, p1, nrm, 0.08f, 1.02f, 1.1f);
+                        if (k % 2 == 0) Post(pb, p0, 0.05f, 0.85f, 1.05f);
+                    }
+                }
+            }
             // Carrefours : points partagés par plusieurs rues (les bordures s'arrêtent avant)
             Dictionary<long, int> nodeUse = new Dictionary<long, int>();
             foreach (ImportedRoad axis in roadAxes)
@@ -635,6 +963,7 @@ namespace BalulaMoto.EditorTools
                     center /= pts.Count;
                     if (!InRange(center)) continue;
                     if (InStationLot(lotList, pts, center)) { skippedStations++; continue; }
+                    if (enclosures.Count > 0 && InEnclosure(pts, center)) { skippedLand++; continue; }
                     if (OnCarriageway(carriage, carriageHw, pts, center)) { skippedRoads++; continue; }
                     if (Triangulator.Area(pts) < 0f) pts.Reverse();
                     float h = Height(w, rnd);
@@ -648,6 +977,34 @@ namespace BalulaMoto.EditorTools
                     }
                     Batch(houses, c.x + "_" + c.y + "_toit").Polygon(pts, h);
                     buildingCount++;
+                    // Courant dans les parcelles : quelques fenêtres éclairées la nuit sur les façades
+                    if (litWindows < 140000)
+                    {
+                        System.Random wr = new System.Random((int)(w.Id % 1000003));
+                        LightMesh lm;
+                        string lk = c.x + "_" + c.y;
+                        if (!lights.TryGetValue(lk, out lm)) { lm = new LightMesh(); lights[lk] = lm; }
+                        int floors = Mathf.Clamp(Mathf.FloorToInt(h / 3f), 1, 5);
+                        for (int i = 0; i < pts.Count; i++)
+                        {
+                            Vector2 a = pts[i], b = pts[(i + 1) % pts.Count];
+                            float wl = Vector2.Distance(a, b);
+                            if (wl < 3.4f || h < 2.6f) continue;
+                            Vector2 wd = (b - a) / wl, wo = new Vector2(wd.y, -wd.x);
+                            int nw = Mathf.FloorToInt(wl / 3.4f);
+                            for (int fl = 0; fl < floors; fl++)
+                                for (int k = 0; k < nw; k++)
+                                {
+                                    if (wr.Next(100) >= 24) continue;
+                                    Vector2 q = a + wd * ((k + 0.5f) * wl / nw) + wo * 0.05f;
+                                    int tone = wr.Next(10);
+                                    byte al = (byte)(110 + wr.Next(146));
+                                    Color32 col = tone < 6 ? new Color32(255, 214, 140, al) : (tone < 8 ? new Color32(235, 240, 255, al) : new Color32(150, 190, 255, al));
+                                    lm.Panel(V3(q, Mathf.Min(h - 0.9f, fl * 3f + 1.7f)), new Vector3(wd.x, 0f, wd.y), Vector3.up, 0.5f, 0.55f, col);
+                                    litWindows++;
+                                }
+                        }
+                    }
                     float br = 0f;
                     foreach (Vector2 p in pts) br = Mathf.Max(br, Vector2.Distance(p, center));
                     buildingSpots.Add(new Vector3(center.x, br, center.y));
@@ -666,6 +1023,56 @@ namespace BalulaMoto.EditorTools
                     OsmWay w;
                     if (m.Type == "way" && m.Role == "outer" && d.WayById.TryGetValue(m.Ref, out w)) AddArea(d, w, rel.Tags, areas, ref areaCount);
                 }
+            }
+
+            // ---------------- Rivières, ruisseaux, canaux (tracés réels d'OpenStreetMap) ----------------
+            foreach (OsmWay w in d.Ways)
+            {
+                string wv;
+                if (!w.Tags.TryGetValue("waterway", out wv)) continue;
+                float ww;
+                switch (wv)
+                {
+                    case "river": ww = 14f; break;
+                    case "canal": ww = 7f; break;
+                    case "stream": ww = 4.5f; break;
+                    case "drain": ww = 2.6f; break;
+                    case "ditch": ww = 1.6f; break;
+                    default: continue;
+                }
+                string tv;
+                if (w.Tags.TryGetValue("tunnel", out tv) && tv != "no") continue; // busé, sous la chaussée
+                float tw;
+                if (w.Tags.TryGetValue("width", out tv) && float.TryParse(tv, NumberStyles.Float, CultureInfo.InvariantCulture, out tw) && tw > 0.5f && tw < 400f) ww = tw;
+                bool wcomplete;
+                List<Vector2> wp = Points(d, w, out wcomplete);
+                if (wp.Count < 2) continue;
+                bool anyIn = false;
+                ImportedRoad wAxis = new ImportedRoad { name = Name(w.Tags, "") , width = ww, rank = 0 };
+                foreach (Vector2 q in wp) if (InRange(q)) wAxis.pts.Add(q);
+                if (wAxis.pts.Count >= 2) waterAxes.Add(wAxis);
+                for (int i = 0; i < wp.Count - 1; i++)
+                {
+                    Vector2 a = wp[i], b = wp[i + 1];
+                    if (!InRange(a) && !InRange(b)) continue;
+                    Vector2 dir = b - a;
+                    float len = dir.magnitude;
+                    if (len < 0.05f) continue;
+                    dir /= len;
+                    anyIn = true;
+                    waterLen += len;
+                    Vector2 left = new Vector2(-dir.y, dir.x) * (ww * 0.5f);
+                    Vector2 a2 = a - dir * Mathf.Min(ww * 0.5f, len * 0.5f), b2 = b + dir * Mathf.Min(ww * 0.5f, len * 0.5f);
+                    int pieces = Mathf.Max(1, Mathf.CeilToInt(Vector2.Distance(a2, b2) / 20f));
+                    Vector2Int wc = Cell((a + b) * 0.5f);
+                    MeshBatch wb = Batch(areas, wc.x + "_" + wc.y + "_eau");
+                    for (int k = 0; k < pieces; k++)
+                    {
+                        Vector2 p0 = Vector2.Lerp(a2, b2, k / (float)pieces), p1 = Vector2.Lerp(a2, b2, (k + 1) / (float)pieces);
+                        wb.Quad(V3(p0 + left, 0.01f), V3(p1 + left, 0.01f), V3(p1 - left, 0.01f), V3(p0 - left, 0.01f));
+                    }
+                }
+                if (anyIn) waterWays++;
             }
 
             // ---------------- Points d'intérêt ----------------
@@ -832,9 +1239,10 @@ namespace BalulaMoto.EditorTools
                     if (em.mainTexture != stripes) { em.mainTexture = stripes; EditorUtility.SetDirty(em); }
                 }
                 else if (kind == "fond") em = Mat(mats, "CaniveauFond", shader, new Color(0.16f, 0.16f, 0.15f), matAsset, ref firstMat);
+                else if (kind == "pont") em = Mat(mats, "Pont", shader, new Color(0.72f, 0.72f, 0.69f), matAsset, ref firstMat);
                 else if (kind == "accot") em = Mat(mats, "Accotement", shader, new Color(0.47f, 0.35f, 0.24f), matAsset, ref firstMat);
                 else em = Mat(mats, "Bordure", shader, new Color(0.62f, 0.62f, 0.6f), matAsset, ref firstMat);
-                GameObject eg = Emit(root, "Bords_" + kv.Key, kv.Value, em, meshAsset, ref firstMesh, kind == "fond", ref idx);
+                GameObject eg = Emit(root, "Bords_" + kv.Key, kv.Value, em, meshAsset, ref firstMesh, kind == "fond" || kind == "pont", ref idx);
                 if (kind == "fond") eg.AddComponent<SurfaceZone>().Kind = SurfaceKind.Caniveau;
             }
             foreach (KeyValuePair<string, MeshBatch> kv in houses)
@@ -846,7 +1254,108 @@ namespace BalulaMoto.EditorTools
             foreach (KeyValuePair<string, MeshBatch> kv in areas)
             {
                 bool water = kv.Key.EndsWith("eau");
-                Emit(root, (water ? "Eau_" : "Verdure_") + kv.Key, kv.Value, Mat(mats, water ? "Eau" : "Verdure", shader, water ? new Color(0.25f, 0.36f, 0.34f) : new Color(0.3f, 0.48f, 0.2f), matAsset, ref firstMat), meshAsset, ref firstMesh, false, ref idx);
+                GameObject ag = Emit(root, (water ? "Eau_" : "Verdure_") + kv.Key, kv.Value, Mat(mats, water ? "Eau" : "Verdure", shader, water ? new Color(0.2f, 0.33f, 0.36f) : new Color(0.3f, 0.48f, 0.2f), matAsset, ref firstMat), meshAsset, ref firstMesh, water, ref idx);
+                // L'eau ralentit comme la boue (on ne roule pas dans une rivière comme sur une route)
+                if (water) ag.AddComponent<SurfaceZone>().Kind = SurfaceKind.Boue;
+            }
+
+            // Clôtures, murets, arbres des monuments
+            foreach (KeyValuePair<string, MeshBatch> kv in decor)
+            {
+                if (kv.Value.V.Count == 0) continue;
+                string kind = kv.Key.Substring(kv.Key.LastIndexOf('_') + 1);
+                Material dm = kind == "grille" ? Mat(mats, "GrilleFer", shader, new Color(0.08f, 0.09f, 0.1f), matAsset, ref firstMat)
+                            : (kind == "socle" ? Mat(mats, "Muret", shader, new Color(0.74f, 0.72f, 0.66f), matAsset, ref firstMat)
+                            : (kind == "tronc" ? Mat(mats, "Tronc", shader, new Color(0.33f, 0.23f, 0.14f), matAsset, ref firstMat)
+                            : Mat(mats, "Feuillage", shader, new Color(0.17f, 0.4f, 0.14f), matAsset, ref firstMat)));
+                Emit(root, "Monument_" + kv.Key, kv.Value, dm, meshAsset, ref firstMesh, false, ref idx);
+            }
+            if (fenceBoxes.Count > 0)
+            {
+                GameObject fc = new GameObject("CloturesCollisions");
+                fc.transform.SetParent(root.transform, false);
+                foreach (Vector4 fb in fenceBoxes)
+                {
+                    GameObject seg = new GameObject("Cloture");
+                    seg.transform.SetParent(fc.transform, false);
+                    seg.transform.position = new Vector3(fb.x, 1.25f, fb.y);
+                    seg.transform.rotation = Quaternion.Euler(0f, fb.z, 0f);
+                    seg.AddComponent<BoxCollider>().size = new Vector3(0.3f, 2.5f, fb.w);
+                }
+            }
+            // Modèles 3D des monuments (convertis par scripts/convertir_monuments.py)
+            List<Vector3> clearZones = new List<Vector3>();
+            foreach (Enclosure e in enclosures)
+            {
+                float rr = Mathf.Min(e.Hx, e.Hz) + 4f;
+                for (float t = -(e.Hx - Mathf.Min(e.Hx, e.Hz)); t <= e.Hx - Mathf.Min(e.Hx, e.Hz) + 0.01f; t += Mathf.Max(10f, rr * 0.5f))
+                {
+                    Vector2 zc = e.C + e.X * t;
+                    clearZones.Add(new Vector3(zc.x, rr, zc.y));
+                }
+                GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(BalulaSetup.Root + "/Modeles/Monuments/" + e.Model + ".obj");
+                if (model == null) { report.Append("Modèle absent : ").Append(e.Model).Append(".obj (monument non posé).\n"); continue; }
+                GameObject inst = (GameObject)PrefabUtility.InstantiatePrefab(model);
+                inst.name = "Monument_" + e.Model;
+                inst.transform.SetParent(root.transform, false);
+                inst.transform.position = new Vector3(e.C.x, -e.Sink, e.C.y);
+                inst.transform.rotation = Quaternion.Euler(0f, e.Yaw, 0f);
+                int parts = 0, verts = 0;
+                foreach (MeshRenderer mr in inst.GetComponentsInChildren<MeshRenderer>())
+                {
+                    Material[] src = mr.sharedMaterials;
+                    for (int i = 0; i < src.Length; i++)
+                    {
+                        if (src[i] == null) continue;
+                        Color mc = src[i].HasProperty("_Color") ? src[i].color : Color.gray;
+                        src[i] = Mat(mats, "Monu_" + e.Model + "_" + Safe(src[i].name), shader, mc, matAsset, ref firstMat);
+                    }
+                    mr.sharedMaterials = src;
+                    MeshFilter mf = mr.GetComponent<MeshFilter>();
+                    if (mf != null && mf.sharedMesh != null)
+                    {
+                        verts += mf.sharedMesh.vertexCount;
+                        if (mr.GetComponent<Collider>() == null) mr.gameObject.AddComponent<MeshCollider>().sharedMesh = mf.sharedMesh;
+                    }
+                    parts++;
+                }
+                Bounds mb = new Bounds(inst.transform.position, Vector3.zero);
+                foreach (Renderer r in inst.GetComponentsInChildren<Renderer>()) mb.Encapsulate(r.bounds);
+                report.Append("   ").Append(e.Model).Append(" : ").Append(parts).Append(" parties, ").Append(verts).Append(" sommets, dimensions ")
+                      .Append(mb.size.x.ToString("0")).Append(" x ").Append(mb.size.z.ToString("0")).Append(" m, hauteur ").Append(mb.size.y.ToString("0")).Append(" m.\n");
+            }
+            // Fenêtres éclairées la nuit (shader BalulaMoto/Lumiere)
+            if (lights.Count > 0)
+            {
+                Shader ls = AssetDatabase.LoadAssetAtPath<Shader>(BalulaSetup.Root + "/Resources/BalulaMoto/Shaders/Lumiere.shader");
+                if (ls != null)
+                {
+                    Material lmat = new Material(ls) { name = "FenetresNuit" };
+                    lmat.enableInstancing = false;
+                    AssetDatabase.CreateAsset(lmat, matAsset + "/FenetresNuit.mat");
+                    foreach (KeyValuePair<string, LightMesh> kv in lights)
+                    {
+                        LightMesh lm = kv.Value;
+                        if (lm.V.Count == 0) continue;
+                        Mesh mesh = new Mesh { name = "Fenetres_" + kv.Key };
+                        if (lm.V.Count > 65000) mesh.indexFormat = IndexFormat.UInt32;
+                        mesh.SetVertices(lm.V);
+                        mesh.SetColors(lm.C);
+                        mesh.SetUVs(0, lm.UV);
+                        mesh.SetTriangles(lm.T, 0);
+                        mesh.RecalculateBounds();
+                        if (firstMesh) { AssetDatabase.CreateAsset(mesh, meshAsset); firstMesh = false; }
+                        else AssetDatabase.AddObjectToAsset(mesh, meshAsset);
+                        GameObject lg = new GameObject("Fenetres_" + kv.Key);
+                        lg.transform.SetParent(root.transform, false);
+                        lg.AddComponent<MeshFilter>().sharedMesh = mesh;
+                        MeshRenderer lr = lg.AddComponent<MeshRenderer>();
+                        lr.sharedMaterial = lmat;
+                        lr.shadowCastingMode = ShadowCastingMode.Off;
+                        lr.receiveShadows = false;
+                        idx++;
+                    }
+                }
             }
 
             ImportedWorld iw = root.AddComponent<ImportedWorld>();
@@ -862,6 +1371,11 @@ namespace BalulaMoto.EditorTools
             iw.roads = roadAxes;
             iw.buildingSpots = buildingSpots;
             iw.works = works;
+            iw.clearZones = clearZones;
+            iw.waterways = waterAxes;
+            report.Append("Eau : ").Append(waterWays).Append(" cours d'eau tracés (").Append((waterLen / 1000f).ToString("0.0")).Append(" km). Ponts : ").Append(bridgeWays)
+                  .Append(" tronçons marqués « pont » (").Append((bridgeLen / 1000f).ToString("0.00")).Append(" km) avec parapets. Fenêtres éclairées la nuit : ").Append(litWindows)
+                  .Append(". Bâtiments OSM écartés des terrains des monuments : ").Append(skippedLand).Append(".\n");
             report.Append("Import ").Append(System.DateTime.Now.ToString("yyyy-MM-dd HH:mm")).Append(" — ").Append(Path.GetFileName(osmPath)).Append('\n');
             report.Append("Origine ").Append(originLat.ToString(CultureInfo.InvariantCulture)).Append(", ").Append(originLon.ToString(CultureInfo.InvariantCulture)).Append(" · rayon ").Append(radius.ToString("0")).Append(" m\n");
             report.Append("Stations-service : ").Append(stationLots.Count).Append(" construites (").Append(duplicateFuel.Count).Append(" doublons fusionnés) ; bâtiments OSM écartés : ")
@@ -1227,7 +1741,7 @@ namespace BalulaMoto.EditorTools
             if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c);
             // Lissé : « _Smoothness » (URP) et « _Glossiness » (Standard). Sans le second, le Standard gardait 0,5 :
             // sol, routes et murs brillaient et reflétaient le ciel (terre éclaircie, reflets bleu-gris).
-            float smooth = key.StartsWith("RouteGoudron") ? 0.25f : 0.08f;
+            float smooth = key.StartsWith("RouteGoudron") ? 0.25f : (key == "Eau" ? 0.62f : (key == "GrilleFer" ? 0.35f : 0.08f));
             if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", smooth);
             if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", smooth);
             // Pas d'instanciation GPU : sur certains téléphones Android (PowerVR, Adreno), les objets instanciés ne sont pas dessinés

@@ -247,6 +247,10 @@ namespace BalulaMoto.Runtime
         private Vector2 center = new Vector2(0.5f, 0.5f);
         private Text infoText;
         private readonly Dictionary<MapIconKind, Text> legendCounts = new Dictionary<MapIconKind, Text>();
+        // Noms des rues écrits sur la carte, le long de chaque rue
+        private RectTransform nameRoot;
+        private readonly List<Text> roadNames = new List<Text>();
+        private const int MaxRoadNames = 110;
 
         protected override void Build()
         {
@@ -262,6 +266,8 @@ namespace BalulaMoto.Runtime
             UIKit.Place(mr, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(side + 360f, side + 360f));
             map = mr.gameObject.AddComponent<RawImage>();
             map.raycastTarget = false;
+            nameRoot = UIKit.Rect(area, "NomsDesRues");
+            UIKit.Stretch(nameRoot, 0, 0, 0, 0);
             iconRoot = UIKit.Rect(area, "Reperes");
             UIKit.Stretch(iconRoot, 0, 0, 0, 0);
             pool = new MapIconPool(iconRoot, 30f);
@@ -325,7 +331,7 @@ namespace BalulaMoto.Runtime
             int[] counts = new int[16];
             foreach (MapIcon ic in icons) counts[(int)ic.Kind]++;
             foreach (KeyValuePair<MapIconKind, Text> kv in legendCounts) kv.Value.text = counts[(int)kv.Key].ToString();
-            infoText.text = "Glissez pour déplacer la carte, + et − pour zoomer.\n" +
+            infoText.text = "Glissez pour déplacer la carte, + et − pour zoomer : les noms des rues apparaissent en zoomant.\n" +
                             "Plan des rues : © contributeurs OpenStreetMap (ODbL).\n" +
                             "Les lieux de référence marqués « à vérifier » attendent la confirmation du créateur.";
             SetTitle("CARTE — " + CityMap.Name);
@@ -363,6 +369,37 @@ namespace BalulaMoto.Runtime
             float pxPerUv = ar.height / zoom;
             GameplayDirector g = GameplayDirector.Instance;
             bool showNames = zoom <= 0.35f, showStops = zoom <= 0.1f;
+            // Noms des rues : les avenues d'abord, puis les rues à mesure qu'on zoome
+            int minRank = zoom <= 0.07f ? 2 : (zoom <= 0.16f ? 3 : (zoom <= 0.4f ? 5 : 8));
+            int shown = 0;
+            foreach (CityMap.RoadLabel rl in CityMap.RoadLabels)
+            {
+                if (rl.Rank < minRank) break; // liste triée par importance
+                Vector2 q = (rl.UV - center) * pxPerUv;
+                if (Mathf.Abs(q.x) > ar.width * 0.5f - 30f || Mathf.Abs(q.y) > ar.height * 0.5f - 12f) continue;
+                if (shown >= roadNames.Count)
+                {
+                    if (roadNames.Count >= MaxRoadNames) break;
+                    Text nt = UIKit.Label(nameRoot, "", 20, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+                    nt.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    nt.verticalOverflow = VerticalWrapMode.Overflow;
+                    nt.raycastTarget = false;
+                    Outline no = nt.gameObject.AddComponent<Outline>();
+                    no.effectColor = new Color(0f, 0f, 0f, 0.95f);
+                    no.effectDistance = new Vector2(1.5f, -1.5f);
+                    roadNames.Add(nt);
+                }
+                Text t = roadNames[shown++];
+                if (!t.gameObject.activeSelf) t.gameObject.SetActive(true);
+                if (t.text != rl.Name) t.text = rl.Name;
+                t.fontSize = rl.Rank >= 8 ? 24 : (rl.Rank >= 5 ? 21 : 17);
+                t.color = rl.Water ? new Color(0.6f, 0.82f, 1f) : (rl.Rank >= 5 ? Color.white : new Color(0.9f, 0.92f, 0.95f));
+                UIKit.Place(t.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), q, new Vector2(300f, 26f));
+                t.rectTransform.localEulerAngles = new Vector3(0f, 0f, rl.Angle);
+            }
+            for (int i = shown; i < roadNames.Count; i++)
+                if (roadNames[i].gameObject.activeSelf) roadNames[i].gameObject.SetActive(false);
+
             pool.Begin();
             foreach (MapIcon ic in icons)
             {

@@ -50,6 +50,11 @@ namespace BalulaMoto.Runtime
             cam.nearClipPlane = 0.12f;
             cam.farClipPlane = 1800f;
             cam.fieldOfView = 62f;
+            // Petits détails (plaques de rue) : dessinés seulement à moins de 75 m
+            float[] cull = new float[32];
+            cull[Night.DetailLayer] = 75f;
+            cam.layerCullDistances = cull;
+            cam.layerCullSpherical = true;
             CameraRig rig = cam.gameObject.AddComponent<CameraRig>();
             rig.Cam = cam;
             return rig;

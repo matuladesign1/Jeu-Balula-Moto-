@@ -4,7 +4,7 @@
 # Données © les contributeurs d'OpenStreetMap — https://www.openstreetmap.org/copyright
 #
 # 1) Méthode principale : extrait « RDC » de Geofabrik (fichier .osm.pbf mis à jour chaque jour), découpé
-#    avec osmium : rues, eau, verdure et lieux dans la grande zone, bâtiments dans la zone centrale.
+#    avec osmium : rues (avec les ponts), rivières et canaux, verdure et lieux dans la grande zone, bâtiments dans la zone centrale.
 #    Fiable pour une grande zone (les serveurs Overpass publics refusent les requêtes trop lourdes).
 # 2) Secours : serveurs Overpass, sur une zone plus petite.
 # La carte n'est téléchargée qu'une fois par mois (cache de la compilation).
@@ -45,8 +45,8 @@ geofabrik() {
   osmium extract -b "$W2,$S2,$E2,$N2" "$PBF" -o "$WORK/centre.osm.pbf" --overwrite || return 1
   rm -f "$PBF"
   osmium tags-filter "$WORK/zone.osm.pbf" \
-      w/highway w/natural=water w/waterway=riverbank \
-      w/leisure=park,pitch,stadium,garden,playground \
+      w/highway w/natural=water w/waterway \
+      w/leisure=park,pitch,stadium,track,garden,playground \
       w/landuse=grass,forest,recreation_ground,cemetery,meadow \
       r/natural=water \
       n/amenity n/shop n/highway=bus_stop n/public_transport n/place n/tourism n/historic n/leisure \
@@ -75,7 +75,7 @@ QUERY="[out:xml][timeout:300];
   way[\"highway\"]($BB);
   way[\"building\"]($BB2);
   way[\"natural\"=\"water\"]($BB);
-  way[\"waterway\"=\"riverbank\"]($BB);
+  way[\"waterway\"]($BB);
   way[\"leisure\"~\"park|pitch|stadium|garden|playground\"]($BB);
   way[\"landuse\"~\"grass|forest|recreation_ground|cemetery|meadow\"]($BB);
   relation[\"natural\"=\"water\"]($BB);

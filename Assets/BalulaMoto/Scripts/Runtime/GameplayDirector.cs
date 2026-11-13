@@ -131,13 +131,21 @@ namespace BalulaMoto.Runtime
         // Boucle principale
         // ==================================================================
 
+        /// <summary>Commandes imposées par les essais automatiques (photos de contrôle) ; null en jeu normal.</summary>
+        public static DriveInput? TestInput;
+        private bool wasNight;
+
         private void Update()
         {
             if (Session == null || Player == null) return;
             float dt = Time.deltaTime;
             if (dt <= 0f) return;
             bool modal = UI != null && UI.AnyModalOpen;
-            Player.Controls = modal ? new DriveInput() : PlayerControls.Read(Player.Kind == VehicleKind.Moto);
+            Player.Controls = modal ? new DriveInput() : (TestInput.HasValue ? TestInput.Value : PlayerControls.Read(Player.Kind == VehicleKind.Moto));
+            // Les phares s'allument tout seuls à la tombée de la nuit (le joueur peut toujours les éteindre)
+            bool nightNow = Session.IsNight;
+            if (nightNow && !wasNight) Player.HeadlightsOn = true;
+            wasNight = nightNow;
             if (PlayerAudio != null) PlayerAudio.HornPressed = !modal && PlayerControls.HornHeld();
             if (!modal) HandleKeys();
             Player.Wetness = Env != null ? Env.Wetness : 0f;

@@ -13,7 +13,37 @@ namespace BalulaMoto.Runtime
         public readonly List<float> StopS = new List<float>();
         public readonly List<LightAxis> StopAxes = new List<LightAxis>();
         public float Length { get; private set; }
+        /// <summary>Grande rue ou rue goudronnée : la circulation y est plus dense.</summary>
+        public bool Major;
+        /// <summary>Positions (le long de la boucle) où taxis et bus s'arrêtent pour prendre des clients ; null = pas encore cherché.</summary>
+        public List<float> Service;
+        private Vector3 boundsMin, boundsMax;
         private float[] cumulative;
+
+        /// <summary>Cherche les arrêts situés au bord de cette rue (une fois par boucle, dans chaque sens).</summary>
+        public void FindService()
+        {
+            Service = new List<float>();
+            if (Length < 40f) return;
+            foreach (ClientStop cs in ClientStop.All)
+            {
+                if (cs == null) continue;
+                Vector3 p = cs.transform.position;
+                if (p.x < boundsMin.x - 18f || p.x > boundsMax.x + 18f || p.z < boundsMin.z - 18f || p.z > boundsMax.z + 18f) continue;
+                // La boucle fait l'aller puis le retour : un arrêt sert les deux sens
+                for (int half = 0; half < 2; half++)
+                {
+                    float s0 = half * Length * 0.5f, s1 = s0 + Length * 0.5f, best = -1f, bestD = 17f * 17f;
+                    for (float s = s0; s < s1; s += 3f)
+                    {
+                        Vector3 q = PositionAt(s);
+                        float d = (q.x - p.x) * (q.x - p.x) + (q.z - p.z) * (q.z - p.z);
+                        if (d < bestD) { bestD = d; best = s; }
+                    }
+                    if (best >= 0f) Service.Add(best);
+                }
+            }
+        }
 
         public void Build()
         {
@@ -23,6 +53,9 @@ namespace BalulaMoto.Runtime
             for (int i = 0; i < n; i++)
                 cumulative[i + 1] = cumulative[i] + Vector3.Distance(Points[i], Points[(i + 1) % n]);
             Length = cumulative[n];
+            boundsMin = new Vector3(float.MaxValue, 0f, float.MaxValue);
+            boundsMax = new Vector3(float.MinValue, 0f, float.MinValue);
+            foreach (Vector3 q in Points) { boundsMin = Vector3.Min(boundsMin, q); boundsMax = Vector3.Max(boundsMax, q); }
         }
 
         public Vector3 PositionAt(float s)
@@ -67,7 +100,7 @@ namespace BalulaMoto.Runtime
         /// <summary>Boucle fermée passant par les coins donnés, avec virages arrondis.</summary>
         public static TrafficPath Loop(string name, IList<Vector3> corners, float radius)
         {
-            TrafficPath p = new TrafficPath { Name = name };
+            TrafficPath p = new TrafficPath { Name = name, Major = true };
             int n = corners.Count;
             for (int i = 0; i < n; i++)
             {
@@ -106,19 +139,40 @@ namespace BalulaMoto.Runtime
         public List<Transform> Wheels = new List<Transform>();
         public float BlockedTime;
         public float HonkCooldown;
+        // Phares, faisceau et détails (roues, inscriptions) : gérés selon la nuit et la distance
+        public Renderer HeadLights, Beam, TailGlow;
+        public Renderer[] Detail;
+        public bool DetailShown = true;
+        // Taxis et bus : arrêt aux arrêts pour prendre et déposer des clients
+        public float Dwell, StopCooldown, Side, ServiceTarget = -1f;
+        public bool WillStop, Dwelling;
         private float wheelSpin;
-        private bool brakeShown;
+        private int brakeShown = -1;
+
+        public bool TakesClients
+        {
+            get
+            {
+                return Type == AIVehicleType.TaxiJaune || Type == AIVehicleType.MinibusJaune || Type == AIVehicleType.MinibusBlanc ||
+                       Type == AIVehicleType.BusTransco || Type == AIVehicleType.MotoTaxi || Type == AIVehicleType.TricycleTaxi;
+            }
+        }
 
         public void UpdateVisuals(bool braking, float dt)
         {
-            wheelSpin += Speed / 0.35f * dt * Mathf.Rad2Deg;
-            foreach (Transform w in Wheels) w.localRotation = Quaternion.AngleAxis(wheelSpin, Vector3.right);
-            if (braking != brakeShown)
+            if (DetailShown)
             {
-                brakeShown = braking;
-                foreach (Renderer r in BrakeLights) Mats.SetLamp(r, new Color(1f, 0.08f, 0.05f), braking, 2.5f);
+                wheelSpin += Speed / 0.35f * dt * Mathf.Rad2Deg;
+                foreach (Transform w in Wheels) w.localRotation = Quaternion.AngleAxis(wheelSpin, Vector3.right);
             }
-            bool blink = (BrokenDown || Sirens) && Mathf.Repeat(Time.time, 0.7f) < 0.35f;
+            // Feux arrière : forts au freinage, allumés (plus faibles) dès qu'il fait nuit
+            int state = braking ? 2 : (Night.Dark ? 1 : 0);
+            if (state != brakeShown)
+            {
+                brakeShown = state;
+                foreach (Renderer r in BrakeLights) Mats.SetLamp(r, new Color(1f, 0.08f, 0.05f), state > 0, state == 2 ? 2.6f : 1.1f);
+            }
+            bool blink = (BrokenDown || Sirens || Dwelling) && Mathf.Repeat(Time.time, 0.7f) < 0.35f;
             for (int i = 0; i < Hazards.Count; i++)
             {
                 Color c = Sirens ? (i % 2 == 0 ? new Color(1f, 0.05f, 0.05f) : new Color(0.1f, 0.3f, 1f)) : new Color(1f, 0.55f, 0.05f);
@@ -185,9 +239,10 @@ namespace BalulaMoto.Runtime
             bool rush = (h >= 6.5f && h < 9f) || (h >= 16f && h < 19f);
             bool night = h >= 21f || h < 5f;
             // Kinshasa : circulation dense, embouteillages aux heures de pointe
-            targetCount = rush ? 42 : (night ? 12 : 30);
-            if (GameSettings.Quality == 0) targetCount = Mathf.RoundToInt(targetCount * 0.55f);
-            else if (GameSettings.Quality == 2) targetCount = Mathf.RoundToInt(targetCount * 1.3f);
+            // (4.2) circulation pleine : environ 80 véhicules autour du joueur en journée, 100 aux heures de pointe
+            targetCount = rush ? 100 : (night ? 45 : 80);
+            if (GameSettings.Quality == 0) targetCount = Mathf.RoundToInt(targetCount * 0.5f);
+            else if (GameSettings.Quality == 2) targetCount = Mathf.RoundToInt(targetCount * 1.15f);
             BalulaGame g = BalulaGame.Instance;
             bool rain = g != null && g.Env != null && g.Env.RainIntensity > 0.3f;
             if (CrowdSystem.Instance != null) CrowdSystem.Instance.SetTimeOfDay(h, rain);
@@ -226,6 +281,7 @@ namespace BalulaMoto.Runtime
             v.BrakeLights = brake;
             v.Hazards = hazards;
             v.Wheels = wheels;
+            TrafficOptimizer.Optimize(v);
             if (path != null)
             {
                 g.transform.position = path.PositionAt(s);
@@ -288,14 +344,16 @@ namespace BalulaMoto.Runtime
         private bool TrySpawnNear(Vector3 pp)
         {
             Camera cam = Camera.main;
-            for (int attempt = 0; attempt < 8; attempt++)
+            for (int attempt = 0; attempt < 12; attempt++)
             {
                 float ang = Random.value * Mathf.PI * 2f;
-                float rad = Mathf.Lerp(65f, 300f, Mathf.Sqrt(Random.value));
+                float rad = Mathf.Lerp(65f, 330f, Mathf.Sqrt(Random.value));
                 Vector3 c = pp + new Vector3(Mathf.Cos(ang) * rad, 0f, Mathf.Sin(ang) * rad);
                 List<SpawnSlot> l;
                 if (!spawnGrid.TryGetValue(SpawnKey(c), out l) || l.Count == 0) continue;
                 SpawnSlot slot = l[Random.Range(0, l.Count)];
+                // Les rues goudronnées et les avenues d'abord : c'est là que roule l'essentiel de la circulation
+                if (attempt < 9 && !Paths[slot.Path].Major) continue;
                 float d2 = (slot.Pos - pp).sqrMagnitude;
                 if (Player != null && d2 < 55f * 55f) continue;
                 if (cam != null && Player != null && d2 < 130f * 130f)
@@ -305,7 +363,7 @@ namespace BalulaMoto.Runtime
                 }
                 bool ok = true;
                 foreach (AIVehicle o in Vehicles)
-                    if ((o.transform.position - slot.Pos).sqrMagnitude < 14f * 14f) { ok = false; break; }
+                    if ((o.transform.position - slot.Pos).sqrMagnitude < 11f * 11f) { ok = false; break; }
                 if (!ok) continue;
                 AIVehicleType type = RandomType();
                 Spawn(type, Paths[slot.Path], slot.S, CruiseFor(type));
@@ -392,8 +450,23 @@ namespace BalulaMoto.Runtime
             Vector3 pp = Player != null ? Player.transform.position : Vector3.zero;
             int normal = 0;
             AIVehicle far = null;
+            Camera mainCam = Camera.main;
+            Vector3 eye = mainCam != null ? mainCam.transform.position : pp;
+            bool dark = Night.Dark;
             foreach (AIVehicle v in Vehicles)
             {
+                if (v == null) continue;
+                // Détails (roues, inscriptions, clignotants) près de la caméra seulement ; faisceaux la nuit
+                float de = (v.transform.position - eye).sqrMagnitude;
+                bool near = de < 85f * 85f;
+                if (v.Detail != null && near != v.DetailShown)
+                {
+                    v.DetailShown = near;
+                    foreach (Renderer r in v.Detail) if (r != null) r.enabled = near;
+                }
+                bool beams = dark && de < 150f * 150f;
+                if (v.Beam != null && v.Beam.enabled != beams) v.Beam.enabled = beams;
+                if (v.TailGlow != null && v.TailGlow.enabled != beams) v.TailGlow.enabled = beams;
                 if (v.Special) continue;
                 normal++;
                 if (far == null && Player != null && (v.transform.position - pp).sqrMagnitude > 430f * 430f) far = v;
@@ -405,7 +478,7 @@ namespace BalulaMoto.Runtime
                 int added;
                 if (rush && Random.value < 0.3f && TrySpawnJam(pp, out added)) normal += added;
                 // Jusqu'à deux véhicules par passage : la circulation se remplit vite autour du joueur
-                for (int k = 0; k < 2 && normal < targetCount; k++)
+                for (int k = 0; k < 4 && normal < targetCount; k++)
                     if (TrySpawnNear(pp)) normal++;
             }
             else if (normal > targetCount + (rush ? 9 : 3))
@@ -422,10 +495,12 @@ namespace BalulaMoto.Runtime
         {
             float gap = 999f;
             Vector3 pos = v.transform.position, fwd = v.transform.forward, right = v.transform.right;
-            foreach (AIVehicle o in Vehicles)
+            for (int i = 0; i < Vehicles.Count; i++)
             {
-                if (o == v) continue;
-                Vector3 d = o.transform.position - pos;
+                AIVehicle o = Vehicles[i];
+                if (o == v || o == null || i >= posCache.Count) continue;
+                Vector3 d = posCache[i] - pos;
+                if (d.x > 34f || d.x < -34f || d.z > 34f || d.z < -34f) continue;
                 float ahead = Vector3.Dot(d, fwd);
                 if (ahead <= 0f || ahead > 30f) continue;
                 if (Mathf.Abs(Vector3.Dot(d, right)) > 2.3f) continue;
@@ -441,13 +516,59 @@ namespace BalulaMoto.Runtime
             return gap;
         }
 
+        private readonly List<Vector3> posCache = new List<Vector3>();
+
+        /// <summary>Taxi, minibus, bus, moto-taxi : s'arrête à l'arrêt, feux de détresse, des clients montent et descendent.</summary>
+        private float ServeStops(AIVehicle v, float target, float dt)
+        {
+            if (v.Dwell > 0f)
+            {
+                v.Dwell -= dt;
+                if (v.Dwell <= 0f) { v.Dwelling = false; v.StopCooldown = Random.Range(25f, 60f); v.ServiceTarget = -1f; }
+                return 0f;
+            }
+            if (v.StopCooldown > 0f) { v.StopCooldown -= dt; return target; }
+            if (v.Path.Service == null) v.Path.FindService();
+            List<float> stops = v.Path.Service;
+            for (int k = 0; k < stops.Count; k++)
+            {
+                float ds = Mathf.Repeat(stops[k] - v.S, v.Path.Length);
+                if (ds > 34f) continue;
+                if (v.ServiceTarget != stops[k])
+                {
+                    v.ServiceTarget = stops[k];
+                    float chance = v.Type == AIVehicleType.BusTransco ? 0.9f : (v.Type == AIVehicleType.MinibusJaune || v.Type == AIVehicleType.MinibusBlanc ? 0.8f :
+                                   (v.Type == AIVehicleType.MotoTaxi ? 0.4f : 0.55f));
+                    v.WillStop = Random.value < chance;
+                }
+                if (!v.WillStop) continue;
+                target = Mathf.Min(target, Mathf.Max(0.6f, (ds - 1.5f) * 0.6f));
+                if (ds < 3f)
+                {
+                    target = 0f;
+                    if (v.Speed < 0.5f)
+                    {
+                        v.Dwell = v.Type == AIVehicleType.BusTransco ? Random.Range(8f, 14f) : Random.Range(4f, 9f);
+                        v.Dwelling = true;
+                        v.WillStop = false;
+                        if (CrowdSystem.Instance != null)
+                            CrowdSystem.Instance.Board(v.transform.position, v.Type == AIVehicleType.BusTransco ? Random.Range(3, 7) : (v.Type == AIVehicleType.MotoTaxi ? 1 : Random.Range(1, 4)));
+                    }
+                }
+                return target;
+            }
+            return target;
+        }
+
         private void FixedUpdate()
         {
             float dt = Time.fixedDeltaTime;
+            posCache.Clear();
+            for (int i = 0; i < Vehicles.Count; i++) posCache.Add(Vehicles[i] != null ? Vehicles[i].transform.position : new Vector3(1e6f, 0f, 1e6f));
             for (int i = Vehicles.Count - 1; i >= 0; i--)
             {
                 AIVehicle v = Vehicles[i];
-                if (v == null) { Vehicles.RemoveAt(i); continue; }
+                if (v == null) { Vehicles.RemoveAt(i); if (i < posCache.Count) posCache.RemoveAt(i); continue; }
                 if (v.Pursuing && v.PursuitTarget != null) { Pursue(v, dt); continue; }
                 if (v.Path == null) continue;
 
@@ -476,11 +597,22 @@ namespace BalulaMoto.Runtime
                         if (mustStop) target = Mathf.Min(target, Mathf.Max(0f, (ds - v.Length * 0.5f - 1.5f) * 0.6f));
                     }
                 }
+                bool stopping = false;
+                if (!v.Special && !v.BrokenDown && v.TakesClients)
+                {
+                    float before = target;
+                    target = ServeStops(v, target, dt);
+                    stopping = v.Dwelling || (v.WillStop && target < before);
+                }
+                // Le véhicule se range sur le côté droit pendant l'arrêt : les autres peuvent passer
+                v.Side = Mathf.MoveTowards(v.Side, stopping ? 2.6f : 0f, dt * 1.6f);
                 bool braking = target < v.Speed - 0.3f;
                 v.Speed = Mathf.MoveTowards(v.Speed, target, (braking ? 6f : 2.2f) * dt);
                 v.S += v.Speed * dt;
+                Vector3 pathDir = v.Path.DirectionAt(v.S);
                 Vector3 pos = v.Path.PositionAt(v.S);
-                Quaternion rot = Quaternion.Slerp(v.transform.rotation, Quaternion.LookRotation(v.Path.DirectionAt(v.S)), dt * 6f);
+                if (v.Side > 0.01f) pos += new Vector3(pathDir.z, 0f, -pathDir.x) * v.Side;
+                Quaternion rot = Quaternion.Slerp(v.transform.rotation, Quaternion.LookRotation(pathDir), dt * 6f);
                 if (v.Rb != null) { v.Rb.MovePosition(pos); v.Rb.MoveRotation(rot); }
                 else v.transform.SetPositionAndRotation(pos, rot);
                 v.UpdateVisuals(braking || v.Speed < 0.1f, dt);

@@ -570,7 +570,7 @@ namespace BalulaMoto.Runtime
             foreach (ImportedPath ip in map.trafficPaths)
             {
                 if (ip.points.Count < 4) continue;
-                TrafficPath tp = new TrafficPath { Name = ip.name };
+                TrafficPath tp = new TrafficPath { Name = ip.name, Major = ip.major };
                 tp.Points.AddRange(ip.points);
                 tp.Build();
                 w.TrafficPaths.Add(tp);

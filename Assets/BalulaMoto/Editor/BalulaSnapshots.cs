@@ -149,20 +149,68 @@ namespace BalulaMoto.EditorTools
                 return true;
             });
             steps.Add(() => { StartGame(game); return true; });
-            Wait(25f, 60);
-            steps.Add(() => { ShootAround(game, "depart"); return true; });
+            Wait(32f, 60);
+            steps.Add(() => { ShootAround(game, "depart"); ShootStopAndSigns(game, "depart"); return true; });
+            // Monuments (modèles MATULA DESIGN) : stade des Martyrs et tour de l'Échangeur
+            foreach (string mname in new[] { "Monument_StadeMartyrs", "Monument_TourEchangeur" })
+            {
+                string mn = mname;
+                steps.Add(() => { TeleportToObject(game, mn); return true; });
+                Wait(12f, 30);
+                steps.Add(() => { ShootMonument(game, mn); return true; });
+            }
+            // Rivière et pont les plus proches du centre
+            steps.Add(() => { TeleportToWater(game); return true; });
+            Wait(10f, 30);
+            steps.Add(() => { ShootStreet(game, "riviere"); return true; });
             // Chantier le plus proche (route en travaux)
             steps.Add(() => { TeleportToWorks(game); return true; });
             Wait(10f, 30);
             steps.Add(() => { ShootStreet(game, "chantier"); return true; });
-            // Deux autres quartiers (grandes avenues) : la ville pleine se reconstruit autour du joueur
-            for (int k = 0; k < 2; k++)
+            // Une grande avenue de jour, puis la même de nuit (lampadaires, fenêtres, phares)
+            steps.Add(() => { Teleport(game, 0); return true; });
+            Wait(22f, 40);
+            steps.Add(() => { ShootStreet(game, "avenue"); ShootStopAndSigns(game, "avenue"); return true; });
+            steps.Add(() =>
             {
-                int index = k;
-                steps.Add(() => { Teleport(game, index); return true; });
-                Wait(14f, 40);
-                steps.Add(() => { ShootStreet(game, "quartier" + (index + 2)); return true; });
-            }
+                if (game.Session != null) game.Session.Profile.minuteDuJour = 20.5f * 60f;
+                report.AppendLine();
+                report.AppendLine("Passage à 20 h 30 (nuit).");
+                return true;
+            });
+            Wait(16f, 40);
+            steps.Add(() =>
+            {
+                report.AppendLine("Niveau de nuit : " + Night.Level.ToString("0.00") + " — phares du joueur : " + (game.Director.Player != null && game.Director.Player.HeadlightsOn));
+                ShootStreet(game, "nuit");
+                return true;
+            });
+            // Essai du tricycle : démarrage à fond, puis virage ; on mesure l'inclinaison
+            steps.Add(() => { StartTricycle(game); return true; });
+            Wait(6f, 30);
+            steps.Add(() => { TrikeLog(game, "à l'arrêt"); GameplayDirector.TestInput = new DriveInput { Throttle = 1f }; return true; });
+            Wait(1.2f, 10);
+            steps.Add(() => { TrikeLog(game, "1,2 s après le démarrage (plein gaz)"); return true; });
+            Wait(2.5f, 10);
+            steps.Add(() =>
+            {
+                TrikeLog(game, "3,7 s (plein gaz)");
+                RaycastVehicle pl = game.Director.Player;
+                if (pl != null) Shoot("tricycle_demarrage", pl.transform.position + pl.transform.forward * 5.5f + pl.transform.right * 2.2f + Vector3.up * 1.5f, pl.transform.position + Vector3.up * 0.9f);
+                GameplayDirector.TestInput = new DriveInput { Throttle = 0.6f, Steer = 0.7f };
+                return true;
+            });
+            Wait(1.5f, 10);
+            steps.Add(() => { TrikeLog(game, "virage à droite (1,5 s)"); GameplayDirector.TestInput = new DriveInput { FrontBrake = 1f, RearBrake = 1f }; return true; });
+            Wait(2.5f, 10);
+            steps.Add(() =>
+            {
+                TrikeLog(game, "après freinage");
+                RaycastVehicle pl = game.Director.Player;
+                if (pl != null) Shoot("tricycle_apres_essai", pl.transform.position - pl.transform.forward * 6f + pl.transform.right * 2f + Vector3.up * 1.8f, pl.transform.position + Vector3.up * 0.9f);
+                GameplayDirector.TestInput = null;
+                return true;
+            });
         }
 
         // ------------------------------------------------------------------
@@ -177,6 +225,174 @@ namespace BalulaMoto.EditorTools
             if (game.Session != null) game.Session.Profile.minuteDuJour = 10f * 60f;
             if (game.Env != null) game.Env.SetWeather(WeatherKind.Soleil, true);
             report.AppendLine("Partie libre démarrée avec le véhicule : " + vid + " (10 h, soleil)");
+        }
+
+        private static float trikeMaxRoll;
+
+        private static void StartTricycle(BalulaGame game)
+        {
+            string vid = null;
+            foreach (VehicleDef d in game.Db.Vehicles) if (d.Kind == VehicleKind.Tricycle) { vid = d.id; break; }
+            report.AppendLine();
+            report.AppendLine("=== Essai du tricycle : " + (vid ?? "aucun tricycle dans les données") + " ===");
+            if (vid == null) return;
+            game.NewGame(GameMode.Libre, vid, "Essai tricycle");
+            if (game.Session != null) game.Session.Profile.minuteDuJour = 10f * 60f;
+            trikeMaxRoll = 0f;
+        }
+
+        private static void TrikeLog(BalulaGame game, string when)
+        {
+            RaycastVehicle pl = game.Director != null ? game.Director.Player : null;
+            if (pl == null) { report.AppendLine("   (pas de véhicule)"); return; }
+            Transform t = pl.transform;
+            // Roulis : angle entre l'axe droit du véhicule et l'horizontale ; tangage : idem pour l'axe avant
+            float roll = Mathf.Asin(Mathf.Clamp(t.right.y, -1f, 1f)) * Mathf.Rad2Deg;
+            float pitch = Mathf.Asin(Mathf.Clamp(t.forward.y, -1f, 1f)) * Mathf.Rad2Deg;
+            trikeMaxRoll = Mathf.Max(trikeMaxRoll, Mathf.Abs(roll));
+            report.AppendLine("   " + when + " : type " + pl.Kind + ", vitesse " + pl.SpeedKmh.ToString("0.0") + " km/h, roulis " + roll.ToString("0.0") + "°, tangage " + pitch.ToString("0.0") +
+                              "°, hauteur " + t.position.y.ToString("0.00") + " m, renversé " + pl.IsUpsideDown + ", accidenté " + pl.Crashed + " — roulis maximal mesuré " + trikeMaxRoll.ToString("0.0") + "°");
+        }
+
+        private static void TeleportToObject(BalulaGame game, string objectName)
+        {
+            GameObject g = GameObject.Find(objectName);
+            report.AppendLine();
+            if (g == null || game.Director == null) { report.AppendLine("=== " + objectName + " : absent de la carte ==="); return; }
+            // Sur la rue la plus proche du monument, à 60 m au moins
+            Vector3 c = g.transform.position;
+            Vector3 best = c + new Vector3(140f, 0f, 0f);
+            float bd = float.MaxValue;
+            foreach (TrafficPath tp in game.World.TrafficPaths)
+                foreach (Vector3 q in tp.Points)
+                {
+                    float d = (q - c).sqrMagnitude;
+                    if (d > 60f * 60f && d < bd) { bd = d; best = q; }
+                }
+            Vector3 look = c - best;
+            look.y = 0f;
+            game.Director.SpawnPlayer(new Vector3(best.x, 0.3f, best.z), Quaternion.LookRotation(look.normalized, Vector3.up));
+            report.AppendLine("=== " + objectName + " à " + c.ToString("F0") + " ; joueur placé à " + Mathf.Sqrt(bd).ToString("0") + " m ===");
+        }
+
+        private static void ShootMonument(BalulaGame game, string objectName)
+        {
+            GameObject g = GameObject.Find(objectName);
+            if (g == null) return;
+            Bounds b = new Bounds(g.transform.position, Vector3.zero);
+            int parts = 0;
+            foreach (Renderer r in g.GetComponentsInChildren<Renderer>()) { b.Encapsulate(r.bounds); parts++; }
+            report.AppendLine("Modèle : " + parts + " parties, boîte " + b.size.ToString("F0") + " m, centre " + b.center.ToString("F0") + ", rotation " + g.transform.eulerAngles.y.ToString("0") + "°");
+            string tag = objectName.Replace("Monument_", "").ToLowerInvariant();
+            float r0 = Mathf.Max(b.extents.x, b.extents.z);
+            Vector3 c = b.center;
+            Shoot(tag + "_vue_ensemble", c + new Vector3(r0 * 1.5f, Mathf.Max(60f, b.size.y * 0.9f), -r0 * 1.5f), c);
+            RaycastVehicle pl = game.Director != null ? game.Director.Player : null;
+            if (pl != null)
+            {
+                Vector3 p = pl.transform.position;
+                Shoot(tag + "_depuis_la_rue", p + Vector3.up * 1.7f, new Vector3(c.x, Mathf.Min(b.size.y * 0.5f, 30f), c.z));
+            }
+            // Devant la clôture : barreaux, arbres et monument à travers
+            Vector3 dir = new Vector3(1f, 0f, 0.35f).normalized;
+            Vector3 fence = new Vector3(c.x, 0f, c.z) + dir * (r0 + 22f);
+            Shoot(tag + "_cloture", fence + Vector3.up * 1.7f, new Vector3(c.x, 6f, c.z));
+            Shoot(tag + "_cloture_de_pres", new Vector3(c.x, 0f, c.z) + dir * (r0 + 14f) + Vector3.up * 1.6f + Vector3.Cross(Vector3.up, dir) * 6f, new Vector3(c.x, 2f, c.z) + dir * (r0 + 6f));
+        }
+
+        private static void TeleportToWater(BalulaGame game)
+        {
+            ImportedWorld map = Compat.FindFirst<ImportedWorld>();
+            report.AppendLine();
+            if (map == null || map.waterways == null || map.waterways.Count == 0 || game.Director == null) { report.AppendLine("=== riviere : aucun cours d'eau dans la carte ==="); return; }
+            // Point de rivière le plus proche d'une rue carrossable (là où un pont ou un passage existe)
+            Vector3 best = Vector3.zero, bestRoad = Vector3.zero;
+            float bd = float.MaxValue;
+            string name = "";
+            foreach (ImportedRoad w in map.waterways)
+            {
+                if (w.width < 4f) continue;
+                foreach (Vector2 q2 in w.pts)
+                {
+                    Vector3 q = new Vector3(q2.x, 0f, q2.y);
+                    if (q.magnitude > 3200f) continue;
+                    foreach (TrafficPath tp in game.World.TrafficPaths)
+                    {
+                        if (tp.Points.Count < 2 || (tp.Points[0] - q).sqrMagnitude > 900f * 900f) continue;
+                        foreach (Vector3 r in tp.Points)
+                        {
+                            float d = (r - q).sqrMagnitude;
+                            if (d < bd) { bd = d; best = q; bestRoad = r; name = w.name; }
+                        }
+                    }
+                }
+            }
+            if (bd == float.MaxValue) { report.AppendLine("=== riviere : aucune rue près d'un cours d'eau ==="); return; }
+            Vector3 look = best - bestRoad;
+            look.y = 0f;
+            if (look.sqrMagnitude < 1f) look = Vector3.forward;
+            Vector3 pos = bestRoad - look.normalized * 25f;
+            game.Director.SpawnPlayer(new Vector3(pos.x, 0.3f, pos.z), Quaternion.LookRotation(look.normalized, Vector3.up));
+            report.AppendLine("=== riviere « " + name + " » : " + map.waterways.Count + " cours d'eau dans la carte ; rue la plus proche à " + Mathf.Sqrt(bd).ToString("0") + " m ===");
+        }
+
+        private static void ShootStopAndSigns(BalulaGame game, string tag)
+        {
+            RaycastVehicle player = game.Director != null ? game.Director.Player : null;
+            if (player == null) return;
+            Vector3 p = player.transform.position;
+            report.AppendLine("Arrêts : " + (CrowdSystem.Instance != null ? CrowdSystem.Instance.StopPeople : -1) + " personnes aux arrêts proches (" + CrowdSystem.PerSide + " par côté) — poteaux électriques : " +
+                              (CityFill.Instance != null ? CityFill.Instance.PoleCount : -1) + " — carrefours avec plaques : " + (CityFill.Instance != null ? CityFill.Instance.SignCount : -1));
+            // Groupe d'arrêt le plus proche
+            Transform nearest = null;
+            float bd = float.MaxValue;
+            int count = 0;
+            if (CrowdSystem.Instance != null)
+                foreach (Transform ch in CrowdSystem.Instance.transform)
+                {
+                    if (!ch.name.StartsWith("Arret_")) continue;
+                    count++;
+                    float d = (ch.position - p).sqrMagnitude;
+                    if (d < bd) { bd = d; nearest = ch; }
+                }
+            if (nearest != null)
+            {
+                Vector3 c = nearest.position;
+                Shoot(tag + "_arret_foule", c + new Vector3(9f, 5.5f, 9f), c + Vector3.up * 1f);
+                Shoot(tag + "_arret_de_pres", c + nearest.forward * 4.5f + Vector3.up * 1.6f, c + Vector3.up * 1.2f);
+                report.AppendLine("Arrêt photographié à " + Mathf.Sqrt(bd).ToString("0") + " m du joueur (" + count + " personnes d'arrêt en tout)");
+            }
+            // Plaque de rue la plus proche
+            GameObject sign = null;
+            bd = float.MaxValue;
+            foreach (TextMesh tm in Compat.FindAll<TextMesh>())
+            {
+                if (tm == null || tm.transform.parent == null || tm.transform.parent.name != "Plaque") continue;
+                float d = (tm.transform.position - p).sqrMagnitude;
+                if (d < bd) { bd = d; sign = tm.gameObject; }
+            }
+            if (sign != null)
+            {
+                Vector3 c = sign.transform.position;
+                Vector3 n = sign.transform.forward;
+                Shoot(tag + "_plaque_de_rue", c - n * 2.6f + Vector3.up * -0.3f, c);
+                Shoot(tag + "_plaque_carrefour", c - n * 9f + Vector3.up * 0.5f + sign.transform.right * 3f, c + Vector3.up * -0.8f);
+                report.AppendLine("Plaque « " + sign.GetComponent<TextMesh>().text + " » à " + Mathf.Sqrt(bd).ToString("0") + " m");
+            }
+            // Un taxi ou un bus à l'arrêt, s'il y en a un
+            if (TrafficManager.Instance != null)
+            {
+                int dwell = 0;
+                AIVehicle shown = null;
+                foreach (AIVehicle v in TrafficManager.Instance.Vehicles)
+                    if (v != null && v.Dwelling) { dwell++; if (shown == null) shown = v; }
+                report.AppendLine("Véhicules arrêtés à un arrêt en ce moment : " + dwell);
+                if (shown != null)
+                {
+                    Vector3 c = shown.transform.position + Vector3.up;
+                    Shoot(tag + "_taxi_a_l_arret", c + shown.transform.right * -8f + shown.transform.forward * 5f + Vector3.up * 2.5f, c);
+                }
+            }
         }
 
         private static void Teleport(BalulaGame game, int index)
@@ -269,7 +485,7 @@ namespace BalulaMoto.EditorTools
             int carShots = 0;
             foreach (AIVehicle v in cars)
             {
-                if (carShots >= 12) break;
+                if (carShots >= 8) break;
                 if (seen.Contains(v.Type)) continue;
                 seen.Add(v.Type);
                 carShots++;

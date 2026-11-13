@@ -52,16 +52,19 @@ namespace BalulaMoto.EditorTools
             string p = assetPath.ToLowerInvariant();
             bool normal = p.Contains("_normal");
             ti.textureType = normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
+            bool opacity = p.Contains("_opacity");
             ti.mipmapEnabled = true;
-            ti.alphaIsTransparency = p.Contains("_opacity");
+            ti.alphaIsTransparency = opacity;
             ti.maxTextureSize = 1024;
+            // Sur téléphone : relief en 256, mèches de cheveux et cils en 512, couleur en 1024 (21 avatars en mémoire).
+            int phone = normal ? 256 : (opacity ? 512 : 1024);
             TextureImporterPlatformSettings android = ti.GetPlatformTextureSettings("Android");
             android.overridden = true;
-            android.maxTextureSize = normal ? 512 : 1024;
+            android.maxTextureSize = phone;
             ti.SetPlatformTextureSettings(android);
             TextureImporterPlatformSettings ios = ti.GetPlatformTextureSettings("iPhone");
             ios.overridden = true;
-            ios.maxTextureSize = normal ? 512 : 1024;
+            ios.maxTextureSize = phone;
             ti.SetPlatformTextureSettings(ios);
         }
 
@@ -92,12 +95,15 @@ namespace BalulaMoto.EditorTools
             public Def(string name, string category, bool female, bool child) { Name = name; Category = category; Female = female; Child = child; }
         }
 
-        // Avatars retenus : personnes à la peau foncée en priorité (population de Kinshasa), tenues de ville,
-        // ouvriers, infirmière, enfants et policier. Les uniformes militaires étrangers du pack sont exclus.
+        // Avatars retenus : tenues de ville, ouvriers, infirmière, enfants et policier ; tous ont un teint africain
+        // (population de Kinshasa) : les textures de peau claire du pack ont été assombries par
+        // scripts/africaniser_avatars.py. Les uniformes militaires étrangers du pack sont exclus.
         private static readonly Def[] Defs =
         {
             new Def("Business_Male_05", "Hommes", false, false),
             new Def("Male_Adult_04", "Hommes", false, false),
+            new Def("Male_Adult_09", "Hommes", false, false),
+            new Def("Male_Adult_10", "Hommes", false, false),
             new Def("Male_Adult_12", "Hommes", false, false),
             new Def("Male_Adult_17", "Hommes", false, false),
             new Def("Male_Adult_18", "Hommes", false, false),
@@ -108,6 +114,9 @@ namespace BalulaMoto.EditorTools
             new Def("Construction_Male_08", "Ouvriers", false, false),
             new Def("Business_Female_01", "Femmes", true, false),
             new Def("Female_Party_02", "Femmes", true, false),
+            new Def("Female_Adult_02", "Femmes", true, false),
+            new Def("Female_Adult_11", "Femmes", true, false),
+            new Def("Female_Adult_15", "Femmes", true, false),
             new Def("Medical_Female_01", "Sante", true, false),
             new Def("Female_Child_02", "Enfants", true, true),
             new Def("Male_Child_02", "Enfants", false, true),
@@ -350,6 +359,9 @@ namespace BalulaMoto.EditorTools
             Material head = MakeMaterial(d.Name + "_tete", lit, urp, Tex(folder, "_head_color"), Tex(folder, "_head_normal"), false);
             Texture2D opacityTex = Tex(folder, "_opacity_color");
             Material opacity = opacityTex != null ? MakeMaterial(d.Name + "_cheveux", lit, urp, opacityTex, null, true) : null;
+            // Accessoires ayant leur propre texture (casque, outils, équipement…) : sans cela ils prenaient la
+            // texture du corps (casque bleu à motifs au lieu de blanc).
+            Dictionary<string, Material> extras = new Dictionary<string, Material>();
 
             // Niveaux de détail fournis par Rocketbox : hipoly, midpoly, lowpoly, ultralowpoly
             List<Renderer> lod0 = new List<Renderer>(), lod1 = new List<Renderer>(), lod2 = new List<Renderer>(), lod3 = new List<Renderer>();
@@ -363,7 +375,10 @@ namespace BalulaMoto.EditorTools
                 for (int i = 0; i < mats.Length; i++)
                 {
                     string mn = mats[i] != null ? mats[i].name.ToLowerInvariant() : "";
-                    mats[i] = mn.Contains("opacity") && opacity != null ? opacity : (mn.Contains("head") ? head : body);
+                    if (mn.Contains("opacity") && opacity != null) { mats[i] = opacity; continue; }
+                    if (mn.Contains("head")) { mats[i] = head; continue; }
+                    if (mn.Contains("body")) { mats[i] = body; continue; }
+                    mats[i] = ExtraMaterial(d, folder, mn, extras, lit, urp) ?? body;
                 }
                 smr.sharedMaterials = mats;
                 smr.updateWhenOffscreen = false;
@@ -469,6 +484,23 @@ namespace BalulaMoto.EditorTools
             PrefabUtility.SaveAsPrefabAsset(root, outPath);
             Object.DestroyImmediate(root);
             return null;
+        }
+
+        /// <summary>Matériau d'un accessoire (« m102_helmet » → texture « m102_helmet_color »), ou null.</summary>
+        private static Material ExtraMaterial(Def d, string folder, string matName, Dictionary<string, Material> cache, Shader lit, bool urp)
+        {
+            string key = matName;
+            int sp = key.IndexOf(' ');
+            if (sp > 0) key = key.Substring(0, sp);
+            int us = key.LastIndexOf('_');
+            string part = us >= 0 ? key.Substring(us + 1) : key;
+            if (part.Length < 3) return null;
+            Material m;
+            if (cache.TryGetValue(part, out m)) return m;
+            Texture2D c = Tex(folder, "_" + part + "_color");
+            m = c != null ? MakeMaterial(d.Name + "_" + part, lit, urp, c, Tex(folder, "_" + part + "_normal"), false) : null;
+            cache[part] = m;
+            return m;
         }
 
         private static void SetShadows(List<Renderer> list, bool cast)

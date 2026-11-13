@@ -44,6 +44,215 @@ namespace BalulaMoto.Runtime
 
         public int Count { get { return peds.Count; } }
 
+        // ------------------------------------------------------------------
+        // Foules aux arrêts : beaucoup de personnes des deux côtés de la rue. Elles sont posées puis figées
+        // (maillage fixe, aucune animation à calculer) pour rester légères sur téléphone.
+        // ------------------------------------------------------------------
+        private class StopGroup
+        {
+            public ClientStop Stop;
+            public Vector3 Axis, Dir, Normal;
+            public float HalfWidth;
+            public readonly List<GameObject> People = new List<GameObject>();
+            public int Target;
+            public float Refill;
+        }
+        private static ImportedWorld mapRef;
+        private readonly Dictionary<ClientStop, StopGroup> stopGroups = new Dictionary<ClientStop, StopGroup>();
+        private readonly List<ClientStop> stopRemove = new List<ClientStop>();
+        private float stopTimer;
+        public int StopPeople { get; private set; }
+
+        /// <summary>Personnes par côté de rue à un arrêt, selon la qualité graphique.</summary>
+        public static int PerSide { get { return GameSettings.Quality == 0 ? 10 : (GameSettings.Quality == 1 ? 18 : 25); } }
+
+        private void UpdateStops(Vector3 pp)
+        {
+            stopTimer -= Time.unscaledDeltaTime;
+            bool scan = stopTimer <= 0f;
+            if (scan)
+            {
+                stopTimer = 0.5f;
+                foreach (ClientStop cs in ClientStop.All)
+                {
+                    if (cs == null || stopGroups.ContainsKey(cs)) continue;
+                    if ((cs.transform.position - pp).sqrMagnitude > 95f * 95f) continue;
+                    if (stopGroups.Count >= 4) break;
+                    StopGroup g = MakeGroup(cs);
+                    if (g != null) stopGroups[cs] = g;
+                }
+                stopRemove.Clear();
+                foreach (KeyValuePair<ClientStop, StopGroup> kv in stopGroups)
+                    if (kv.Key == null || (kv.Key.transform.position - pp).sqrMagnitude > 135f * 135f) stopRemove.Add(kv.Key);
+                foreach (ClientStop cs in stopRemove)
+                {
+                    foreach (GameObject go in stopGroups[cs].People) if (go != null) { Destroy(go); StopPeople--; }
+                    stopGroups.Remove(cs);
+                }
+            }
+            // Remplissage progressif : deux personnes par image au plus (pas d'à-coup)
+            int budget = 2;
+            foreach (KeyValuePair<ClientStop, StopGroup> kv in stopGroups)
+            {
+                StopGroup g = kv.Value;
+                if (g.Refill > 0f) { g.Refill -= Time.deltaTime; continue; }
+                while (budget > 0 && g.People.Count < g.Target)
+                {
+                    budget--;
+                    AddStopPerson(g);
+                }
+                if (budget <= 0) break;
+            }
+        }
+
+        private StopGroup MakeGroup(ClientStop cs)
+        {
+            Vector3 p = cs.transform.position;
+            StopGroup g = new StopGroup { Stop = cs, Target = PerSide * 2 };
+            // Rue la plus proche de l'arrêt : la foule se tient le long de ses deux bords
+            float best = 45f * 45f;
+            bool found = false;
+            if (mapRef != null)
+            {
+                Vector2 p2 = new Vector2(p.x, p.z);
+                foreach (ImportedRoad r in mapRef.roads)
+                {
+                    if (r.rank < 2) continue;
+                    for (int i = 0; i < r.pts.Count - 1; i++)
+                    {
+                        Vector2 a = r.pts[i], b = r.pts[i + 1];
+                        if (Mathf.Abs(a.x - p2.x) > 260f || Mathf.Abs(a.y - p2.y) > 260f) continue;
+                        Vector2 ab = b - a;
+                        float len2 = ab.sqrMagnitude;
+                        if (len2 < 0.01f) continue;
+                        float t = Mathf.Clamp01(Vector2.Dot(p2 - a, ab) / len2);
+                        Vector2 q = a + ab * t;
+                        float d = (q - p2).sqrMagnitude - r.rank * 4f;
+                        if (d >= best) continue;
+                        best = d;
+                        found = true;
+                        Vector2 dir = ab / Mathf.Sqrt(len2);
+                        g.Axis = new Vector3(q.x, 0f, q.y);
+                        g.Dir = new Vector3(dir.x, 0f, dir.y);
+                        g.Normal = new Vector3(-dir.y, 0f, dir.x);
+                        g.HalfWidth = r.width * 0.5f;
+                    }
+                }
+            }
+            if (!found)
+            {
+                // Piste d'essai ou arrêt loin de toute rue importée : petit groupe autour de l'arrêt
+                g.Axis = p;
+                g.Dir = cs.transform.right;
+                g.Normal = cs.transform.forward;
+                g.HalfWidth = 0.5f;
+                g.Target = Mathf.Min(g.Target, 12);
+            }
+            return g;
+        }
+
+        private void AddStopPerson(StopGroup g)
+        {
+            int index = g.People.Count;
+            float side = index % 2 == 0 ? 1f : -1f;
+            Vector3 pos = Vector3.zero;
+            bool ok = false;
+            for (int attempt = 0; attempt < 6 && !ok; attempt++)
+            {
+                float along = ((float)rnd.NextDouble() * 2f - 1f) * 17f;
+                float lateral = g.HalfWidth + 1.05f + (float)rnd.NextDouble() * (1.2f + attempt * 0.5f);
+                pos = g.Axis + g.Dir * along + g.Normal * side * lateral;
+                if (CityFill.IsBlocked(pos, 0.35f)) continue;
+                ok = true;
+                foreach (GameObject o in g.People)
+                    if (o != null && (o.transform.position - pos).sqrMagnitude < 0.45f * 0.45f) { ok = false; break; }
+            }
+            if (!ok) { g.People.Add(null); return; }
+            string outfit;
+            bool woman;
+            GameObject prefab = PickWalker(out outfit, out woman);
+            if (outfit == "police") { prefab = Pick("Hommes"); outfit = "civil"; }
+            if (prefab == null) { g.People.Add(null); return; }
+            pos.y = Ground(pos, 0f);
+            GameObject go = HumanLibrary.Instantiate(prefab, transform, transform.InverseTransformPoint(pos), woman && rnd.Next(10) < 6 ? "pagne" : outfit, false, seedCounter++, false);
+            go.name = "Arret_" + go.name;
+            go.transform.position = pos;
+            // La plupart regardent la rue (on guette le taxi), quelques-uns discutent ou regardent le téléphone
+            Vector3 look = -g.Normal * side;
+            float turn = ((float)rnd.NextDouble() - 0.5f) * 110f;
+            go.transform.rotation = Quaternion.AngleAxis(turn, Vector3.up) * Quaternion.LookRotation(look);
+            HumanFigure f = go.GetComponent<HumanFigure>();
+            if (f != null) f.enabled = false;
+            HumanAvatar av = go.GetComponent<HumanAvatar>();
+            if (av != null)
+            {
+                int k = rnd.Next(100);
+                HumanAction a = k < 34 ? HumanAction.Wait : (k < 58 ? HumanAction.Idle : (k < 76 ? HumanAction.Idle2 : (k < 88 ? HumanAction.Phone : (k < 95 ? HumanAction.Talk : HumanAction.Wave))));
+                if (raining && rnd.Next(3) == 0) a = HumanAction.Umbrella;
+                // La pose doit être calculée même hors du champ de la caméra, sinon le personnage serait figé bras en croix
+                if (av.Anim != null) av.Anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                av.Play(a, 0f, true);
+                if (a == HumanAction.Umbrella) HumanProps.HandProp(av, true);
+                else if (a == HumanAction.Phone) HumanProps.HandProp(av, false);
+                else if (woman && !av.Child && rnd.Next(100) < 14) HumanProps.Basin(av, rnd);
+            }
+            HumanLibrary.MakeStatic(go, false);
+            g.People.Add(go);
+            StopPeople++;
+        }
+
+        /// <summary>Un taxi ou un bus s'arrête : les personnes les plus proches montent (elles quittent le groupe)
+        /// et quelques passagers descendent et s'en vont à pied. Le groupe se reforme peu à peu.</summary>
+        public int Board(Vector3 vehiclePos, int count)
+        {
+            int boarded = 0;
+            foreach (KeyValuePair<ClientStop, StopGroup> kv in stopGroups)
+            {
+                StopGroup g = kv.Value;
+                if ((g.Axis - vehiclePos).sqrMagnitude > 30f * 30f) continue;
+                for (int n = 0; n < count; n++)
+                {
+                    int bestI = -1;
+                    float bestD = 12f * 12f;
+                    for (int i = 0; i < g.People.Count; i++)
+                    {
+                        if (g.People[i] == null) continue;
+                        float d = (g.People[i].transform.position - vehiclePos).sqrMagnitude;
+                        if (d < bestD) { bestD = d; bestI = i; }
+                    }
+                    if (bestI < 0) break;
+                    Destroy(g.People[bestI]);
+                    g.People.RemoveAt(bestI);
+                    StopPeople--;
+                    boarded++;
+                }
+                g.People.RemoveAll(o => o == null);
+                g.Refill = 6f + (float)rnd.NextDouble() * 8f;
+                break;
+            }
+            // Passagers qui descendent : des marcheurs partent du trottoir le plus proche
+            int alight = rnd.Next(0, 3);
+            for (int n = 0; n < alight && peds.Count < target + 6; n++)
+            {
+                List<Vector2Int> cell;
+                if (!grid.TryGetValue(KeyAt(vehiclePos), out cell) || cell.Count == 0) break;
+                Vector2Int ls = cell[0];
+                float bd = float.MaxValue;
+                foreach (Vector2Int c in cell)
+                {
+                    float d = (lanes[c.x].P[c.y] - vehiclePos).sqrMagnitude;
+                    if (d < bd) { bd = d; ls = c; }
+                }
+                if (bd > 18f * 18f) break;
+                Lane l = lanes[ls.x];
+                Vector3 a = l.P[ls.y], b = l.P[ls.y + 1];
+                Vector3 ab = b - a;
+                float t = ab.sqrMagnitude > 0.01f ? Mathf.Clamp01(Vector3.Dot(vehiclePos - a, ab) / ab.sqrMagnitude) : 0f;
+                SpawnWalker(ls, t, Vector3.Lerp(a, b, t));
+            }
+            return boarded;
+        }
+
         public static CrowdSystem Create(Transform parent, List<List<Vector3>> polylines)
         {
             GameObject g = new GameObject("Foule");
@@ -58,6 +267,7 @@ namespace BalulaMoto.Runtime
         public static List<List<Vector3>> CollectLanes(WorldContext w, ImportedWorld map)
         {
             List<List<Vector3>> list = new List<List<Vector3>>();
+            mapRef = map;
             if (map != null && map.walkPaths != null)
                 foreach (ImportedPath p in map.walkPaths)
                     if (p != null && p.points != null && p.points.Count >= 2) list.Add(new List<Vector3>(p.points));
@@ -161,6 +371,7 @@ namespace BalulaMoto.Runtime
             if (dt > 0f) playerSpeed = Mathf.Lerp(playerSpeed, (pp - lastPlayer).magnitude / dt, 0.2f);
             lastPlayer = pp;
 
+            UpdateStops(pp);
             spawnTimer -= Time.unscaledDeltaTime;
             if (spawnTimer <= 0f && peds.Count < target)
             {

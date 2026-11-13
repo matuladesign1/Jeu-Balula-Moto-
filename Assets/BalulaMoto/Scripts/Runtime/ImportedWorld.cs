@@ -29,6 +29,10 @@ namespace BalulaMoto.Runtime
         public List<Vector3> buildingSpots = new List<Vector3>();
         /// <summary>Routes en travaux (chaussée défoncée, barrières, sable, engins) choisies à l'import.</summary>
         public List<WorkZone> works = new List<WorkZone>();
+        /// <summary>Rivières, ruisseaux et canaux (tracés OpenStreetMap) : carte du jeu.</summary>
+        public List<ImportedRoad> waterways = new List<ImportedRoad>();
+        /// <summary>Terrains réservés (monuments clôturés) : x, z = centre, y = rayon. Ni parcelle ni poteau dedans.</summary>
+        public List<Vector3> clearZones = new List<Vector3>();
         [TextArea(3, 12)] public string report;
     }
 
