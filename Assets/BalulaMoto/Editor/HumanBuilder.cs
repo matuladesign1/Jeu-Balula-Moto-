@@ -344,10 +344,12 @@ namespace BalulaMoto.EditorTools
             SetShadows(lod2, false);
             SetShadows(lod3, false);
             List<LOD> lods = new List<LOD>();
-            if (lod0.Count > 0) lods.Add(new LOD(0.42f, lod0.ToArray()));
-            if (lod1.Count > 0) lods.Add(new LOD(0.16f, lod1.ToArray()));
-            if (lod2.Count > 0) lods.Add(new LOD(0.06f, lod2.ToArray()));
-            if (lod3.Count > 0) lods.Add(new LOD(0.012f, lod3.ToArray()));
+            // Seuils (hauteur à l'écran) : très près = haute définition (passagers), jusqu'à ~15 m = moyenne,
+            // ~45 m = légère, au-delà = très légère, puis masqué
+            if (lod0.Count > 0) lods.Add(new LOD(0.5f, lod0.ToArray()));
+            if (lod1.Count > 0) lods.Add(new LOD(0.1f, lod1.ToArray()));
+            if (lod2.Count > 0) lods.Add(new LOD(0.035f, lod2.ToArray()));
+            if (lod3.Count > 0) lods.Add(new LOD(0.008f, lod3.ToArray()));
             if (lods.Count == 0)
             {
                 Object.DestroyImmediate(root);

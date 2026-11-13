@@ -200,7 +200,8 @@ namespace BalulaMoto.Runtime
         // ------------------------------------------------------------------
         private bool FindSpot(Vector3 pp, out Vector2Int ls, out float t, out Vector3 pos)
         {
-            for (int attempt = 0; attempt < 8; attempt++)
+            Camera cam = Camera.main;
+            for (int attempt = 0; attempt < 10; attempt++)
             {
                 float ang = (float)rnd.NextDouble() * Mathf.PI * 2f;
                 float rad = Mathf.Lerp(SpawnMin, SpawnMax, Mathf.Sqrt((float)rnd.NextDouble()));
@@ -213,6 +214,15 @@ namespace BalulaMoto.Runtime
                 pos = Vector3.Lerp(l.P[ls.y], l.P[ls.y + 1], t);
                 float d = Vector3.Distance(new Vector3(pos.x, 0f, pos.z), new Vector3(pp.x, 0f, pp.z));
                 if (d < SpawnMin * 0.8f || d > DespawnDist * 0.9f) continue;
+                // Apparition hors du champ de la caméra quand c'est possible (pas de personnage qui surgit sous les yeux)
+                if (cam != null && attempt < 7 && d < 60f)
+                {
+                    Vector3 toPos = pos - cam.transform.position;
+                    toPos.y = 0f;
+                    Vector3 cf = cam.transform.forward;
+                    cf.y = 0f;
+                    if (toPos.sqrMagnitude > 0.01f && cf.sqrMagnitude > 0.01f && Vector3.Dot(cf.normalized, toPos.normalized) > 0.45f) continue;
+                }
                 return true;
             }
             ls = Vector2Int.zero;
