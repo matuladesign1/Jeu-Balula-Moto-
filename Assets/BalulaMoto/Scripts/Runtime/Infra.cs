@@ -307,8 +307,9 @@ namespace BalulaMoto.Runtime
             tm.anchor = TextAnchor.MiddleCenter;
             tm.alignment = TextAlignment.Center;
             tm.color = color;
-            if (Fonts.Default != null) mr.sharedMaterial = Fonts.Default.material;
+            if (Fonts.Default != null) mr.sharedMaterial = Fonts.TextMaterial;
             mr.shadowCastingMode = ShadowCastingMode.Off;
+            mr.receiveShadows = false;
         }
 
         /// <summary>Prisme extrudé selon X à partir d'un profil (Y,Z) — ralentisseurs, rampes.</summary>
@@ -376,6 +377,47 @@ namespace BalulaMoto.Runtime
                 }
                 return font;
             }
+        }
+
+        private static Material textMat;
+        private static bool textShaderMissing;
+        private static bool rebuildHooked;
+
+        /// <summary>Matériau du texte 3D : caché par ce qui se trouve devant lui et lisible d'un seul côté
+        /// (le matériau d'origine des polices dessine le texte par-dessus tout, des deux côtés).</summary>
+        public static Material TextMaterial
+        {
+            get
+            {
+                Font f = Default;
+                if (f == null) return null;
+                if (textMat == null && !textShaderMissing)
+                {
+                    Shader sh = Resources.Load<Shader>("BalulaMoto/Shaders/Texte3D");
+                    if (sh == null) sh = Shader.Find("BalulaMoto/Texte3D");
+                    if (sh != null && sh.isSupported)
+                    {
+                        textMat = new Material(sh);
+                        textMat.name = "Texte3D";
+                        textMat.enableInstancing = false;
+                        if (!rebuildHooked) { Font.textureRebuilt += OnFontTextureRebuilt; rebuildHooked = true; }
+                    }
+                    else
+                    {
+                        textShaderMissing = true;
+                        Debug.LogWarning("[BalulaMoto] Shader BalulaMoto/Texte3D absent : texte 3D avec le matériau de la police.");
+                    }
+                }
+                if (textMat == null) return f.material;
+                if (f.material != null && textMat.mainTexture != f.material.mainTexture) textMat.mainTexture = f.material.mainTexture;
+                return textMat;
+            }
+        }
+
+        // La texture d'une police dynamique est reconstruite quand de nouveaux caractères sont demandés.
+        private static void OnFontTextureRebuilt(Font f)
+        {
+            if (textMat != null && f != null && f == font && f.material != null) textMat.mainTexture = f.material.mainTexture;
         }
     }
 
