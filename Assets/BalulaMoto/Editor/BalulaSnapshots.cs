@@ -238,6 +238,29 @@ namespace BalulaMoto.EditorTools
             Shoot(tag + "_chauffeur_face", p + t.forward * 3.6f + Vector3.up * 1.6f, p + Vector3.up * 1.15f);
             Describe("Véhicule du joueur et chauffeur", player.gameObject, t.position + t.right * 2.6f);
 
+            // Un camion-citerne arrêté sur la voie la plus proche (pour vérifier ce nouveau modèle)
+            if (TrafficManager.Instance != null)
+            {
+                TrafficPath bestPath = null;
+                float bestS = 0f, bestD = float.MaxValue;
+                foreach (TrafficPath tp in game.World.TrafficPaths)
+                {
+                    if (tp == null || tp.Points.Count < 2) continue;
+                    float acc = 0f;
+                    for (int i = 0; i < tp.Points.Count - 1; i++)
+                    {
+                        float dd = (tp.Points[i] - p).sqrMagnitude;
+                        if (dd < bestD && dd > 400f) { bestD = dd; bestPath = tp; bestS = acc; }
+                        acc += Vector3.Distance(tp.Points[i], tp.Points[i + 1]);
+                    }
+                }
+                if (bestPath != null)
+                {
+                    AIVehicle tanker = TrafficManager.Instance.Spawn(AIVehicleType.CamionCiterne, bestPath, bestS, 0f);
+                    tanker.Special = true;
+                    report.AppendLine("Camion-citerne ajouté pour la photo à " + tanker.transform.position.ToString("F0"));
+                }
+            }
             // Circulation : le plus proche de chaque type
             List<AIVehicle> cars = new List<AIVehicle>();
             if (TrafficManager.Instance != null) foreach (AIVehicle v in TrafficManager.Instance.Vehicles) if (v != null) cars.Add(v);

@@ -202,9 +202,9 @@ namespace BalulaMoto.Runtime
             Prims.Box(root, "PoteauPanneau", p + new Vector3(0f, 0.9f, 0f), new Vector3(0.08f, 1.8f, 0.08f), Dark);
             GameObject board = Prims.Box(root, "Panneau", p + new Vector3(0f, 1.75f, 0f), new Vector3(1.3f, 0.9f, 0.05f), Yellow, true);
             board.transform.localRotation = q;
-            GameObject t1 = Prims.Label(root, "TRAVAUX", p + q * new Vector3(0f, 1.92f, -0.04f) , 0.045f, Dark, false);
+            GameObject t1 = Prims.Label(root, "TRAVAUX", p + q * new Vector3(0f, 1.92f, -0.04f), 0.032f, Dark, false);
             t1.transform.localRotation = q;
-            GameObject t2 = Prims.Label(root, "RALENTIR", p + q * new Vector3(0f, 1.58f, -0.04f), 0.03f, Red, false);
+            GameObject t2 = Prims.Label(root, "RALENTIR", p + q * new Vector3(0f, 1.58f, -0.04f), 0.024f, Red, false);
             t2.transform.localRotation = q;
         }
     }

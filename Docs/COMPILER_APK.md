@@ -71,3 +71,13 @@ Ouvrez l'exécution en rouge dans l'onglet **Actions**, puis l'étape en échec 
   toutes les compilations, pour pouvoir mettre à jour le jeu sans le désinstaller. Ce n'est pas une clé secrète :
   pour le Google Play Store, il faudra une clé de publication privée (gardée hors du dépôt, dans les secrets GitHub)
   et un fichier `.aab` (étape ultérieure).
+- Graphismes : **OpenGL ES 3 seulement** (pas de Vulkan, mal pris en charge par de nombreux téléphones à petit prix),
+  personnages animés par le processeur, pas d'instanciation GPU.
+
+## Photos de contrôle (facultatif)
+
+Onglet **Actions > « Photos de contrôle » > Run workflow** : le jeu est lancé dans Unity sur le serveur (écran
+virtuel), une partie démarre, puis une trentaine de photos sont prises (garage, chauffeur, chaque type de véhicule,
+piétons, station-service, chantier, rues, vues aériennes) avec un rapport technique `rapport.txt`. Les photos sont
+dans l'artefact « BalulaMoto-photos » de la tâche et dans la branche `ci-photos` du dépôt. Elles servent à vérifier
+l'affichage avant de publier un APK ; le rendu du serveur (logiciel) peut différer légèrement de celui d'un téléphone.

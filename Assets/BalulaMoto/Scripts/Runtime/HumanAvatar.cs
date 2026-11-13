@@ -80,10 +80,45 @@ namespace BalulaMoto.Runtime
             if (Anim != null) Anim.speed = speed;
         }
 
-        /// <summary>Fige la pose actuelle (conducteurs de la circulation) : plus aucun calcul d'animation.</summary>
+        private bool baked;
+
+        /// <summary>Fige la pose actuelle (conducteurs et passagers de la circulation) : plus aucun calcul d'animation,
+        /// et le corps est « cuit » en maillage fixe (plus de déformation à chaque image, coûteuse sur téléphone).</summary>
         public void Freeze()
         {
             if (Anim != null) Anim.enabled = false;
+            if (baked) return;
+            baked = true;
+            LODGroup lg = GetComponent<LODGroup>();
+            LOD[] lods = lg != null ? lg.GetLODs() : null;
+            foreach (SkinnedMeshRenderer smr in GetComponentsInChildren<SkinnedMeshRenderer>())
+            {
+                if (smr == null || !smr.enabled || smr.sharedMesh == null) continue;
+                Mesh m = new Mesh { name = smr.sharedMesh.name + "_fige" };
+                smr.BakeMesh(m, true);
+                m.RecalculateBounds();
+                Transform st = smr.transform;
+                GameObject go = new GameObject(smr.name + "_fige");
+                go.transform.SetParent(st.parent, false);
+                go.transform.localPosition = st.localPosition;
+                go.transform.localRotation = st.localRotation;
+                go.transform.localScale = st.localScale;
+                go.layer = smr.gameObject.layer;
+                go.AddComponent<MeshFilter>().sharedMesh = m;
+                MeshRenderer mr = go.AddComponent<MeshRenderer>();
+                mr.sharedMaterials = smr.sharedMaterials;
+                mr.shadowCastingMode = smr.shadowCastingMode;
+                mr.receiveShadows = smr.receiveShadows;
+                go.AddComponent<MeshCleanup>().Target = m;
+                smr.enabled = false;
+                if (lods == null) continue;
+                for (int i = 0; i < lods.Length; i++)
+                {
+                    Renderer[] rs = lods[i].renderers;
+                    for (int k = 0; k < rs.Length; k++) if (rs[k] == smr) rs[k] = mr;
+                }
+            }
+            if (lg != null && lods != null) lg.SetLODs(lods);
         }
 
         public Vector3 HeadTopWorld()

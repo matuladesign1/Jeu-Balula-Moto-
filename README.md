@@ -22,6 +22,21 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
 - **Carte** : mini-carte et carte plein écran avec légende.
 - **Sauvegardes automatiques** (carrière et libre séparées).
 
+### Nouveautés de la version 4.1
+
+- **Personnages vraiment visibles** (chauffeur, piétons, passagers, chauffeur du garage). Cause trouvée grâce à des photos prises automatiquement dans le jeu : nos avatars n'ont qu'un niveau de détail, qui n'était dessiné que lorsqu'il occupait la moitié de l'écran (à moins de 3 m environ) ; au-delà, seul le casque ou le foulard restait affiché. Le seuil est corrigé (personnages visibles jusqu'à environ 140 m).
+- **Véhicules entiers** : vitres, montants et toit des taxis, minibus, bus, berlines et camions manquaient (un calcul donnait une valeur invalide et Unity rejetait toute la partie haute). Corrigé.
+- **Téléphones Android** : affichage en OpenGL ES 3 seulement (les pilotes Vulkan de nombreux téléphones à petit prix dessinent mal certains objets), sans instanciation GPU, personnages animés par le processeur.
+- **Musique de fond originale** : quatre morceaux instrumentaux (rumba, sebene, ndombolo) composés pour le jeu et générés par programme, enchaînés en fondu ; réglage **Paramètres > Musique** (0 % = coupée). L'ancien bruit de ville en boucle de 3 s (qui « accrochait ») est remplacé par une ambiance plus longue, seulement pendant la partie.
+- **Stations-service** comme sur vos photos : auvent blanc à bande rouge, îlots de pompes, distributeurs, boutique vitrée, totem avec le prix du litre, éclairage la nuit. Marque **fictive « BALULA ÉNERGIE »** (aucun logo réel). Chaque station est posée au bord de la rue la plus proche et face à elle.
+- **Nouveaux véhicules** dans la circulation : **camion-citerne** (générique, sans marque), pick-up double cabine (souvent chargé de sacs), 4x4, tricycle-taxi.
+- **Courses** : surtout des petites courses de 1 à 2 km (65 %), des moyennes (25 %) et quelques longues (10 %, jamais plus de 9 km de route environ) ; prix au kilomètre un peu réduit.
+- **Routes en travaux** (une quarantaine, réparties dans la ville) : chaussée défoncée (sable, gravier, bosses), barrières rouge et blanc, cônes, tas de sable qui mordent sur la route, pelleteuse, panneaux « TRAVAUX — RALENTIR », ouvriers ; la circulation y roule au pas.
+- **Caniveaux** en béton des deux côtés des rues goudronnées et des grandes avenues, **accotements** de terre tassée, **bordures peintes rouge et blanc** sur les boulevards. Rouler dans un caniveau secoue et freine la moto.
+- **Terre marron foncé** : le sol est découpé en dalles (sur téléphone, un sol d'une seule pièce apparaissait bleu-gris clair, noyé dans le brouillard) ; les rues en terre sont plus foncées.
+- **« Tunnels »** : les bâtiments OpenStreetMap posés en travers d'une chaussée (on roulait à travers leurs murs) ne sont plus construits.
+- **Paramètres** : le modèle du téléphone et sa carte graphique sont affichés en bas (utile pour me signaler un problème d'affichage).
+
 ### Nouveautés de la version 4.0
 
 - **Menu « garage »** (comme la première photo d'exemple) : garage 3D (briques, rideau métallique, établi, pneus, fûts, néons, affiches), votre moto exposée et votre **chauffeur debout à côté** ; tuiles **ACHETER**, **AMÉLIORER**, **PERSONNALISER**, **CHAUFFEUR**, **MISSIONS**, bouton **GARAGE**, argent, niveau, jauge de carburant et grand bouton **ROULER**.
@@ -89,7 +104,7 @@ Données © les contributeurs d'OpenStreetMap, licence ODbL (attribution affich�
 - **Compilation** : le code est vérifié par analyse statique ; la compilation Unity se fait dans le cloud. Les éventuelles erreurs apparaissent dans le journal GitHub Actions et sont corrigées au fur et à mesure.
 - **Personnages** : réalistes (Rocketbox), mais le pack libre contient peu de femmes africaines (3 modèles adultes) : les variantes viennent des foulards, bassines, animations et tailles. Des modèles supplémentaires (scans ou achats sous licence) pourront être ajoutés dans `ThirdParty`.
 - **Véhicules et bâtiments** : carrosseries lisses générées par le code (pas de modèles de marque) ; bâtiments OSM en volumes simples. Chaque véhicule du joueur a un emplacement prévu (`prefabRessource`) pour brancher un modèle Blender final (voir `Docs/FEUILLE_DE_ROUTE.md`).
-- **Sons** de synthèse ; musique originale à commander (aucune chanson commerciale).
+- **Sons** de synthèse (moteurs, klaxons, ambiance) ; **musique** originale générée par programme pour le jeu (aucune chanson commerciale). Des morceaux enregistrés par des musiciens pourront remplacer les fichiers de `Resources/BalulaMoto/Musique` (licence à obtenir).
 - **Marques** : les noms de modèles réels (TVS, Bajaj, Honda, Yamaha…) devront être licenciés ou remplacés par des noms fictifs avant une sortie commerciale. Je ne suis pas juriste : faites valider ce point.
 - **Prix et taux** (carburant, change, tarifs) : valeurs datées dans `economy.json`, à mettre à jour.
 

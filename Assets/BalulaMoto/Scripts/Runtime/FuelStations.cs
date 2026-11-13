@@ -17,7 +17,7 @@ namespace BalulaMoto.Runtime
         private static readonly Color White = new Color(0.95f, 0.95f, 0.93f);
         private static readonly Color Red = new Color(0.84f, 0.08f, 0.1f);
         private static readonly Color DarkRed = new Color(0.5f, 0.04f, 0.05f);
-        private static readonly Color Concrete = new Color(0.6f, 0.6f, 0.58f);
+        private static readonly Color Concrete = new Color(0.5f, 0.5f, 0.48f);
         private static readonly Color Curb = new Color(0.78f, 0.78f, 0.75f);
         private static readonly Color Dark = new Color(0.07f, 0.08f, 0.1f);
         private static readonly Color Glass = new Color(0.1f, 0.2f, 0.24f);
