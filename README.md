@@ -35,7 +35,7 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
   lumière sur la chaussée, fenêtres et ampoules allumées dans les parcelles et les bâtiments, enseignes des boutiques.
 - **Phares** : chaque véhicule de la circulation allume ses phares et ses feux arrière quand il fait noir (faisceau sur
   la route) ; les phares du joueur s'allument aussi tout seuls à la tombée de la nuit.
-- **Rivières, ruisseaux et canaux** d'OpenStreetMap (tracés réels, eau brune et berges de boue) et **ponts** : les
+- **Rivières, ruisseaux et canaux** d'OpenStreetMap (tracés réels, eau sombre et trouble, berges de boue) et **ponts** : les
   tronçons de route marqués « pont » dans OpenStreetMap ont des parapets et des garde-corps.
 - **Circulation dense** : environ 80 véhicules autour du joueur (100 aux heures de pointe), surtout sur les avenues et
   le goudron ; chaque véhicule est allégé (pièces fusionnées) pour tenir sur téléphone.

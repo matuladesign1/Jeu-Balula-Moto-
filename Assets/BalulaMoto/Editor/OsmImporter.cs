@@ -1279,8 +1279,9 @@ namespace BalulaMoto.EditorTools
                     Emit(root, "Berges_" + kv.Key, kv.Value, Mat(mats, "Berge", shader, new Color(0.19f, 0.15f, 0.1f), matAsset, ref firstMat), meshAsset, ref firstMesh, false, ref idx);
                     continue;
                 }
-                // Eau des rivières de Kinshasa : brun-vert, chargée de terre
-                GameObject ag = Emit(root, (water ? "Eau_" : "Verdure_") + kv.Key, kv.Value, Mat(mats, water ? "Eau" : "Verdure", shader, water ? new Color(0.2f, 0.22f, 0.15f) : new Color(0.3f, 0.48f, 0.2f), matAsset, ref firstMat), meshAsset, ref firstMesh, water, ref idx);
+                // Eau des rivières de Kinshasa : sombre, gris-vert trouble (même famille que le fleuve, en plus foncé).
+                // Plus claire et plus lisse, elle renvoyait le soleil et ressemblait à une allée crème vue d'en haut.
+                GameObject ag = Emit(root, (water ? "Eau_" : "Verdure_") + kv.Key, kv.Value, Mat(mats, water ? "Eau" : "Verdure", shader, water ? new Color(0.14f, 0.18f, 0.16f) : new Color(0.3f, 0.48f, 0.2f), matAsset, ref firstMat), meshAsset, ref firstMesh, water, ref idx);
                 // L'eau ralentit comme la boue (on ne roule pas dans une rivière comme sur une route)
                 if (water) ag.AddComponent<SurfaceZone>().Kind = SurfaceKind.Boue;
             }
@@ -1767,7 +1768,7 @@ namespace BalulaMoto.EditorTools
             if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c);
             // Lissé : « _Smoothness » (URP) et « _Glossiness » (Standard). Sans le second, le Standard gardait 0,5 :
             // sol, routes et murs brillaient et reflétaient le ciel (terre éclaircie, reflets bleu-gris).
-            float smooth = key.StartsWith("RouteGoudron") ? 0.25f : (key == "Eau" ? 0.5f : (key == "GrilleFer" ? 0.35f : 0.08f));
+            float smooth = key.StartsWith("RouteGoudron") ? 0.25f : (key == "Eau" ? 0.35f : (key == "GrilleFer" ? 0.35f : 0.08f));
             if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", smooth);
             if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", smooth);
             // Pas d'instanciation GPU : sur certains téléphones Android (PowerVR, Adreno), les objets instanciés ne sont pas dessinés

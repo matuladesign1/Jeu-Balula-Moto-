@@ -315,7 +315,9 @@ namespace BalulaMoto.EditorTools
             report.AppendLine();
             if (map == null || map.waterways == null || map.waterways.Count == 0 || game.Director == null) { report.AppendLine("=== riviere : aucun cours d'eau dans la carte ==="); return; }
             // Point de rivière le plus proche d'une rue carrossable (là où un pont ou un passage existe)
-            Vector3 best = Vector3.zero, bestRoad = Vector3.zero;
+            Vector3 best = Vector3.zero;
+            TrafficPath bestPath = null;
+            int bestIdx = 0;
             float bd = float.MaxValue;
             string name = "";
             foreach (ImportedRoad w in map.waterways)
@@ -328,21 +330,37 @@ namespace BalulaMoto.EditorTools
                     foreach (TrafficPath tp in game.World.TrafficPaths)
                     {
                         if (tp.Points.Count < 2 || (tp.Points[0] - q).sqrMagnitude > 900f * 900f) continue;
-                        foreach (Vector3 r in tp.Points)
+                        for (int i = 0; i < tp.Points.Count; i++)
                         {
-                            float d = (r - q).sqrMagnitude;
-                            if (d < bd) { bd = d; best = q; bestRoad = r; name = w.name; }
+                            float d = (tp.Points[i] - q).sqrMagnitude;
+                            if (d < bd) { bd = d; best = q; bestPath = tp; bestIdx = i; name = w.name; }
                         }
                     }
                 }
             }
-            if (bd == float.MaxValue) { report.AppendLine("=== riviere : aucune rue près d'un cours d'eau ==="); return; }
-            Vector3 look = best - bestRoad;
+            if (bestPath == null) { report.AppendLine("=== riviere : aucune rue près d'un cours d'eau ==="); return; }
+            // Sur la rue, 18 m avant l'endroit où elle croise (ou longe) la rivière, en regardant vers elle :
+            // les photos montrent l'eau, les berges et le pont éventuel au lieu d'un mur de parcelle.
+            List<Vector3> pts = bestPath.Points;
+            int iPrev = Mathf.Max(0, bestIdx - 1), iNext = Mathf.Min(pts.Count - 1, bestIdx + 1);
+            Vector3 look = pts[iNext] - pts[iPrev];
             look.y = 0f;
-            if (look.sqrMagnitude < 1f) look = Vector3.forward;
-            Vector3 pos = bestRoad - look.normalized * 25f;
-            game.Director.SpawnPlayer(new Vector3(pos.x, 0.3f, pos.z), Quaternion.LookRotation(look.normalized, Vector3.up));
-            report.AppendLine("=== riviere « " + name + " » : " + map.waterways.Count + " cours d'eau dans la carte ; rue la plus proche à " + Mathf.Sqrt(bd).ToString("0") + " m ===");
+            if (look.sqrMagnitude < 0.01f) look = best - pts[bestIdx];
+            look.y = 0f;
+            if (look.sqrMagnitude < 0.01f) look = Vector3.forward;
+            look.Normalize();
+            Vector3 pos = pts[bestIdx];
+            float walked = 0f;
+            for (int i = bestIdx; i > 0 && walked < 18f; i--)
+            {
+                float seg = Vector3.Distance(pts[i], pts[i - 1]);
+                if (walked + seg >= 18f) { pos = Vector3.Lerp(pts[i], pts[i - 1], (18f - walked) / Mathf.Max(seg, 0.01f)); walked = 18f; break; }
+                walked += seg;
+                pos = pts[i - 1];
+            }
+            if (walked < 1f) pos = pts[bestIdx] - look * 18f;
+            game.Director.SpawnPlayer(new Vector3(pos.x, 0.3f, pos.z), Quaternion.LookRotation(look, Vector3.up));
+            report.AppendLine("=== riviere « " + name + " » : " + map.waterways.Count + " cours d'eau dans la carte ; rue la plus proche à " + Mathf.Sqrt(bd).ToString("0") + " m ; joueur sur la rue, 18 m avant ===");
         }
 
         private static void TeleportToStop(BalulaGame game)
