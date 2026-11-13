@@ -194,6 +194,9 @@
     {
       "id": "stade-martyrs",
       "nom": "Stade des Martyrs",
+      "latModele": -4.3301806,
+      "lonModele": 15.3107769,
+      "sourceModele": "Repère envoyé par le créateur (maps.app.goo.gl/tcXupmqsgkk9HbXHA) pour poser le modèle 3D du stade",
       "nomLocal": "Stade des Martyrs de la Pentecôte",
       "categorie": "sport",
       "commune": "Lingwala",
@@ -421,6 +424,9 @@
     {
       "id": "tour-echangeur",
       "nom": "Tour de l'Échangeur",
+      "latModele": -4.3744201,
+      "lonModele": 15.3459008,
+      "sourceModele": "Repère envoyé par le créateur (maps.app.goo.gl/b4JZYVAgmaUuoEPt8) pour poser le modèle 3D de la tour",
       "nomLocal": "Tour des Héros nationaux",
       "categorie": "monument",
       "commune": "Limete",

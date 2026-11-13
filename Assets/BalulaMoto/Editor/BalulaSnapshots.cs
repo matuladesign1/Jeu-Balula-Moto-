@@ -171,6 +171,12 @@ namespace BalulaMoto.EditorTools
             steps.Add(() => { Teleport(game, 0); return true; });
             Wait(22f, 40);
             steps.Add(() => { ShootStreet(game, "avenue"); ShootStopAndSigns(game, "avenue"); return true; });
+            // Un arrêt : foule des deux côtés, taxis et bus qui s'arrêtent
+            steps.Add(() => { TeleportToStop(game); return true; });
+            Wait(26f, 60);
+            steps.Add(() => { ShootStopAndSigns(game, "arret"); return true; });
+            Wait(22f, 40);
+            steps.Add(() => { ShootStopAndSigns(game, "arret2"); return true; });
             steps.Add(() =>
             {
                 if (game.Session != null) game.Session.Profile.minuteDuJour = 20.5f * 60f;
@@ -334,6 +340,37 @@ namespace BalulaMoto.EditorTools
             Vector3 pos = bestRoad - look.normalized * 25f;
             game.Director.SpawnPlayer(new Vector3(pos.x, 0.3f, pos.z), Quaternion.LookRotation(look.normalized, Vector3.up));
             report.AppendLine("=== riviere « " + name + " » : " + map.waterways.Count + " cours d'eau dans la carte ; rue la plus proche à " + Mathf.Sqrt(bd).ToString("0") + " m ===");
+        }
+
+        private static void TeleportToStop(BalulaGame game)
+        {
+            RaycastVehicle player = game.Director != null ? game.Director.Player : null;
+            report.AppendLine();
+            if (player == null) return;
+            Vector3 p = player.transform.position;
+            // Arrêt le plus proche situé au bord d'une grande rue (là où passent taxis et bus)
+            ClientStop best = null;
+            Vector3 bestRoad = Vector3.zero, bestDir = Vector3.forward;
+            float bd = float.MaxValue;
+            foreach (ClientStop cs in ClientStop.All)
+            {
+                if (cs == null) continue;
+                Vector3 c = cs.transform.position;
+                foreach (TrafficPath tp in game.World.TrafficPaths)
+                {
+                    if (!tp.Major || tp.Points.Count < 2) continue;
+                    for (int i = 0; i < tp.Points.Count - 1; i++)
+                    {
+                        if ((tp.Points[i] - c).sqrMagnitude > 12f * 12f) continue;
+                        float d = (c - p).sqrMagnitude;
+                        if (d < bd) { bd = d; best = cs; bestRoad = tp.Points[i]; bestDir = (tp.Points[i + 1] - tp.Points[i]).normalized; }
+                    }
+                }
+            }
+            if (best == null) { report.AppendLine("=== arret : aucun arrêt au bord d'une grande rue ==="); return; }
+            Vector3 pos = bestRoad - bestDir * 22f;
+            game.Director.SpawnPlayer(new Vector3(pos.x, 0.3f, pos.z), Quaternion.LookRotation(bestDir, Vector3.up));
+            report.AppendLine("=== arret « " + (best.Place != null ? best.Place.Name : "?") + " » à " + best.transform.position.ToString("F0") + " (" + Mathf.Sqrt(bd).ToString("0") + " m) ===");
         }
 
         private static void ShootStopAndSigns(BalulaGame game, string tag)

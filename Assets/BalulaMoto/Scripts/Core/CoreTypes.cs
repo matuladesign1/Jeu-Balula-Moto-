@@ -230,6 +230,10 @@ namespace BalulaMoto.Core
         public double lon;
         public string statutCoordonnees;
         public string sourceCoordonnees;
+        /// <summary>Emplacement indiqué par le créateur pour poser un modèle 3D (0 = non indiqué).</summary>
+        public double latModele;
+        public double lonModele;
+        public string sourceModele;
         public string description;
         public List<string> references;
         public string acces;

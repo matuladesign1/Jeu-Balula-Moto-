@@ -338,6 +338,8 @@ namespace BalulaMoto.Runtime
             if (text.Length > 26) text = text.Substring(0, 25) + "…";
             Vector3 r = new Vector3(dir2.x, 0f, dir2.y), f = new Vector3(-dir2.y, 0f, dir2.x), u = Vector3.up;
             float hw = Mathf.Clamp(0.05f * text.Length + 0.12f, 0.35f, 1.5f);
+            // La plaque part du poteau (en drapeau) : le poteau ne coupe pas le nom
+            center += r * (hw + 0.07f);
             md.Box(center, r, u, f, new Vector3(hw + 0.03f, 0.15f, 0.012f), 18, 18);   // liseré blanc
             md.Box(center, r, u, f, new Vector3(hw, 0.125f, 0.016f), 6, 6);            // plaque bleue
             md.Panel(center - u * 0.15f - f * 0.001f, r, f, hw + 0.03f, 0.012f, 18);

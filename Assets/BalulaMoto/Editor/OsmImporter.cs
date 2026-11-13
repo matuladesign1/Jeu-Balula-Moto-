@@ -365,7 +365,7 @@ namespace BalulaMoto.EditorTools
             public float Corner;           // rayon des angles (Hx = Hz = Corner : terrain rond)
             public float ModelHx, ModelHz; // demi-emprise du modèle (les arbres restent autour)
             public float Yaw, Sink;
-            public string Note;
+            public string Note, Where;
 
             public Vector2 Z { get { return new Vector2(-X.y, X.x); } }
 
@@ -498,8 +498,22 @@ namespace BalulaMoto.EditorTools
                 double fx, fz;
                 GeoProjection.ToLocal(loc.lat, loc.lon, originLat, originLon, out fx, out fz);
                 Vector2 p = new Vector2((float)fx, (float)fz);
+                string where = "coordonnées de référence";
+                if (loc.latModele != 0.0 || loc.lonModele != 0.0)
+                {
+                    // Repère du créateur : retenu s'il laisse la place du monument (sinon la référence déjà vérifiée)
+                    GeoProjection.ToLocal(loc.latModele, loc.lonModele, originLat, originLon, out fx, out fz);
+                    Vector2 pin = new Vector2((float)fx, (float)fz);
+                    float cPin = RoadClearance(carriage, carriageHw, pin), cRef = RoadClearance(carriage, carriageHw, p);
+                    if (loc.id != "tour-echangeur" || cPin >= 24f || cPin >= cRef)
+                    {
+                        where = "repère du créateur (à " + Vector2.Distance(pin, p).ToString("0") + " m de la référence)";
+                        p = pin;
+                    }
+                    else where = "référence vérifiée (le repère du créateur, à " + Vector2.Distance(pin, p).ToString("0") + " m, tombe à " + cPin.ToString("0") + " m d'une chaussée : pas la place de la tour)";
+                }
                 if (!InRange(p)) { report.Append("Monument « ").Append(loc.nom).Append(" » : hors de la zone importée, non posé.\n"); continue; }
-                Enclosure e = new Enclosure { Id = loc.id, Name = loc.nom, C = p, X = new Vector2(1f, 0f) };
+                Enclosure e = new Enclosure { Id = loc.id, Name = loc.nom, C = p, X = new Vector2(1f, 0f), Where = where };
                 if (loc.id == "stade-martyrs")
                 {
                     e.Model = "StadeMartyrs";
@@ -633,7 +647,7 @@ namespace BalulaMoto.EditorTools
                 trees++;
             }
             report.Append("Monument « ").Append(e.Name).Append(" » : modèle ").Append(e.Model).Append(" posé à (").Append(e.C.x.ToString("0")).Append(", ").Append(e.C.y.ToString("0"))
-                  .Append("), angle ").Append(e.Yaw.ToString("0")).Append("° — ").Append(e.Note).Append(". Clôture de barreaux : ").Append(fenceLen.ToString("0")).Append(" m, ")
+                  .Append("), angle ").Append(e.Yaw.ToString("0")).Append("° — emplacement : ").Append(e.Where).Append(" ; ").Append(e.Note).Append(". Clôture de barreaux : ").Append(fenceLen.ToString("0")).Append(" m, ")
                   .Append(gates).Append(" ouverture(s), ").Append(trees).Append(" arbres.\n");
         }
 
