@@ -1,0 +1,121 @@
+# BALULA MOTO — photos de contrôle : le jeu est lancé dans l'éditeur Unity (écran virtuel, rendu logiciel),
+# une partie démarre, puis des photos sont prises (garage, chauffeur, circulation, piétons, station, rues) avec un
+# rapport technique. Sert à vérifier l'affichage avant de publier un APK. Lancement manuel uniquement.
+name: Photos de contrôle
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: photos-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  photos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - name: Vérifier les identifiants Unity
+        env:
+          U: ${{ secrets.UNITY_USERNAME }}
+          P: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [ -z "$U" ] || [ -z "$P" ]; then
+            echo "::error title=Secrets Unity manquants::Ajoutez UNITY_USERNAME et UNITY_PASSWORD (voir Docs/COMPILER_APK.md)."
+            exit 1
+          fi
+
+      - name: Libérer de l'espace disque
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: false
+
+      - name: Récupérer le projet
+        uses: actions/checkout@v4
+
+      - name: Cache Unity (Library)
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/**') }}-${{ hashFiles('Assets/BalulaMoto/ThirdParty/**') }}
+          restore-keys: |
+            Library-Android-
+
+      - name: Installer Unity 6 (module Android)
+        id: unity-setup
+        uses: RageAgainstThePixel/unity-setup@v3
+        with:
+          unity-version: '6000.0'
+          version-file: 'None'
+          build-targets: Android
+          cache-installation: true
+
+      - name: Activer la licence Unity Personal
+        uses: RageAgainstThePixel/activate-unity-license@v3
+        with:
+          license: 'personal'
+          username: ${{ secrets.UNITY_USERNAME }}
+          password: ${{ secrets.UNITY_PASSWORD }}
+
+      - name: Mois courant (cache de la carte)
+        id: mois
+        run: echo "valeur=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache de la carte de Kinshasa
+        uses: actions/cache@v4
+        with:
+          path: osm
+          key: osm-kinshasa-${{ steps.mois.outputs.valeur }}-${{ hashFiles('scripts/fetch_osm.sh') }}
+
+      - name: Télécharger la carte de Kinshasa (OpenStreetMap, ODbL)
+        run: |
+          if [ -s osm/kinshasa.osm ]; then echo "Carte OSM déjà en cache ($(du -h osm/kinshasa.osm | cut -f1))."; else bash scripts/fetch_osm.sh osm/kinshasa.osm; fi
+
+      - name: Écran virtuel et rendu OpenGL logiciel
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri libglu1-mesa > /dev/null
+          xvfb-run -a -s "-screen 0 1280x720x24" glxinfo -B || true
+
+      - name: Lancer le jeu et prendre les photos
+        timeout-minutes: 100
+        run: |
+          mkdir -p build/photos
+          OSM_ARGS=""
+          if [ -s osm/kinshasa.osm ]; then OSM_ARGS="-balulaOsm $GITHUB_WORKSPACE/osm/kinshasa.osm"; fi
+          xvfb-run -a -s "-screen 0 1280x720x24" "$UNITY_EDITOR_PATH" -batchmode -force-glcore -logFile - \
+            -projectPath "$GITHUB_WORKSPACE" -buildTarget Android \
+            -executeMethod BalulaMoto.EditorTools.BalulaSnapshots.Run \
+            -balulaPhotos "$GITHUB_WORKSPACE/build/photos" $OSM_ARGS || echo "Unity a terminé avec le code $?"
+          ls -la build/photos
+
+      - name: Publier les photos (artefact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BalulaMoto-photos
+          path: build/photos
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Publier les photos (branche ci-photos)
+        if: always()
+        run: |
+          if [ -z "$(ls -A build/photos 2>/dev/null)" ]; then echo "Aucune photo."; exit 0; fi
+          cd build/photos
+          git init -q
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout -q -b ci-photos
+          git add -A
+          git commit -q -m "Photos de contrôle n°${{ github.run_number }} (${{ github.sha }})"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-photos

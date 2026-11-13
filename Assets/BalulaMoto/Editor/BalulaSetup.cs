@@ -300,7 +300,7 @@ namespace BalulaMoto.EditorTools
             EditorApplication.Exit(code);
         }
 
-        private static string Arg(string name)
+        public static string Arg(string name)
         {
             string[] args = System.Environment.GetCommandLineArgs();
             for (int i = 0; i < args.Length - 1; i++)
@@ -309,7 +309,7 @@ namespace BalulaMoto.EditorTools
         }
 
         /// <summary>Importe la vraie carte de Kinshasa (OpenStreetMap) dans la scène avant la compilation, si fournie.</summary>
-        private static void ImportOsmForBuild()
+        public static void ImportOsmForBuild()
         {
             string osm = Arg("-balulaOsm");
             if (string.IsNullOrEmpty(osm)) return;
