@@ -241,8 +241,8 @@ namespace BalulaMoto.EditorTools
             // Un camion-citerne arrêté sur la voie la plus proche (pour vérifier ce nouveau modèle)
             if (TrafficManager.Instance != null)
             {
-                TrafficPath bestPath = null;
-                float bestS = 0f, bestD = float.MaxValue;
+                TrafficPath tankPath = null;
+                float tankS = 0f, tankD = float.MaxValue;
                 foreach (TrafficPath tp in game.World.TrafficPaths)
                 {
                     if (tp == null || tp.Points.Count < 2) continue;
@@ -250,13 +250,13 @@ namespace BalulaMoto.EditorTools
                     for (int i = 0; i < tp.Points.Count - 1; i++)
                     {
                         float dd = (tp.Points[i] - p).sqrMagnitude;
-                        if (dd < bestD && dd > 400f) { bestD = dd; bestPath = tp; bestS = acc; }
+                        if (dd < tankD && dd > 400f) { tankD = dd; tankPath = tp; tankS = acc; }
                         acc += Vector3.Distance(tp.Points[i], tp.Points[i + 1]);
                     }
                 }
-                if (bestPath != null)
+                if (tankPath != null)
                 {
-                    AIVehicle tanker = TrafficManager.Instance.Spawn(AIVehicleType.CamionCiterne, bestPath, bestS, 0f);
+                    AIVehicle tanker = TrafficManager.Instance.Spawn(AIVehicleType.CamionCiterne, tankPath, tankS, 0f);
                     tanker.Special = true;
                     report.AppendLine("Camion-citerne ajouté pour la photo à " + tanker.transform.position.ToString("F0"));
                 }
