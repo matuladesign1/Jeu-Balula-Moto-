@@ -101,6 +101,11 @@ jobs:
       - name: Construire l'APK
         run: |
           mkdir -p build
+          # Pas d'APK « piste d'essai » publiée par erreur : sans la carte de Kinshasa, on s'arrête ici
+          if [ ! -s osm/kinshasa.osm ] && [ "${{ github.event_name != 'workflow_dispatch' || inputs.carte_osm }}" = "true" ]; then
+            echo "::error::Carte de Kinshasa absente (téléchargement OSM échoué) : compilation arrêtée, relancez plus tard."
+            exit 1
+          fi
           OSM_ARGS=""
           if [ -s osm/kinshasa.osm ]; then OSM_ARGS="-balulaOsm $GITHUB_WORKSPACE/osm/kinshasa.osm"; fi
           "$UNITY_EDITOR_PATH" -batchmode -nographics -logFile - \

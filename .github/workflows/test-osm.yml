@@ -1,0 +1,44 @@
+# BALULA MOTO — essai rapide du téléchargement de la carte de Kinshasa (sans compiler le jeu).
+# La carte obtenue est mise dans le même cache que la compilation de l'APK : celle-ci la réutilise ensuite.
+name: Tester la carte OSM
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  carte:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Récupérer le projet
+        uses: actions/checkout@v4
+
+      - name: Mois courant (cache de la carte)
+        id: mois
+        run: echo "valeur=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache de la carte de Kinshasa (renouvelée chaque mois)
+        uses: actions/cache@v4
+        with:
+          path: osm
+          key: osm-kinshasa-${{ steps.mois.outputs.valeur }}-${{ hashFiles('scripts/fetch_osm.sh') }}
+
+      - name: Télécharger et vérifier la carte
+        run: |
+          if [ -s osm/kinshasa.osm ]; then echo "Carte déjà en cache."; else bash scripts/fetch_osm.sh osm/kinshasa.osm; fi
+          ls -la osm || true
+          if [ -s osm/kinshasa.osm ]; then
+            echo "Noeuds : $(grep -c '<node' osm/kinshasa.osm)"
+            echo "Chemins : $(grep -c '<way' osm/kinshasa.osm)"
+            echo "Rues (highway) : $(grep -c 'k="highway"' osm/kinshasa.osm)"
+            echo "Bâtiments : $(grep -c 'k="building"' osm/kinshasa.osm)"
+            echo "Arrêts : $(grep -c 'v="bus_stop"' osm/kinshasa.osm)"
+            echo "Stations : $(grep -c 'v="fuel"' osm/kinshasa.osm)"
+            head -c 800 osm/kinshasa.osm; echo
+          else
+            echo "::error::Aucune carte téléchargée"
+            exit 1
+          fi
