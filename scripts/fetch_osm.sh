@@ -46,7 +46,7 @@ out body;"
 
 for SERVER in https://overpass-api.de/api/interpreter https://overpass.kumi.systems/api/interpreter https://overpass.private.coffee/api/interpreter; do
   echo "Téléchargement OSM depuis $SERVER (routes $BB, bâtiments $BB2)…"
-  if curl -sS -f --retry 2 --max-time 600 -A "BalulaMoto-CI (github.com/matuladesign1)" \
+  if curl -sS -f --retry 2 --max-time 240 -A "BalulaMoto-CI (github.com/matuladesign1)" \
        --data-urlencode "data=$QUERY" -o "$OUT.tmp" "$SERVER"; then
     if [ -s "$OUT.tmp" ] && grep -q "<osm" "$OUT.tmp" && grep -q "<way" "$OUT.tmp"; then
       mv "$OUT.tmp" "$OUT"

@@ -82,9 +82,21 @@ jobs:
           username: ${{ secrets.UNITY_USERNAME }}
           password: ${{ secrets.UNITY_PASSWORD }}
 
+      - name: Mois courant (cache de la carte)
+        id: mois
+        run: echo "valeur=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache de la carte de Kinshasa (renouvelée chaque mois)
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.carte_osm }}
+        uses: actions/cache@v4
+        with:
+          path: osm
+          key: osm-kinshasa-${{ steps.mois.outputs.valeur }}-${{ hashFiles('scripts/fetch_osm.sh') }}
+
       - name: Télécharger la carte de Kinshasa (OpenStreetMap, ODbL)
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.carte_osm }}
-        run: bash scripts/fetch_osm.sh osm/kinshasa.osm
+        run: |
+          if [ -s osm/kinshasa.osm ]; then echo "Carte OSM déjà en cache ($(du -h osm/kinshasa.osm | cut -f1))."; else bash scripts/fetch_osm.sh osm/kinshasa.osm; fi
 
       - name: Construire l'APK
         run: |

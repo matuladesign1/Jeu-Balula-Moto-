@@ -421,8 +421,13 @@ namespace BalulaMoto.Runtime
             else if (r < 78) a = HumanAction.Idle2;
             else a = HumanAction.Idle;
             p.Av.Play(a, 0.3f, true);
-            if (a == HumanAction.Umbrella) HumanProps.HandProp(p.Av, true);
-            else if (a == HumanAction.Phone) HumanProps.HandProp(p.Av, false);
+            if (a == HumanAction.Umbrella || a == HumanAction.Phone)
+            {
+                // Un seul objet en main à la fois (pas d'accumulation au fil des arrêts)
+                RemoveNamed(p.Go, "Telephone", "Parapluie");
+                RemoveNamed(p.Go, "Toile", "Toile");
+                HumanProps.HandProp(p.Av, a == HumanAction.Umbrella);
+            }
         }
 
         private static void RemoveNamed(GameObject g, string a, string b)
