@@ -559,25 +559,29 @@ namespace BalulaMoto.EditorTools
                     string[] terms = loc.rechercheOsm.Split('|');
                     string found = null;
                     ImportedPlace foundPlace = null;
+                    bool exact = false;
                     foreach (ImportedPlace ip in places)
                     {
                         string nn = TextUtil.Normalize(ip.name);
                         foreach (string t in terms)
                         {
                             string q = TextUtil.Normalize(t.Trim());
-                            if (q.Length > 3 && nn.Contains(q))
-                            {
-                                double lat, lon;
-                                GeoProjection.ToLatLon(ip.position.x, ip.position.z, originLat, originLon, out lat, out lon);
-                                found = ip.name + " (" + lat.ToString("0.00000", CultureInfo.InvariantCulture) + ", " + lon.ToString("0.00000", CultureInfo.InvariantCulture) + ")";
-                                foundPlace = ip;
-                                break;
-                            }
+                            if (q.Length <= 3) continue;
+                            if (nn == q) { foundPlace = ip; exact = true; break; }
+                            if (foundPlace == null && nn.Contains(q)) foundPlace = ip;
                         }
-                        if (found != null) break;
+                        if (exact) break;
+                    }
+                    if (foundPlace != null)
+                    {
+                        double lat, lon;
+                        GeoProjection.ToLatLon(foundPlace.position.x, foundPlace.position.z, originLat, originLon, out lat, out lon);
+                        found = foundPlace.name + " (" + lat.ToString("0.00000", CultureInfo.InvariantCulture) + ", " + lon.ToString("0.00000", CultureInfo.InvariantCulture) + ")" +
+                                (exact ? " — nom identique, repère affiché « à vérifier »" : " — nom seulement proche, non affiché");
                     }
                     refsReport.Add("• " + loc.nom + " : coordonnées manquantes — " + (found != null ? "SUGGESTION OSM à confirmer : " + found : "aucune correspondance OSM"));
-                    if (foundPlace != null)
+                    // Repère affiché seulement si le nom OSM est identique (un nom proche peut désigner un autre lieu)
+                    if (foundPlace != null && exact)
                     {
                         // Repère affiché à l'emplacement OSM correspondant au nom, clairement marqué « à vérifier »
                         ImportedPlace ip = Place(loc.id, loc.nom, "repere", new Vector2(foundPlace.position.x, foundPlace.position.z), Mathf.Max(3, loc.poids), loc.arret, false);
