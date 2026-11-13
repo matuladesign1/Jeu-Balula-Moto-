@@ -387,6 +387,16 @@
       "id": "refus_obtemperer",
       "libelle": "Refus d'obtempérer",
       "montant": 50000
+    },
+    {
+      "id": "pieton_bouscule",
+      "libelle": "Piéton bousculé",
+      "montant": 30000
+    },
+    {
+      "id": "accrochage",
+      "libelle": "Accrochage avec un autre véhicule",
+      "montant": 20000
     }
   ],
   "documents": {

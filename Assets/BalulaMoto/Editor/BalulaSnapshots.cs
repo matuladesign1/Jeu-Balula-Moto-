@@ -151,6 +151,16 @@ namespace BalulaMoto.EditorTools
             steps.Add(() => { StartGame(game); return true; });
             Wait(32f, 60);
             steps.Add(() => { ShootAround(game, "depart"); ShootStopAndSigns(game, "depart"); return true; });
+            // Police : poste le plus proche, agents, piéton bousculé devant l'agent, arrêt, amende payée
+            steps.Add(() => { TeleportToPolice(game); return true; });
+            Wait(8f, 30);
+            steps.Add(() => { ShootPolice(game); PoliceBump(game); return true; });
+            Wait(2f, 15);
+            steps.Add(() => { PoliceLog(game, "2 s après le piéton bousculé"); return true; });
+            Wait(3f, 15);
+            steps.Add(() => { PoliceLog(game, "agent arrivé au véhicule"); ShootPoliceStop(game); PayPolice(game); return true; });
+            Wait(3f, 15);
+            steps.Add(() => { PoliceLog(game, "après l'amende"); return true; });
             // Monuments (modèles MATULA DESIGN) : stade des Martyrs et tour de l'Échangeur
             foreach (string mname in new[] { "Monument_StadeMartyrs", "Monument_TourEchangeur" })
             {
@@ -258,6 +268,113 @@ namespace BalulaMoto.EditorTools
             trikeMaxRoll = Mathf.Max(trikeMaxRoll, Mathf.Abs(roll));
             report.AppendLine("   " + when + " : type " + pl.Kind + ", vitesse " + pl.SpeedKmh.ToString("0.0") + " km/h, roulis " + roll.ToString("0.0") + "°, tangage " + pitch.ToString("0.0") +
                               "°, hauteur " + t.position.y.ToString("0.00") + " m, renversé " + pl.IsUpsideDown + ", accidenté " + pl.Crashed + " — roulis maximal mesuré " + trikeMaxRoll.ToString("0.0") + "°");
+        }
+
+        // ------------------------------------------------------------------
+        // Police
+        // ------------------------------------------------------------------
+        private static long moneyBeforeFine;
+
+        private static void TeleportToPolice(BalulaGame game)
+        {
+            report.AppendLine();
+            PolicePatrol pp = PolicePatrol.Instance;
+            RaycastVehicle pl = game.Director != null ? game.Director.Player : null;
+            if (pp == null || pl == null) { report.AppendLine("=== police : aucun poste (carte sans rues ?) ==="); return; }
+            Vector3 j, spot;
+            if (!pp.NearestPost(pl.transform.position, out j, out spot)) { report.AppendLine("=== police : aucun poste ==="); return; }
+            // Sur la chaussée la plus proche de l'agent, à 6-18 m, en regardant vers le carrefour
+            Vector3 best = spot;
+            float bd = float.MaxValue;
+            foreach (TrafficPath tp in game.World.TrafficPaths)
+                foreach (Vector3 q in tp.Points)
+                {
+                    float d = (q - spot).sqrMagnitude;
+                    if (d > 36f && d < 18f * 18f && d < bd) { bd = d; best = q; }
+                }
+            Vector3 look = j - best;
+            look.y = 0f;
+            if (look.sqrMagnitude < 1f) look = spot - best;
+            look.y = 0f;
+            if (look.sqrMagnitude < 0.01f) look = Vector3.forward;
+            game.Director.SpawnPlayer(new Vector3(best.x, 0.3f, best.z), Quaternion.LookRotation(look.normalized, Vector3.up));
+            moneyBeforeFine = game.Session != null ? game.Session.Profile.argent : 0;
+            report.AppendLine("=== police : " + pp.PostCount + " postes dans la ville ; poste le plus proche, carrefour " + j.ToString("F0") + ", agent " + spot.ToString("F0") +
+                              " ; maillage de l'agent " + PoliceOfficerModel.Triangles(false) + " triangles (" + PoliceOfficerModel.Triangles(true) + " de loin) ===");
+        }
+
+        private static Transform NearestAgent(BalulaGame game, float radius)
+        {
+            RaycastVehicle pl = game.Director != null ? game.Director.Player : null;
+            if (PolicePatrol.Instance == null || pl == null) return null;
+            return PolicePatrol.Instance.NearestOfficer(pl.transform.position, radius);
+        }
+
+        private static void ShootPolice(BalulaGame game)
+        {
+            Transform a = NearestAgent(game, 80f);
+            report.AppendLine("Agents en place autour du joueur : " + (PolicePatrol.Instance != null ? PolicePatrol.Instance.ActiveOfficers : 0));
+            if (a == null) { report.AppendLine("   aucun agent à moins de 80 m"); return; }
+            Vector3 c = a.position + Vector3.up * 1.0f;
+            Shoot("police_agent_face", a.position + a.forward * 2.6f + Vector3.up * 1.55f, c + Vector3.up * 0.35f);
+            Shoot("police_agent_trois_quarts", a.position + a.forward * 2.2f + a.right * 1.8f + Vector3.up * 1.4f, c);
+            Shoot("police_agent_profil", a.position + a.right * 3.2f + Vector3.up * 1.2f, c);
+            RaycastVehicle pl = game.Director.Player;
+            Vector3 mid = (a.position + pl.transform.position) * 0.5f;
+            Shoot("police_carrefour", mid + (pl.transform.position - a.position).normalized * 4f + Vector3.up * 9f - pl.transform.forward * 14f, mid);
+            Bounds b = new Bounds(a.position, Vector3.zero);
+            foreach (Renderer r in a.GetComponentsInChildren<Renderer>()) b.Encapsulate(r.bounds);
+            report.AppendLine("   agent à " + Vector3.Distance(a.position, pl.transform.position).ToString("0.0") + " m du joueur, taille " + b.size.y.ToString("0.00") + " m, pieds à y=" + b.min.y.ToString("0.00"));
+        }
+
+        private static void PoliceBump(BalulaGame game)
+        {
+            Transform a = NearestAgent(game, 80f);
+            RaycastVehicle pl = game.Director.Player;
+            Vector3 where = pl.transform.position + pl.transform.forward * 2f;
+            game.Director.TestPedestrianBump(where);
+            report.AppendLine("Piéton bousculé (simulé) devant le véhicule, agent le plus proche à " + (a != null ? Vector3.Distance(a.position, where).ToString("0") + " m" : "—") +
+                              " : arrêt demandé " + game.Director.PoliceStopPending + " (" + game.Director.PendingInfraction + ")");
+        }
+
+        private static void PoliceLog(BalulaGame game, string when)
+        {
+            UIManager ui = UIManager.Instance;
+            bool open = ui != null && ui.Police != null && ui.Police.IsOpen;
+            Transform a = NearestAgent(game, 100f);
+            RaycastVehicle pl = game.Director.Player;
+            string text = "";
+            if (open)
+            {
+                FieldInfo fi = typeof(PolicePanel).GetField("details", BindingFlags.NonPublic | BindingFlags.Instance);
+                UnityEngine.UI.Text t = fi != null ? fi.GetValue(ui.Police) as UnityEngine.UI.Text : null;
+                if (t != null) text = " — panneau : " + System.Text.RegularExpressions.Regex.Replace(t.text, "<[^>]*>", "").Replace("\n", " / ");
+            }
+            report.AppendLine("Police, " + when + " : arrêt en attente " + game.Director.PoliceStopPending + ", panneau d'amende ouvert " + open +
+                              ", agent à " + (a != null ? Vector3.Distance(a.position, pl.transform.position).ToString("0.0") + " m" : "—") +
+                              ", argent " + (game.Session != null ? game.Session.Profile.argent.ToString() : "?") + " FC" + text);
+        }
+
+        private static void ShootPoliceStop(BalulaGame game)
+        {
+            Transform a = NearestAgent(game, 30f);
+            RaycastVehicle pl = game.Director.Player;
+            if (a == null || pl == null) return;
+            Vector3 mid = (a.position + pl.transform.position) * 0.5f + Vector3.up * 1.0f;
+            Vector3 side = Vector3.Cross(Vector3.up, a.position - pl.transform.position).normalized;
+            Shoot("police_controle", mid + side * 4.5f + Vector3.up * 0.8f, mid);
+            Shoot("police_controle_haut", mid + side * 3f - pl.transform.forward * 4f + Vector3.up * 3.5f, mid);
+        }
+
+        private static void PayPolice(BalulaGame game)
+        {
+            UIManager ui = UIManager.Instance;
+            if (ui == null || ui.Police == null || !ui.Police.IsOpen) { report.AppendLine("Amende : panneau non ouvert, rien à payer"); return; }
+            MethodInfo pay = typeof(PolicePanel).GetMethod("Pay", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (pay != null) pay.Invoke(ui.Police, null);
+            long after = game.Session != null ? game.Session.Profile.argent : 0;
+            report.AppendLine("Amende payée : " + (moneyBeforeFine - after) + " FC (avant " + moneyBeforeFine + ", après " + after + ")");
+            ui.Close(ui.Police);
         }
 
         private static void TeleportToObject(BalulaGame game, string objectName)
@@ -512,11 +629,11 @@ namespace BalulaMoto.EditorTools
             Shoot(tag + "_chauffeur_face", p + t.forward * 3.6f + Vector3.up * 1.6f, p + Vector3.up * 1.15f);
             Describe("Véhicule du joueur et chauffeur", player.gameObject, t.position + t.right * 2.6f);
 
-            // Un camion-citerne arrêté sur la voie la plus proche (pour vérifier ce nouveau modèle)
+            // Un bus TRANSCO (modèle de MATULA DESIGN) arrêté sur la voie la plus proche : face, trois-quarts, côté, arrière
             if (TrafficManager.Instance != null)
             {
-                TrafficPath tankPath = null;
-                float tankS = 0f, tankD = float.MaxValue;
+                TrafficPath busPath = null;
+                float busS = 0f, busD = float.MaxValue;
                 foreach (TrafficPath tp in game.World.TrafficPaths)
                 {
                     if (tp == null || tp.Points.Count < 2) continue;
@@ -524,15 +641,22 @@ namespace BalulaMoto.EditorTools
                     for (int i = 0; i < tp.Points.Count - 1; i++)
                     {
                         float dd = (tp.Points[i] - p).sqrMagnitude;
-                        if (dd < tankD && dd > 400f) { tankD = dd; tankPath = tp; tankS = acc; }
+                        if (dd < busD && dd > 400f) { busD = dd; busPath = tp; busS = acc; }
                         acc += Vector3.Distance(tp.Points[i], tp.Points[i + 1]);
                     }
                 }
-                if (tankPath != null)
+                if (busPath != null)
                 {
-                    AIVehicle tanker = TrafficManager.Instance.Spawn(AIVehicleType.CamionCiterne, tankPath, tankS, 0f);
-                    tanker.Special = true;
-                    report.AppendLine("Camion-citerne ajouté pour la photo à " + tanker.transform.position.ToString("F0"));
+                    AIVehicle bus = TrafficManager.Instance.Spawn(AIVehicleType.BusTransco, busPath, busS, 0f);
+                    bus.Special = true;
+                    Transform bt = bus.transform;
+                    report.AppendLine("Bus TRANSCO ajouté pour la photo à " + bt.position.ToString("F0") + " — modèle fourni : " + (VehicleBuilder.TranscoModel != null) + ", roues : " + bus.Wheels.Count + ", longueur " + bus.Length.ToString("0.0") + " m");
+                    Vector3 bc = bt.position + Vector3.up * 1.6f;
+                    Shoot(tag + "_bus_transco_trois_quarts", bc + bt.forward * 11f + bt.right * 7f + Vector3.up * 0.6f, bc);
+                    Shoot(tag + "_bus_transco_face", bc + bt.forward * 9f + Vector3.up * 0.2f, bt.position + bt.forward * 5.6f + Vector3.up * 1.7f);
+                    Shoot(tag + "_bus_transco_cote", bc + bt.right * 12f, bc);
+                    Shoot(tag + "_bus_transco_arriere", bc - bt.forward * 11f - bt.right * 5f + Vector3.up * 0.5f, bc);
+                    Describe("Bus TRANSCO", bus.gameObject, bc + bt.right * 12f);
                 }
             }
             // Circulation : le plus proche de chaque type

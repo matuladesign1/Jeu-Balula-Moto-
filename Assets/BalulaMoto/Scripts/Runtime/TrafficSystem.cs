@@ -250,13 +250,13 @@ namespace BalulaMoto.Runtime
 
         private AIVehicleType RandomType()
         {
-            // Kinshasa : beaucoup de taxis jaunes, de minibus et de motos-taxis
+            // Kinshasa : beaucoup de taxis jaunes, de minibus et de motos-taxis ; bus TRANSCO partout (8 %)
             float r = Random.value;
             if (r < 0.21f) return AIVehicleType.TaxiJaune;
-            if (r < 0.37f) return AIVehicleType.MinibusJaune;
-            if (r < 0.58f) return AIVehicleType.MotoTaxi;
-            if (r < 0.67f) return AIVehicleType.Berline;
-            if (r < 0.72f) return AIVehicleType.MinibusBlanc;
+            if (r < 0.36f) return AIVehicleType.MinibusJaune;
+            if (r < 0.56f) return AIVehicleType.MotoTaxi;
+            if (r < 0.65f) return AIVehicleType.Berline;
+            if (r < 0.69f) return AIVehicleType.MinibusBlanc;
             if (r < 0.77f) return AIVehicleType.BusTransco;
             if (r < 0.80f) return AIVehicleType.CamionRemorque;
             if (r < 0.84f) return AIVehicleType.CamionCiterne;

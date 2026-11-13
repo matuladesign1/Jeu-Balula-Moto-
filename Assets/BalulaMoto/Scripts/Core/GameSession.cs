@@ -359,6 +359,8 @@ namespace BalulaMoto.Core
         public const string NoLights = "sans_phare";
         public const string NoDocuments = "documents";
         public const string Fleeing = "refus_obtemperer";
+        public const string Pedestrian = "pieton_bouscule";
+        public const string Collision = "accrochage";
 
         private readonly GameSession s;
         public PoliceSystem(GameSession session) { s = session; }

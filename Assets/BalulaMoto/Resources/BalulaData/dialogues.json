@@ -360,6 +360,20 @@
       ]
     },
     {
+      "cle": "pieton_bouscule",
+      "quartier": "",
+      "fr": [
+        "Eh chauffeur ! Tu veux me tuer ?",
+        "Aïe ! Regarde devant toi !",
+        "Doucement ! Il y a des gens ici !"
+      ],
+      "ln": [
+        "Eh chauffeur ! Olingi koboma ngai ?",
+        "Aïe ! Tala liboso !",
+        "Malembe ! Bato bazali awa !"
+      ]
+    },
+    {
       "cle": "police_controle",
       "quartier": "",
       "fr": [

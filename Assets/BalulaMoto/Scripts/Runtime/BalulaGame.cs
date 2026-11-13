@@ -59,6 +59,8 @@ namespace BalulaMoto.Runtime
             if (imported != null) CityFill.Create(worldRoot, imported);
             // Routes en travaux (barrières, sable, pelleteuse, ouvriers) construites autour du joueur
             if (imported != null) Roadworks.Create(worldRoot, imported);
+            // Policiers à pied aux carrefours (modèle de MATULA DESIGN) : sifflet, arrêt et amende en cas d'infraction
+            if (imported != null) PolicePatrol.Create(worldRoot, imported);
             // Plan de la ville pour la mini-carte et la carte plein écran
             CityMap.Build(imported, World);
             Cam.SetMenuOrbit(World.MenuCenter, 70f);

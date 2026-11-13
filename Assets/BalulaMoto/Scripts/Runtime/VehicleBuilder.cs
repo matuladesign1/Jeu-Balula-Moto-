@@ -607,6 +607,14 @@ namespace BalulaMoto.Runtime
                 return root;
             }
 
+            // Bus TRANSCO : modèle fourni par MATULA DESIGN (ModelVehicles.cs), le bus dessiné par le jeu reste en secours
+            if (type == AIVehicleType.BusTransco)
+            {
+                GameObject mb = BuildModelBus(root, out length, brakeLights, hazards, wheels);
+                if (mb != null) return mb;
+                length = L;
+            }
+
             // Carrosseries lisses (CarBodies.cs) ; les volumes simples ci-dessous restent en secours
             if (UseSmoothBodies) return BuildSmoothTraffic(root, type, rnd, seed, body, out length, brakeLights, hazards, wheels);
 

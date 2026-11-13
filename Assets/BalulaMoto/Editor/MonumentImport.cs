@@ -1,4 +1,5 @@
-// BALULA MOTO — réglages d'import des modèles de monuments (dossier Modeles/Monuments, fichiers OBJ en mètres).
+// BALULA MOTO — réglages d'import des modèles fournis par MATULA DESIGN, convertis en OBJ (mètres, Y vers le haut) :
+// monuments (dossier Modeles) et véhicules (Resources/BalulaMoto/Vehicules, chargés pendant la partie).
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
@@ -8,10 +9,12 @@ namespace BalulaMoto.EditorTools
     public class MonumentImportRules : AssetPostprocessor
     {
         private const string Folder = "Assets/BalulaMoto/Modeles/";
+        private const string Vehicles = "Assets/BalulaMoto/Resources/BalulaMoto/Vehicules/";
 
         private void OnPreprocessModel()
         {
-            if (!assetPath.StartsWith(Folder)) return;
+            bool vehicle = assetPath.StartsWith(Vehicles);
+            if (!assetPath.StartsWith(Folder) && !vehicle) return;
             ModelImporter mi = assetImporter as ModelImporter;
             if (mi == null) return;
             mi.globalScale = 1f;
@@ -21,12 +24,13 @@ namespace BalulaMoto.EditorTools
             mi.importAnimation = false;
             mi.importBlendShapes = false;
             mi.animationType = ModelImporterAnimationType.None;
-            mi.isReadable = false;
+            // Véhicules : maillages lisibles, pour que la circulation fusionne carrosserie, roues et feux
+            mi.isReadable = vehicle;
             mi.meshCompression = ModelImporterMeshCompression.Off;
             mi.weldVertices = true;
             // Les fichiers n'ont pas de normales : faces nettes (angle de lissage faible)
             mi.importNormals = ModelImporterNormals.Calculate;
-            mi.normalSmoothingAngle = 30f;
+            mi.normalSmoothingAngle = vehicle ? 40f : 30f;
             mi.importTangents = ModelImporterTangents.None;
             mi.materialImportMode = ModelImporterMaterialImportMode.ImportStandard;
             mi.generateSecondaryUV = false;

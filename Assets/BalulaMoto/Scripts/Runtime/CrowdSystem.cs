@@ -26,7 +26,21 @@ namespace BalulaMoto.Runtime
             public float Timer;
             public bool Standing, Static, Slow;
             public float GroundY, GroundTimer;
+            /// <summary>Bousculé par le joueur : immobile le temps de tomber et de se relever.</summary>
+            public float Stun;
         }
+
+        // Personnes bousculées : écart, chute vers l'extérieur, puis elles se relèvent
+        private class Shove
+        {
+            public Transform T;
+            public Vector3 From, Push, Axis;
+            public Quaternion Rot;
+            public float Time;
+        }
+        private readonly List<Shove> shoves = new List<Shove>();
+        /// <summary>Personnes bousculées par le joueur depuis le début de la partie.</summary>
+        public int Bumped { get; private set; }
 
         private readonly List<Lane> lanes = new List<Lane>();
         private readonly Dictionary<long, List<Vector2Int>> grid = new Dictionary<long, List<Vector2Int>>();
@@ -373,6 +387,7 @@ namespace BalulaMoto.Runtime
             lastPlayer = pp;
 
             UpdateStops(pp);
+            UpdateShoves(dt);
             spawnTimer -= Time.unscaledDeltaTime;
             if (spawnTimer <= 0f && peds.Count < target)
             {
@@ -396,6 +411,7 @@ namespace BalulaMoto.Runtime
             {
                 Ped p = peds[i];
                 if (p.Go == null) continue;
+                if (p.Stun > 0f) { p.Stun -= dt; continue; }
                 if (p.Static) continue;
                 if (p.Standing)
                 {
@@ -405,6 +421,97 @@ namespace BalulaMoto.Runtime
                 }
                 Walk(p, dt, pp);
             }
+        }
+
+        // ------------------------------------------------------------------
+        // Piétons bousculés par le véhicule du joueur
+        // ------------------------------------------------------------------
+        private static bool Touch(Transform t, Vector3 c, Vector3 f, Vector3 r, float hw, float hl)
+        {
+            Vector3 d = t.position - c;
+            return Mathf.Abs(Vector3.Dot(d, f)) < hl + 0.25f && Mathf.Abs(Vector3.Dot(d, r)) < hw + 0.3f;
+        }
+
+        private bool IsShoved(Transform t)
+        {
+            for (int i = 0; i < shoves.Count; i++) if (shoves[i].T == t) return true;
+            return false;
+        }
+
+        private Vector3 StartShove(Transform t, Vector3 vehCenter, Vector3 vehRight)
+        {
+            Vector3 side = t.position - vehCenter;
+            side.y = 0f;
+            Vector3 dir = vehRight * (Vector3.Dot(side, vehRight) >= 0f ? 1f : -1f);
+            float dist = CityFill.IsBlocked(t.position + dir * 1.1f, 0.3f) ? 0.4f : 1.1f;
+            shoves.Add(new Shove { T = t, From = t.position, Push = dir * dist, Rot = t.rotation, Axis = Vector3.Cross(Vector3.up, dir) });
+            Bumped++;
+            return dir * dist;
+        }
+
+        private void UpdateShoves(float dt)
+        {
+            for (int i = shoves.Count - 1; i >= 0; i--)
+            {
+                Shove sh = shoves[i];
+                if (sh.T == null) { shoves.RemoveAt(i); continue; }
+                sh.Time += dt;
+                float t = sh.Time;
+                float push = Mathf.Clamp01(t / 0.25f);
+                push = 1f - (1f - push) * (1f - push);
+                // Chute en 0,3 s, au sol jusqu'à 1,4 s, debout à 2,1 s
+                float tilt = t < 0.3f ? t / 0.3f : (t < 1.4f ? 1f : Mathf.Clamp01(1f - (t - 1.4f) / 0.7f));
+                sh.T.position = sh.From + sh.Push * push;
+                sh.T.rotation = Quaternion.AngleAxis(78f * tilt, sh.Axis) * sh.Rot;
+                if (t > 2.1f)
+                {
+                    sh.T.rotation = sh.Rot;
+                    shoves.RemoveAt(i);
+                }
+            }
+        }
+
+        /// <summary>Vrai si le véhicule du joueur (rectangle au sol) touche un piéton ou une personne d'un arrêt :
+        /// elle est bousculée (écart, chute, elle se relève).</summary>
+        public bool Bump(Vector3 center, Vector3 fwd, float halfW, float halfL, out Vector3 where)
+        {
+            where = Vector3.zero;
+            fwd.y = 0f;
+            if (fwd.sqrMagnitude < 1e-4f) return false;
+            fwd.Normalize();
+            Vector3 right = new Vector3(fwd.z, 0f, -fwd.x);
+            for (int i = 0; i < peds.Count; i++)
+            {
+                Ped p = peds[i];
+                if (p.Go == null || p.Stun > 0f || !Touch(p.Go.transform, center, fwd, right, halfW, halfL)) continue;
+                where = p.Go.transform.position;
+                p.Stun = 2.3f;
+                Vector3 push = StartShove(p.Go.transform, center, right);
+                if (p.Av != null) p.Av.Play(HumanAction.Crouch);
+                // Le piéton reprend ensuite sa marche à l'endroit où il a été poussé (pas de retour brusque)
+                if (!p.Static && p.Lane < lanes.Count)
+                {
+                    Lane l = lanes[p.Lane];
+                    if (p.Seg < l.P.Length - 1)
+                    {
+                        Vector3 pf = SegmentDir(l, p.Seg) * p.Dir;
+                        Vector3 pr = new Vector3(pf.z, 0f, -pf.x);
+                        p.BaseSide = Mathf.Clamp(p.BaseSide + Vector3.Dot(push, pr), -2.5f, 2.5f);
+                        p.Side = p.BaseSide;
+                        p.Dodge = 0f;
+                    }
+                }
+                return true;
+            }
+            foreach (KeyValuePair<ClientStop, StopGroup> kv in stopGroups)
+                foreach (GameObject person in kv.Value.People)
+                {
+                    if (person == null || IsShoved(person.transform) || !Touch(person.transform, center, fwd, right, halfW, halfL)) continue;
+                    where = person.transform.position;
+                    StartShove(person.transform, center, right);
+                    return true;
+                }
+            return false;
         }
 
         // ------------------------------------------------------------------

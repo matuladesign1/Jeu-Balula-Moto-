@@ -41,6 +41,15 @@ namespace BalulaMoto.Runtime
         private string pendingInfraction;
         private float policeStopTimer, chaseEscapeTimer, docCheckCooldown = 30f;
         private bool policeChase, policePanelOpen;
+        // Agent à pied (poste de police d'un carrefour) qui a vu l'infraction et qui arrête le joueur
+        private Transform stopOfficer;
+        private bool stopByPost;
+        private float bumpCooldown;
+        /// <summary>Piétons et agents bousculés depuis le début de la partie (photos de contrôle).</summary>
+        public int PedestrianBumps { get; private set; }
+        /// <summary>Vrai pendant un arrêt de police (sifflet donné, en attente que le joueur se range).</summary>
+        public bool PoliceStopPending { get { return pendingInfraction != null; } }
+        public string PendingInfraction { get { return pendingInfraction; } }
         private AIVehicle escort;
         private float followSeconds, followLost;
 
@@ -529,7 +538,8 @@ namespace BalulaMoto.Runtime
                 Metrics.CollisionSeverity = Mathf.Max(Metrics.CollisionSeverity, sev);
                 Comment("collision");
             }
-            if (other != null && other.GetComponentInParent<AIVehicle>() != null && dv > 3f) Infraction(PoliceSystem.Dangerous);
+            // Accrochage d'une autre voiture : infraction si un agent l'a vu
+            if (other != null && other.GetComponentInParent<AIVehicle>() != null && dv > 2f) Infraction(PoliceSystem.Collision);
             if (UI != null && sev > 0.15f) UI.Toast("Choc ! Carrosserie : " + Session.ActiveVehicle.carrosserie.ToString("0") + " %");
         }
 
@@ -595,14 +605,17 @@ namespace BalulaMoto.Runtime
                 if (State == RideState.EnCourse && Metrics != null) { Metrics.RedLights++; Comment("feu_rouge"); }
                 Infraction(PoliceSystem.RedLight);
             }
+            CheckPedestrianBumps(dt);
             PoliceCheckpoint cp = World.Checkpoint;
-            if (cp == null) return;
-            float dist = Flat(cp.transform.position - pos);
-            bool near = dist < cp.Radius;
-            if (near && Player.SpeedKmh > World.SpeedLimitKmh + 12f) Infraction(PoliceSystem.Speeding);
-            if (near && Session.IsNight && !Player.HeadlightsOn && Player.SpeedKmh > 10f) Infraction(PoliceSystem.NoLights);
+            PolicePatrol patrol = PolicePatrol.Instance;
+            float dist = cp != null ? Flat(cp.transform.position - pos) : float.MaxValue;
+            bool nearCp = cp != null && dist < cp.Radius;
+            // Agents à pied des carrefours : ils voient la vitesse et les phares éteints de près
+            bool nearAgent = patrol != null && patrol.NearestOfficer(pos, 40f) != null;
+            if ((nearCp || nearAgent) && Player.SpeedKmh > World.SpeedLimitKmh + 12f) Infraction(PoliceSystem.Speeding);
+            if ((nearCp || nearAgent) && Session.IsNight && !Player.HeadlightsOn && Player.SpeedKmh > 10f) Infraction(PoliceSystem.NoLights);
             docCheckCooldown -= dt;
-            if (pendingInfraction == null && !policeChase && !policePanelOpen && dist < 18f && Player.SpeedKmh < 30f && docCheckCooldown <= 0f)
+            if (cp != null && pendingInfraction == null && !policeChase && !policePanelOpen && dist < 18f && Player.SpeedKmh < 30f && docCheckCooldown <= 0f)
             {
                 docCheckCooldown = 150f;
                 if (Random.value < 0.35f || Session.Profile.rechercheParPolice) Infraction(Session.Profile.rechercheParPolice ? PoliceSystem.Fleeing : "controle");
@@ -610,14 +623,22 @@ namespace BalulaMoto.Runtime
             if (pendingInfraction != null && !policeChase && !policePanelOpen)
             {
                 policeStopTimer += dt;
+                float d = stopByPost && stopOfficer != null ? Flat(stopOfficer.position - pos) : dist;
                 if (Player.SpeedKmh < 3f)
                 {
                     policePanelOpen = true;
-                    if (UI != null) UI.OpenPolice(pendingInfraction, false);
+                    // L'agent du carrefour vient au véhicule ; recherché pour refus d'obtempérer : amende plus lourde
+                    bool fled = stopByPost && Session.Profile.rechercheParPolice;
+                    if (stopByPost && stopOfficer != null && patrol != null) patrol.Approach(stopOfficer, Player.transform);
+                    if (UI != null) UI.OpenPolice(pendingInfraction, fled);
                 }
-                else if (policeStopTimer > 12f && dist > 60f) StartChase();
+                else if (policeStopTimer > 12f && d > 60f)
+                {
+                    if (!stopByPost && cp != null && cp.Bus != null) StartChase();
+                    else RefuseStop();
+                }
             }
-            if (policeChase && cp.Bus != null)
+            if (policeChase && cp != null && cp.Bus != null)
             {
                 float d = Flat(cp.Bus.transform.position - pos);
                 if (d < 7f && Player.SpeedKmh < 8f)
@@ -640,15 +661,65 @@ namespace BalulaMoto.Runtime
             }
         }
 
-        private void Infraction(string id)
+        /// <summary>Piétons (et agents) bousculés par le véhicule du joueur : ils tombent et se relèvent, la police verbalise.</summary>
+        private void CheckPedestrianBumps(float dt)
+        {
+            bumpCooldown -= dt;
+            if (bumpCooldown > 0f || Player.SpeedKmh < 6f) return;
+            Transform pt = Player.transform;
+            bool moto = Player.Kind == VehicleKind.Moto;
+            float hw = moto ? 0.45f : 0.75f, hl = moto ? 1.05f : 1.5f;
+            Vector3 where = Vector3.zero;
+            bool hit = CrowdSystem.Instance != null && CrowdSystem.Instance.Bump(pt.position, pt.forward, hw, hl, out where);
+            Transform agent;
+            if (!hit && PolicePatrol.Instance != null && PolicePatrol.Instance.Bump(pt.position, pt.forward, hw, hl, out agent))
+            {
+                hit = true;
+                where = agent.position;
+            }
+            if (!hit) return;
+            bumpCooldown = 2f;
+            PedestrianBumps++;
+            // Le choc ralentit le véhicule
+            if (Player.Body != null) Compat.SetVelocity(Player.Body, Compat.GetVelocity(Player.Body) * 0.6f);
+            Say("Piéton", Session.Dialogue.Line("pieton_bouscule", "", Session.Dialogue.Preference));
+            if (UI != null) UI.Toast("Vous avez bousculé un piéton !");
+            if (State == RideState.EnCourse && Metrics != null)
+            {
+                Metrics.Collisions++;
+                Comment("collision");
+            }
+            Infraction(PoliceSystem.Pedestrian, where);
+        }
+
+        /// <summary>Refus de s'arrêter devant un agent à pied : noté, le prochain contrôle sera plus sévère.</summary>
+        private void RefuseStop()
+        {
+            Session.Profile.rechercheParPolice = true;
+            Say("Police", Session.Dialogue.Line("police_fuite", ""));
+            if (UI != null) UI.Toast("Refus d'obtempérer : l'agent a relevé votre plaque. Le prochain contrôle sera plus sévère.");
+            pendingInfraction = null;
+            stopOfficer = null;
+            stopByPost = false;
+        }
+
+        private void Infraction(string id) { Infraction(id, Player.transform.position); }
+
+        /// <summary>Infraction vue par la police (agent d'un carrefour à moins de 75 m, ou contrôle routier) : sifflet, arrêt.</summary>
+        private void Infraction(string id, Vector3 where)
         {
             if (pendingInfraction != null || policeChase || policePanelOpen) return;
             PoliceCheckpoint cp = World.Checkpoint;
-            if (cp == null || Flat(cp.transform.position - Player.transform.position) > cp.Radius) return;
+            bool cpNear = cp != null && Flat(cp.transform.position - Player.transform.position) <= cp.Radius;
+            Transform officer = PolicePatrol.Instance != null ? PolicePatrol.Instance.NearestOfficer(where, PolicePatrol.SightRadius) : null;
+            if (!cpNear && officer == null) return;
+            stopOfficer = cpNear ? null : officer;
+            stopByPost = !cpNear;
             pendingInfraction = id;
             policeStopTimer = 0f;
             Say("Police", Session.Dialogue.Line("police_stop", "", Session.Dialogue.Preference));
             if (AmbientAudio.Instance != null) AmbientAudio.Instance.Play(AudioSynth.Whistle, 0.6f);
+            if (UI != null && stopByPost) UI.Toast("Coup de sifflet : un agent vous arrête (" + Session.Police.InfractionLabel(id).ToLowerInvariant() + "). Rangez-vous.");
         }
 
         private void StartChase()
@@ -675,7 +746,19 @@ namespace BalulaMoto.Runtime
         {
             pendingInfraction = null;
             policePanelOpen = false;
+            // L'agent retourne à son poste
+            if (stopByPost && PolicePatrol.Instance != null) PolicePatrol.Instance.Release();
+            stopOfficer = null;
+            stopByPost = false;
             EndChase();
+        }
+
+        /// <summary>Essais automatiques (photos de contrôle) : simule un piéton bousculé à cet endroit.</summary>
+        public void TestPedestrianBump(Vector3 where)
+        {
+            PedestrianBumps++;
+            Say("Piéton", Session.Dialogue.Line("pieton_bouscule", "", Session.Dialogue.Preference));
+            Infraction(PoliceSystem.Pedestrian, where);
         }
 
         // ==================================================================

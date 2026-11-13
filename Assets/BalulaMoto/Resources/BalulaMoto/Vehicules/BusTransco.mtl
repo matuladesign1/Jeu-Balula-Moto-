@@ -1,0 +1,72 @@
+newmtl Paint_White
+Kd 0.8800 0.8900 0.8800
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Glass_Tinted_Blue
+Kd 0.0350 0.1600 0.2700
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Rubber_Black
+Kd 0.0180 0.0200 0.0250
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Metal_Dark
+Kd 0.0700 0.0800 0.0900
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Metal_Silver
+Kd 0.5800 0.6100 0.6300
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Stripe_Blue
+Kd 0.0200 0.2000 0.7200
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Stripe_Red
+Kd 0.8200 0.0250 0.0350
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Stripe_Yellow
+Kd 0.9800 0.7600 0.0200
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Light
+Kd 0.8200 0.8800 0.9100
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
