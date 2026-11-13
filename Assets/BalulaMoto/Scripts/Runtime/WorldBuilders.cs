@@ -502,6 +502,55 @@ namespace BalulaMoto.Runtime
                 if (p.isFuel) InteractionPoint.Create(root, InteractionKind.StationService, "station", p.name, p.position, 10f);
                 if (p.isLandmark) LandmarkPin.Create(root, p.id, p.name, p.status, p.position);
             }
+            // Arrêts informels (comme à Kinshasa : devant les marchés, gares, hôpitaux, écoles, églises, magasins),
+            // posés sur le trottoir réel le plus proche (rues OpenStreetMap), jamais à moins de 120 m d'un autre arrêt
+            if (stops < 70 && map.walkPaths.Count > 0)
+            {
+                Dictionary<long, List<Vector3>> walkGrid = new Dictionary<long, List<Vector3>>();
+                foreach (ImportedPath wp in map.walkPaths)
+                    foreach (Vector3 q in wp.points)
+                    {
+                        long k = ((long)Mathf.FloorToInt(q.x / 50f) << 32) ^ (uint)Mathf.FloorToInt(q.z / 50f);
+                        List<Vector3> l;
+                        if (!walkGrid.TryGetValue(k, out l)) { l = new List<Vector3>(); walkGrid[k] = l; }
+                        l.Add(q);
+                    }
+                List<ImportedPlace> candidates = new List<ImportedPlace>();
+                foreach (ImportedPlace p in map.places)
+                {
+                    if (p.isStop || p.isFuel || p.isLandmark) continue;
+                    if (p.category == "marche" || p.category == "gare" || p.category == "sante" || p.category == "ecole" || p.category == "eglise" || p.category == "commerce")
+                        candidates.Add(p);
+                }
+                candidates.Sort((a, b) => b.weight.CompareTo(a.weight));
+                foreach (ImportedPlace p in candidates)
+                {
+                    if (stops >= 90) break;
+                    int cx = Mathf.FloorToInt(p.position.x / 50f), cz = Mathf.FloorToInt(p.position.z / 50f);
+                    Vector3 best = Vector3.zero;
+                    float bestD = 70f * 70f;
+                    bool found = false;
+                    for (int dz = -1; dz <= 1; dz++)
+                        for (int dx = -1; dx <= 1; dx++)
+                        {
+                            List<Vector3> l;
+                            if (!walkGrid.TryGetValue(((long)(cx + dx) << 32) ^ (uint)(cz + dz), out l)) continue;
+                            foreach (Vector3 q in l)
+                            {
+                                float d2 = (q.x - p.position.x) * (q.x - p.position.x) + (q.z - p.position.z) * (q.z - p.position.z);
+                                if (d2 < bestD) { bestD = d2; best = q; found = true; }
+                            }
+                        }
+                    if (!found) continue;
+                    bool close = false;
+                    foreach (ClientStop cs in ClientStop.All)
+                        if ((cs.transform.position - best).sqrMagnitude < 120f * 120f) { close = true; break; }
+                    if (close) continue;
+                    PlaceRef stopRef = WorldGeo.Place("arret-" + p.id, "Arrêt " + p.name, p.district, "arret", new Vector3(best.x, 0f, best.z), Mathf.Max(1, p.weight), true);
+                    ClientStop.Create(root, stopRef, false);
+                    stops++;
+                }
+            }
             if (stops == 0)
                 foreach (PlaceRef pr in w.Places)
                     if (stops++ < 40) ClientStop.Create(root, pr, false);

@@ -13,7 +13,7 @@ OUT="${1:-osm/kinshasa.osm}"
 LAT="${2:--4.3376}"
 LON="${3:-15.3317}"
 R_ROADS="${4:-4900}"
-R_BUILD="${5:-1900}"
+R_BUILD="${5:-2600}"
 mkdir -p "$(dirname "$OUT")"
 WORK="$(mktemp -d)"
 

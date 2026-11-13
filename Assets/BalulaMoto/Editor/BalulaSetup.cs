@@ -318,7 +318,7 @@ namespace BalulaMoto.EditorTools
             if (Compat.FindFirst<ImportedWorld>() != null) { Debug.Log("[BALULA] La scène contient déjà une carte importée : conservée."); return; }
             double lat = ParseD(Arg("-balulaOsmLat"), -4.3376), lon = ParseD(Arg("-balulaOsmLon"), 15.3317);
             float radius = (float)ParseD(Arg("-balulaOsmRadius"), 4800.0);
-            int maxBuildings = (int)ParseD(Arg("-balulaOsmBuildings"), 12000.0);
+            int maxBuildings = (int)ParseD(Arg("-balulaOsmBuildings"), 16000.0);
             string report = OsmImporterWindow.ImportBatch(osm, "Kinshasa", lat, lon, radius, maxBuildings);
             Debug.Log("[BALULA] Import OSM : " + report);
             EditorSceneManager.MarkSceneDirty(scene);
