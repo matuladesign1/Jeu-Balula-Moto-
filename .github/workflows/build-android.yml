@@ -99,8 +99,13 @@ jobs:
           if [ -s osm/kinshasa.osm ]; then echo "Carte OSM déjà en cache ($(du -h osm/kinshasa.osm | cut -f1))."; else bash scripts/fetch_osm.sh osm/kinshasa.osm; fi
 
       - name: Construire l'APK
+        env:
+          # Pile plus grande pour les fils de travail d'IL2CPP (évite un plantage sur les grosses méthodes)
+          DOTNET_DefaultStackSize: "1000000"
         run: |
           mkdir -p build
+          # Repartir d'un état de compilation propre : un cache « Library/Bee » périmé a fait planter IL2CPP (version 4.2)
+          rm -rf Library/Bee Library/Il2cppBuildCache
           # Pas d'APK « piste d'essai » publiée par erreur : sans la carte de Kinshasa, on s'arrête ici
           if [ ! -s osm/kinshasa.osm ] && [ "${{ github.event_name != 'workflow_dispatch' || inputs.carte_osm }}" = "true" ]; then
             echo "::error::Carte de Kinshasa absente (téléchargement OSM échoué) : compilation arrêtée, relancez plus tard."
@@ -114,6 +119,14 @@ jobs:
             -customBuildPath "$GITHUB_WORKSPACE/build/BalulaMoto.apk" $OSM_ARGS
           ls -la build
           test -s build/BalulaMoto.apk
+
+      - name: Diagnostic en cas d'échec
+        if: failure()
+        run: |
+          sudo dmesg 2>/dev/null | tail -40 || true
+          ulimit -a || true
+          free -m || true
+          df -h . || true
 
       - name: Publier l'APK (artefact)
         if: always()
