@@ -71,6 +71,7 @@ jobs:
         uses: RageAgainstThePixel/unity-setup@v3
         with:
           unity-version: '6000.0'
+          version-file: 'None'
           build-targets: Android
           cache-installation: true
 
