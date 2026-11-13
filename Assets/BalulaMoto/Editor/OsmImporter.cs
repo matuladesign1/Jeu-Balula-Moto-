@@ -1080,10 +1080,16 @@ namespace BalulaMoto.EditorTools
                     int pieces = Mathf.Max(1, Mathf.CeilToInt(Vector2.Distance(a2, b2) / 20f));
                     Vector2Int wc = Cell((a + b) * 0.5f);
                     MeshBatch wb = Batch(areas, wc.x + "_" + wc.y + "_eau");
+                    MeshBatch bank = Batch(areas, wc.x + "_" + wc.y + "_berge");
+                    float bw = Mathf.Clamp(ww * 0.18f, 0.8f, 3f);
+                    Vector2 outer = left.normalized * (ww * 0.5f + bw);
                     for (int k = 0; k < pieces; k++)
                     {
                         Vector2 p0 = Vector2.Lerp(a2, b2, k / (float)pieces), p1 = Vector2.Lerp(a2, b2, (k + 1) / (float)pieces);
                         wb.Quad(V3(p0 + left, 0.01f), V3(p1 + left, 0.01f), V3(p1 - left, 0.01f), V3(p0 - left, 0.01f));
+                        // Berges de boue des deux côtés
+                        bank.Quad(V3(p0 + outer, 0.006f), V3(p1 + outer, 0.006f), V3(p1 + left, 0.006f), V3(p0 + left, 0.006f));
+                        bank.Quad(V3(p0 - left, 0.006f), V3(p1 - left, 0.006f), V3(p1 - outer, 0.006f), V3(p0 - outer, 0.006f));
                     }
                 }
                 if (anyIn) waterWays++;
@@ -1268,7 +1274,13 @@ namespace BalulaMoto.EditorTools
             foreach (KeyValuePair<string, MeshBatch> kv in areas)
             {
                 bool water = kv.Key.EndsWith("eau");
-                GameObject ag = Emit(root, (water ? "Eau_" : "Verdure_") + kv.Key, kv.Value, Mat(mats, water ? "Eau" : "Verdure", shader, water ? new Color(0.2f, 0.33f, 0.36f) : new Color(0.3f, 0.48f, 0.2f), matAsset, ref firstMat), meshAsset, ref firstMesh, water, ref idx);
+                if (kv.Key.EndsWith("berge"))
+                {
+                    Emit(root, "Berges_" + kv.Key, kv.Value, Mat(mats, "Berge", shader, new Color(0.19f, 0.15f, 0.1f), matAsset, ref firstMat), meshAsset, ref firstMesh, false, ref idx);
+                    continue;
+                }
+                // Eau des rivières de Kinshasa : brun-vert, chargée de terre
+                GameObject ag = Emit(root, (water ? "Eau_" : "Verdure_") + kv.Key, kv.Value, Mat(mats, water ? "Eau" : "Verdure", shader, water ? new Color(0.2f, 0.22f, 0.15f) : new Color(0.3f, 0.48f, 0.2f), matAsset, ref firstMat), meshAsset, ref firstMesh, water, ref idx);
                 // L'eau ralentit comme la boue (on ne roule pas dans une rivière comme sur une route)
                 if (water) ag.AddComponent<SurfaceZone>().Kind = SurfaceKind.Boue;
             }
@@ -1755,7 +1767,7 @@ namespace BalulaMoto.EditorTools
             if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c);
             // Lissé : « _Smoothness » (URP) et « _Glossiness » (Standard). Sans le second, le Standard gardait 0,5 :
             // sol, routes et murs brillaient et reflétaient le ciel (terre éclaircie, reflets bleu-gris).
-            float smooth = key.StartsWith("RouteGoudron") ? 0.25f : (key == "Eau" ? 0.62f : (key == "GrilleFer" ? 0.35f : 0.08f));
+            float smooth = key.StartsWith("RouteGoudron") ? 0.25f : (key == "Eau" ? 0.5f : (key == "GrilleFer" ? 0.35f : 0.08f));
             if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", smooth);
             if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", smooth);
             // Pas d'instanciation GPU : sur certains téléphones Android (PowerVR, Adreno), les objets instanciés ne sont pas dessinés

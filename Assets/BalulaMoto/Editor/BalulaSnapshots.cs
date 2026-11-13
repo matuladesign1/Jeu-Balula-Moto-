@@ -297,7 +297,10 @@ namespace BalulaMoto.EditorTools
             if (pl != null)
             {
                 Vector3 p = pl.transform.position;
-                Shoot(tag + "_depuis_la_rue", p + Vector3.up * 1.7f, new Vector3(c.x, Mathf.Min(b.size.y * 0.5f, 30f), c.z));
+                Vector3 back = pl.transform.position - new Vector3(c.x, 0f, c.z);
+                back.y = 0f;
+                back = back.sqrMagnitude > 1f ? back.normalized : Vector3.forward;
+                Shoot(tag + "_depuis_la_rue", p + back * 5f + Vector3.up * 2.4f, new Vector3(c.x, Mathf.Min(b.size.y * 0.5f, 30f), c.z));
             }
             // Devant la clôture : barreaux, arbres et monument à travers
             Vector3 dir = new Vector3(1f, 0f, 0.35f).normalized;

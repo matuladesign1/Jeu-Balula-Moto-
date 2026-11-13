@@ -159,13 +159,14 @@ namespace BalulaMoto.Runtime
             bool ok = false;
             for (int attempt = 0; attempt < 6 && !ok; attempt++)
             {
-                float along = ((float)rnd.NextDouble() * 2f - 1f) * 17f;
-                float lateral = g.HalfWidth + 1.05f + (float)rnd.NextDouble() * (1.2f + attempt * 0.5f);
+                // Attroupement autour de l'arrêt (plus dense au milieu), sur 1 à 4 m de profondeur
+                float along = (((float)rnd.NextDouble() + (float)rnd.NextDouble()) - 1f) * 13f;
+                float lateral = g.HalfWidth + 1.0f + (float)rnd.NextDouble() * (2.6f + attempt * 0.4f);
                 pos = g.Axis + g.Dir * along + g.Normal * side * lateral;
                 if (CityFill.IsBlocked(pos, 0.35f)) continue;
                 ok = true;
                 foreach (GameObject o in g.People)
-                    if (o != null && (o.transform.position - pos).sqrMagnitude < 0.45f * 0.45f) { ok = false; break; }
+                    if (o != null && (o.transform.position - pos).sqrMagnitude < 0.55f * 0.55f) { ok = false; break; }
             }
             if (!ok) { g.People.Add(null); return; }
             string outfit;

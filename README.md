@@ -22,6 +22,30 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
 - **Carte** : mini-carte et carte plein écran avec légende.
 - **Sauvegardes automatiques** (carrière et libre séparées).
 
+### Nouveautés de la version 4.2
+
+- **Tous les personnages ont un teint africain** : 21 avatars (5 nouveaux, dont 3 femmes) ; la peau claire des avatars du
+  pack Rocketbox a été assombrie vers cinq teints bruns à très foncés (`scripts/africaniser_avatars.py`), cheveux foncés.
+  La forme des visages reste celle du pack.
+- **Tricycle corrigé** : il se couchait sur un côté au démarrage (la barre anti-roulis arrière poussait dans le mauvais
+  sens). Il reste maintenant à plat comme un vrai trois-roues (roulis mesuré : 0° au démarrage, 1° en virage).
+- **Noms des rues** : sur la carte du jeu (ils apparaissent en zoomant) et sur des **plaques bleues à lettres blanches**
+  à chaque carrefour entre deux rues nommées dans OpenStreetMap. Une rue sans nom dans OpenStreetMap reste sans plaque.
+- **Poteaux électriques, fils et lampadaires** le long de toutes les rues ; **la nuit**, lampadaires et flaques de
+  lumière sur la chaussée, fenêtres et ampoules allumées dans les parcelles et les bâtiments, enseignes des boutiques.
+- **Phares** : chaque véhicule de la circulation allume ses phares et ses feux arrière quand il fait noir (faisceau sur
+  la route) ; les phares du joueur s'allument aussi tout seuls à la tombée de la nuit.
+- **Rivières, ruisseaux et canaux** d'OpenStreetMap (tracés réels, eau brune et berges de boue) et **ponts** : les
+  tronçons de route marqués « pont » dans OpenStreetMap ont des parapets et des garde-corps.
+- **Circulation dense** : environ 80 véhicules autour du joueur (100 aux heures de pointe), surtout sur les avenues et
+  le goudron ; chaque véhicule est allégé (pièces fusionnées) pour tenir sur téléphone.
+- **Taxis, minibus, bus, motos-taxis et tricycles** s'arrêtent aux arrêts (feux de détresse, rangés sur le côté) :
+  des clients montent, d'autres descendent.
+- **Foules aux arrêts** : jusqu'à 25 personnes de chaque côté de la rue (18 en qualité moyenne, 10 en qualité basse).
+- **Monuments de MATULA DESIGN** : Stade des Martyrs et Tour de l'Échangeur (modèles fournis, convertis en OBJ par
+  `scripts/convertir_monuments.py`), posés aux repères envoyés par le créateur, sur un terrain clôturé de barreaux de
+  fer espacés (on voit les arbres et le monument à travers), avec pelouse, arbres et un portail côté rue.
+
 ### Nouveautés de la version 4.1
 
 - **Personnages vraiment visibles** (chauffeur, piétons, passagers, chauffeur du garage). Cause trouvée grâce à des photos prises automatiquement dans le jeu : nos avatars n'ont qu'un niveau de détail, qui n'était dessiné que lorsqu'il occupait la moitié de l'écran (à moins de 3 m environ) ; au-delà, seul le casque ou le foulard restait affiché. Le seuil est corrigé (personnages visibles jusqu'à environ 140 m).
