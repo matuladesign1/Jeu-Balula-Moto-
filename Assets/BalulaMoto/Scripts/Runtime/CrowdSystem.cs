@@ -317,6 +317,9 @@ namespace BalulaMoto.Runtime
             Vector3 dir = SegmentDir(l, ls.y);
             Vector3 right = new Vector3(dir.z, 0f, -dir.x) * (rnd.Next(2) == 0 ? 1f : -1f);
             Vector3 center = pos + right * (1.6f + (float)rnd.NextDouble());
+            // Jamais dans une parcelle clôturée : on essaie l'autre côté, sinon pas de groupe ici
+            if (CityFill.IsBlocked(center, 1.3f)) center = pos - right * 1.2f;
+            if (CityFill.IsBlocked(center, 1.3f)) return;
             center.y = Ground(center, pos.y);
             int n = 2 + rnd.Next(2);
             float a0 = (float)rnd.NextDouble() * 360f;
@@ -351,6 +354,8 @@ namespace BalulaMoto.Runtime
             Vector3 dir = SegmentDir(l, ls.y);
             Vector3 right = new Vector3(dir.z, 0f, -dir.x) * (rnd.Next(2) == 0 ? 1f : -1f);
             Vector3 p0 = pos + right * 1.8f;
+            if (CityFill.IsBlocked(p0, 0.9f)) { right = -right; p0 = pos + right * 1.1f; }
+            if (CityFill.IsBlocked(p0, 0.9f)) return;
             p0.y = Ground(p0, pos.y);
             Ped p = Create(HumanLibrary.Woman(rnd), p0, "pagne");
             if (p == null) return;
@@ -503,6 +508,8 @@ namespace BalulaMoto.Runtime
             {
                 float side = Vector3.Dot(toPlayer, right);
                 dodgeTarget = side > 0f ? -1.8f : 1.8f;
+                // Pas d'écart vers un mur de parcelle : de l'autre côté, ou un petit pas seulement
+                if (CityFill.IsBlocked(basePos + right * (p.BaseSide + dodgeTarget), 0.35f)) dodgeTarget = -dodgeTarget * 0.6f;
             }
             p.Dodge = Mathf.MoveTowards(p.Dodge, dodgeTarget, dt * (dodgeTarget != 0f ? 4f : 1f));
             p.Side = Mathf.MoveTowards(p.Side, p.BaseSide + p.Dodge, dt * 2f);

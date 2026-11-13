@@ -249,7 +249,10 @@ namespace BalulaMoto.Runtime
             }
             else if (ReverseGear)
             {
-                if (ForwardSpeed > -3.5f) drive = -ThrottleSmoothed * Mathf.Min(tractionLimit * 0.5f, power / Mathf.Max(speedAbs, 2f));
+                // Tricycle : vraie marche arrière ; moto : le pilote recule en poussant avec les pieds (au pas)
+                float reverseMax = moto ? 1.6f : 3.5f;
+                float reverseForce = moto ? totalMass * 1.1f : Mathf.Min(tractionLimit * 0.5f, power / Mathf.Max(speedAbs, 2f));
+                if (ForwardSpeed > -reverseMax) drive = -ThrottleSmoothed * reverseForce;
             }
             else
             {

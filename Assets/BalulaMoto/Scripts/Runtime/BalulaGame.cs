@@ -53,7 +53,13 @@ namespace BalulaMoto.Runtime
             Traffic.Init(World.TrafficPaths, World.WalkPaths, GameSettings.Quality == 0 ? 10 : 22);
             // Foule de piétons réalistes autour du joueur (trottoirs OSM ou de la piste d'essai)
             if (HumanLibrary.Available) CrowdSystem.Create(worldRoot, CrowdSystem.CollectLanes(World, imported));
+            // Ville pleine : parcelles clôturées, boutiques, panneaux publicitaires le long de toutes les rues
+            if (imported != null) CityFill.Create(worldRoot, imported);
+            // Plan de la ville pour la mini-carte et la carte plein écran
+            CityMap.Build(imported, World);
             Cam.SetMenuOrbit(World.MenuCenter, 70f);
+            // Garage du menu principal (moto du joueur et chauffeur debout à côté)
+            GarageScene.Create();
 
             EnsureEventSystem();
             UI = UIManager.Create();

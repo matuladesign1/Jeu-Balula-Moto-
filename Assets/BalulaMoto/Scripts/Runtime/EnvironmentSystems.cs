@@ -160,7 +160,7 @@ namespace BalulaMoto.Runtime
             RenderSettings.ambientLight = Color.Lerp(nightAmbient, dayAmbient, daylight) + new Color(flash, flash, flash) * 0.3f;
             Color fogColor = Weather == WeatherKind.Poussiere ? new Color(0.72f, 0.6f, 0.45f) : Color.Lerp(new Color(0.75f, 0.82f, 0.9f), new Color(0.55f, 0.57f, 0.6f), Overcast);
             RenderSettings.fogColor = Color.Lerp(new Color(0.03f, 0.04f, 0.07f), fogColor, daylight);
-            float fog = Weather == WeatherKind.Brouillard ? 0.012f : (Weather == WeatherKind.Poussiere ? 0.009f : 0.0018f + RainIntensity * 0.006f);
+            float fog = Weather == WeatherKind.Brouillard ? 0.012f : (Weather == WeatherKind.Poussiere ? 0.009f : 0.0026f + RainIntensity * 0.006f);
             RenderSettings.fogDensity = Mathf.Lerp(RenderSettings.fogDensity, fog, dt * 0.2f);
             if (Camera.main != null)
             {

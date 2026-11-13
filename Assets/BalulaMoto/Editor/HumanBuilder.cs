@@ -237,13 +237,60 @@ namespace BalulaMoto.EditorTools
                 }
             }
             clip.EnsureQuaternionContinuity();
-            if (px != null && py != null && pz != null) bipHeight = new Vector3(px.Evaluate(0f), py.Evaluate(0f), pz.Evaluate(0f)).magnitude;
+            if (px != null && py != null && pz != null)
+            {
+                bipHeight = new Vector3(px.Evaluate(0f), py.Evaluate(0f), pz.Evaluate(0f)).magnitude;
+                // Les marches de la bibliothèque avancent le bassin (environ 1,2 m par cycle) puis reviennent
+                // en arrière à la boucle : on retire cette avance (le jeu déplace déjà le personnage), sinon
+                // il glisse et « saute » en arrière à chaque pas.
+                float limit = Mathf.Max(0.02f, bipHeight * 0.05f);
+                string[] axes = { ".x", ".y", ".z" };
+                AnimationCurve[] curves = { px, py, pz };
+                for (int a = 0; a < 3; a++)
+                {
+                    AnimationCurve fixedCurve = Detrend(curves[a], limit);
+                    if (fixedCurve == null) continue;
+                    EditorCurveBinding pb = EditorCurveBinding.FloatCurve("Bip01", typeof(Transform), "m_LocalPosition" + axes[a]);
+                    AnimationUtility.SetEditorCurve(clip, pb, fixedCurve);
+                }
+            }
             AnimationClipSettings s = AnimationUtility.GetAnimationClipSettings(clip);
             s.loopTime = true;
             AnimationUtility.SetAnimationClipSettings(clip, s);
             if (AssetDatabase.LoadAssetAtPath<Object>(outPath) != null) AssetDatabase.DeleteAsset(outPath);
             AssetDatabase.CreateAsset(clip, outPath);
             return clip;
+        }
+
+        /// <summary>Retire la dérive linéaire d'une courbe de position (et la recentre) si elle dépasse la limite ;
+        /// renvoie null si la courbe ne dérive pas.</summary>
+        private static AnimationCurve Detrend(AnimationCurve c, float limit)
+        {
+            if (c == null || c.length < 2) return null;
+            Keyframe[] k = c.keys;
+            float t0 = k[0].time, t1 = k[k.Length - 1].time, span = t1 - t0;
+            if (span <= 1e-4f) return null;
+            float drift = k[k.Length - 1].value - k[0].value;
+            if (Mathf.Abs(drift) < limit) return null;
+            float slope = drift / span;
+            float sum = 0f;
+            const int n = 64;
+            for (int i = 0; i < n; i++)
+            {
+                float t = t0 + span * (i + 0.5f) / n;
+                sum += c.Evaluate(t) - slope * (t - t0);
+            }
+            float mean = sum / n;
+            for (int i = 0; i < k.Length; i++)
+            {
+                k[i].value = k[i].value - slope * (k[i].time - t0) - mean;
+                if (!float.IsInfinity(k[i].inTangent)) k[i].inTangent -= slope;
+                if (!float.IsInfinity(k[i].outTangent)) k[i].outTangent -= slope;
+            }
+            AnimationCurve r = new AnimationCurve(k);
+            r.preWrapMode = c.preWrapMode;
+            r.postWrapMode = c.postWrapMode;
+            return r;
         }
 
         private static string NormalizePath(string path)
@@ -357,7 +404,12 @@ namespace BalulaMoto.EditorTools
             }
             LODGroup lg = root.AddComponent<LODGroup>();
             lg.SetLODs(lods.ToArray());
-            lg.RecalculateBounds();
+            // Taille fixée à la main : en compilation sans écran (-nographics), RecalculateBounds peut donner
+            // une taille nulle et le personnage n'est alors jamais dessiné (seul le casque restait visible).
+            lg.localReferencePoint = new Vector3(0f, 0.9f, 0f);
+            lg.size = 1.9f;
+            foreach (List<Renderer> list in new[] { lod0, lod1, lod2, lod3 })
+                foreach (Renderer r in list) HumanLibrary.GenerousBounds(r as SkinnedMeshRenderer);
 
             // Animator (animations « Generic » partagées par tous les avatars du même sexe)
             Animator an = inst.GetComponent<Animator>();

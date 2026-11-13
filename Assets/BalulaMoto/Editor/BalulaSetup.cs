@@ -166,8 +166,10 @@ namespace BalulaMoto.EditorTools
         {
             PlayerSettings.companyName = "MATULA DESIGN";
             PlayerSettings.productName = "BALULA MOTO";
-            if (string.IsNullOrEmpty(PlayerSettings.bundleVersion) || PlayerSettings.bundleVersion == "0.1" || PlayerSettings.bundleVersion == "1.0")
-                PlayerSettings.bundleVersion = "0.1.0";
+            // Version 4.0 (garage, carte, ville pleine, personnages visibles, embouteillages)
+            PlayerSettings.bundleVersion = "4.0.0";
+            PlayerSettings.Android.bundleVersionCode = 40;
+            PlayerSettings.iOS.buildNumber = "40";
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, BundleId);
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, BundleId);
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
@@ -237,6 +239,20 @@ namespace BalulaMoto.EditorTools
             else EditorUtility.DisplayDialog("BALULA MOTO", "La construction a échoué : consultez la Console (Window > General > Console) et envoyez-moi les messages en rouge.", "OK");
         }
 
+        /// <summary>Signe l'APK avec la clé de test du projet (Keystore/balula-test.keystore) : toutes les versions
+        /// portent la même signature et s'installent par-dessus la précédente sans perdre les sauvegardes.
+        /// Clé de test uniquement (mot de passe connu) : pour le Play Store, créer une clé de publication privée.</summary>
+        private static void UseTestKeystore()
+        {
+            string ks = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Keystore", "balula-test.keystore");
+            if (!File.Exists(ks)) return;
+            PlayerSettings.Android.useCustomKeystore = true;
+            PlayerSettings.Android.keystoreName = ks;
+            PlayerSettings.Android.keystorePass = "android";
+            PlayerSettings.Android.keyaliasName = "balula";
+            PlayerSettings.Android.keyaliasPass = "android";
+        }
+
         /// <summary>Construit l'APK. Retourne le chemin, ou null en cas d'échec.</summary>
         public static string BuildApk(string outputPath)
         {
@@ -245,6 +261,7 @@ namespace BalulaMoto.EditorTools
                 outputPath = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Builds", "BalulaMoto.apk");
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
             EditorUserBuildSettings.buildAppBundle = false;
+            UseTestKeystore();
             BuildPlayerOptions o = new BuildPlayerOptions();
             o.scenes = new[] { ScenePath };
             o.locationPathName = outputPath;
@@ -299,9 +316,9 @@ namespace BalulaMoto.EditorTools
             if (!File.Exists(osm)) { Debug.LogWarning("[BALULA] Carte OSM introuvable : " + osm + " — la piste d'essai sera utilisée."); return; }
             Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             if (Compat.FindFirst<ImportedWorld>() != null) { Debug.Log("[BALULA] La scène contient déjà une carte importée : conservée."); return; }
-            double lat = ParseD(Arg("-balulaOsmLat"), -4.32194), lon = ParseD(Arg("-balulaOsmLon"), 15.31194);
-            float radius = (float)ParseD(Arg("-balulaOsmRadius"), 2500.0);
-            int maxBuildings = (int)ParseD(Arg("-balulaOsmBuildings"), 9000.0);
+            double lat = ParseD(Arg("-balulaOsmLat"), -4.3376), lon = ParseD(Arg("-balulaOsmLon"), 15.3317);
+            float radius = (float)ParseD(Arg("-balulaOsmRadius"), 4800.0);
+            int maxBuildings = (int)ParseD(Arg("-balulaOsmBuildings"), 12000.0);
             string report = OsmImporterWindow.ImportBatch(osm, "Kinshasa", lat, lon, radius, maxBuildings);
             Debug.Log("[BALULA] Import OSM : " + report);
             EditorSceneManager.MarkSceneDirty(scene);

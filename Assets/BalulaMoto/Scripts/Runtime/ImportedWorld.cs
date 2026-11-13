@@ -23,6 +23,20 @@ namespace BalulaMoto.Runtime
         public List<ImportedPath> trafficPaths = new List<ImportedPath>();
         /// <summary>Trottoirs (bords des rues OpenStreetMap) utilisés par la foule.</summary>
         public List<ImportedPath> walkPaths = new List<ImportedPath>();
+        /// <summary>Axes des rues (parcelles clôturées générées autour du joueur, carte du jeu).</summary>
+        public List<ImportedRoad> roads = new List<ImportedRoad>();
+        /// <summary>Bâtiments OpenStreetMap : x, z = centre, y = rayon (les parcelles générées les évitent).</summary>
+        public List<Vector3> buildingSpots = new List<Vector3>();
         [TextArea(3, 12)] public string report;
+    }
+
+    /// <summary>Axe d'une rue importée (portion dans la zone de la carte).</summary>
+    [System.Serializable]
+    public class ImportedRoad
+    {
+        public string name;
+        public float width;
+        public int rank;
+        public List<Vector2> pts = new List<Vector2>();
     }
 }

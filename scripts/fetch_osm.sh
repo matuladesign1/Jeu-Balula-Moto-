@@ -4,10 +4,10 @@
 # Données © les contributeurs d'OpenStreetMap — https://www.openstreetmap.org/copyright
 set -u
 OUT="${1:-osm/kinshasa.osm}"
-LAT="${2:--4.32194}"
-LON="${3:-15.31194}"
-R_ROADS="${4:-2600}"
-R_BUILD="${5:-1700}"
+LAT="${2:--4.3376}"
+LON="${3:-15.3317}"
+R_ROADS="${4:-4900}"
+R_BUILD="${5:-1900}"
 mkdir -p "$(dirname "$OUT")"
 
 read -r S W N E <<<"$(python3 -c "
@@ -23,7 +23,7 @@ print(f'{lat-dl:.5f} {lon-dn:.5f} {lat+dl:.5f} {lon+dn:.5f}')")"
 
 BB="$S,$W,$N,$E"
 BB2="$S2,$W2,$N2,$E2"
-QUERY="[out:xml][timeout:300];
+QUERY="[out:xml][timeout:420][maxsize:1073741824];
 (
   way[\"highway\"]($BB);
   way[\"building\"]($BB2);
@@ -46,7 +46,7 @@ out body;"
 
 for SERVER in https://overpass-api.de/api/interpreter https://overpass.kumi.systems/api/interpreter https://overpass.private.coffee/api/interpreter; do
   echo "Téléchargement OSM depuis $SERVER (routes $BB, bâtiments $BB2)…"
-  if curl -sS -f --retry 2 --max-time 240 -A "BalulaMoto-CI (github.com/matuladesign1)" \
+  if curl -sS -f --retry 1 --max-time 480 -A "BalulaMoto-CI (github.com/matuladesign1)" \
        --data-urlencode "data=$QUERY" -o "$OUT.tmp" "$SERVER"; then
     if [ -s "$OUT.tmp" ] && grep -q "<osm" "$OUT.tmp" && grep -q "<way" "$OUT.tmp"; then
       mv "$OUT.tmp" "$OUT"

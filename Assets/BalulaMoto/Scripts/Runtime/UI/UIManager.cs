@@ -31,6 +31,8 @@ namespace BalulaMoto.Runtime
         public EmptyTankPanel EmptyTank;
         public PolicePanel Police;
         public ConfirmPanel Confirm;
+        public MapPanel Map;
+        public DriverPanel Driver;
 
         private readonly List<UIPanel> openModals = new List<UIPanel>();
         private readonly List<UIPanel> all = new List<UIPanel>();
@@ -95,6 +97,8 @@ namespace BalulaMoto.Runtime
             EmptyTank = Add(new EmptyTankPanel());
             Police = Add(new PolicePanel());
             Confirm = Add(new ConfirmPanel());
+            Map = Add(new MapPanel());
+            Driver = Add(new DriverPanel());
 
             // Bulle de dialogue (client, police, vendeurs)
             commentBox = UIKit.Box(SafeRoot, "Bulle", new Color(0.05f, 0.06f, 0.1f, 0.88f));
@@ -177,6 +181,7 @@ namespace BalulaMoto.Runtime
 
         public void OpenPause() { if (!AnyModalOpen) Open(Pause); }
         public void OpenMissions() { Open(Missions); }
+        public void OpenMap() { if (!Map.IsOpen) Open(Map); }
         public void OpenFinances() { Open(Finances); }
         public void OpenProvinces() { Open(Provinces); }
         public void OpenShop() { Open(Shop); }

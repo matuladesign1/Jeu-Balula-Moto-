@@ -354,6 +354,10 @@ namespace BalulaMoto.EditorTools
             List<KeyValuePair<float, OsmWay>> majors = new List<KeyValuePair<float, OsmWay>>();
             List<ImportedPath> walks = new List<ImportedPath>();
             int walkPoints = 0;
+            List<ImportedRoad> roadAxes = new List<ImportedRoad>();
+            int roadPoints = 0;
+            List<KeyValuePair<float, ImportedRoad>> trafficCandidates = new List<KeyValuePair<float, ImportedRoad>>();
+            List<Vector3> buildingSpots = new List<Vector3>();
             Vector3 spawn = Vector3.zero;
             float spawnHeading = 0f, bestSpawn = float.MaxValue;
 
@@ -401,25 +405,39 @@ namespace BalulaMoto.EditorTools
                     }
                 }
                 roadCount++;
-                // Trottoirs des deux côtés (rues ordinaires et avenues ; pas d'autoroutes ni de pistes)
-                if (rank >= 2 && rank <= 8 && hw != "service" && hw != "track" && walkPoints < 70000)
+                // Portions de la rue dans la zone : axes (parcelles, carte), trottoirs, boucles de circulation
                 {
                     List<Vector2> run = new List<Vector2>();
+                    string roadName = Name(w.Tags, null);
                     for (int i = 0; i <= pts.Count; i++)
                     {
                         bool inside = i < pts.Count && InRange(pts[i]);
                         if (inside) run.Add(pts[i]);
                         if ((!inside || i == pts.Count) && run.Count >= 2)
                         {
-                            foreach (float side in new[] { 1f, -1f })
+                            if (roadPoints < 250000)
                             {
-                                ImportedPath wp = new ImportedPath { name = "Trottoir" };
-                                AddLane(wp.points, run, side * (width * 0.5f + 1.3f));
-                                for (int k = 0; k < wp.points.Count; k++) wp.points[k] = new Vector3(wp.points[k].x, 0f, wp.points[k].z);
-                                if (wp.points.Count >= 2) { walks.Add(wp); walkPoints += wp.points.Count; }
+                                ImportedRoad axis = new ImportedRoad { name = roadName ?? "", width = width, rank = rank };
+                                axis.pts.AddRange(run);
+                                roadAxes.Add(axis);
+                                roadPoints += run.Count;
+                                float runLen = 0f;
+                                for (int k = 0; k < run.Count - 1; k++) runLen += Vector2.Distance(run[k], run[k + 1]);
+                                if (rank >= 3 && hw != "service" && hw != "track" && runLen >= 60f)
+                                    trafficCandidates.Add(new KeyValuePair<float, ImportedRoad>(runLen, axis));
+                            }
+                            if (rank >= 2 && rank <= 8 && hw != "service" && hw != "track" && walkPoints < 160000)
+                            {
+                                foreach (float side in new[] { 1f, -1f })
+                                {
+                                    ImportedPath wp = new ImportedPath { name = "Trottoir" };
+                                    AddLane(wp.points, run, side * (width * 0.5f + 1.3f));
+                                    for (int k = 0; k < wp.points.Count; k++) wp.points[k] = new Vector3(wp.points[k].x, 0f, wp.points[k].z);
+                                    if (wp.points.Count >= 2) { walks.Add(wp); walkPoints += wp.points.Count; }
+                                }
                             }
                         }
-                        if (!inside) run.Clear();
+                        if (!inside) run = new List<Vector2>();
                     }
                 }
                 if (rank >= 5)
@@ -430,18 +448,17 @@ namespace BalulaMoto.EditorTools
                 }
             }
 
-            // ---------------- Boucles de circulation (aller-retour sur les grandes avenues) ----------------
-            majors.Sort((p, q) => q.Key.CompareTo(p.Key));
-            for (int k = 0; k < majors.Count && paths.Count < 14; k++)
+            // ---------------- Boucles de circulation (aller-retour sur toutes les rues carrossables) ----------------
+            trafficCandidates.Sort((p, q) => q.Key.CompareTo(p.Key));
+            for (int k = 0; k < trafficCandidates.Count && paths.Count < 3000; k++)
             {
-                bool complete;
-                List<Vector2> pts = Points(d, majors[k].Value, out complete);
-                List<Vector2> inside = pts.FindAll(InRange);
-                if (inside.Count < 2) continue;
-                ImportedPath ip = new ImportedPath { name = Name(majors[k].Value.Tags, "Avenue " + majors[k].Value.Id) };
-                AddLane(ip.points, inside, 1.8f);
-                inside.Reverse();
-                AddLane(ip.points, inside, 1.8f);
+                ImportedRoad axis = trafficCandidates[k].Value;
+                List<Vector2> lane = new List<Vector2>(axis.pts);
+                float off = Mathf.Clamp(axis.width * 0.25f, 1.2f, 1.9f);
+                ImportedPath ip = new ImportedPath { name = string.IsNullOrEmpty(axis.name) ? "Rue" : axis.name };
+                AddLane(ip.points, lane, off);
+                lane.Reverse();
+                AddLane(ip.points, lane, off);
                 paths.Add(ip);
             }
 
@@ -483,6 +500,9 @@ namespace BalulaMoto.EditorTools
                     }
                     Batch(houses, c.x + "_" + c.y + "_toit").Polygon(pts, h);
                     buildingCount++;
+                    float br = 0f;
+                    foreach (Vector2 p in pts) br = Mathf.Max(br, Vector2.Distance(p, center));
+                    buildingSpots.Add(new Vector3(center.x, br, center.y));
                     string bname = Name(w.Tags, null);
                     if (bname != null) places.Add(Place("osm-b" + w.Id, bname, "batiment", center, 2, false, false));
                 }
@@ -547,7 +567,7 @@ namespace BalulaMoto.EditorTools
                     GeoProjection.ToLocal(loc.lat, loc.lon, originLat, originLon, out x, out z);
                     Vector2 p = new Vector2((float)x, (float)z);
                     if (!InRange(p)) continue;
-                    ImportedPlace ip = Place(loc.id, loc.nom, "repere", p, Mathf.Max(3, loc.poids), loc.arret, false);
+                    ImportedPlace ip = Place(loc.id, loc.nom, "repere", p, Mathf.Max(3, loc.poids), loc.arret, loc.categorie == "station-service");
                     ip.district = string.IsNullOrEmpty(loc.commune) ? worldName : loc.commune;
                     ip.isLandmark = true;
                     ip.status = loc.statutCoordonnees;
@@ -655,6 +675,8 @@ namespace BalulaMoto.EditorTools
             iw.places = places;
             iw.trafficPaths = paths;
             iw.walkPaths = walks;
+            iw.roads = roadAxes;
+            iw.buildingSpots = buildingSpots;
             report.Append("Import ").Append(System.DateTime.Now.ToString("yyyy-MM-dd HH:mm")).Append(" — ").Append(Path.GetFileName(osmPath)).Append('\n');
             report.Append("Origine ").Append(originLat.ToString(CultureInfo.InvariantCulture)).Append(", ").Append(originLon.ToString(CultureInfo.InvariantCulture)).Append(" · rayon ").Append(radius.ToString("0")).Append(" m\n");
             report.Append(roadCount).Append(" routes, ").Append(buildingCount).Append(" bâtiments, ").Append(areaCount).Append(" surfaces (eau/verdure), ").Append(places.Count).Append(" lieux, ").Append(paths.Count).Append(" boucles de circulation, ").Append(walks.Count).Append(" trottoirs.\n");

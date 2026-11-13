@@ -241,6 +241,9 @@ namespace BalulaMoto.Runtime
             Prims.Tube(p, "TigeRetroD", new Vector3(0.25f, 0.2f, -0.05f), new Vector3(0.3f, 0.46f, 0f), 0.015f, Black);
             Prims.Box(p, "RetroG", new Vector3(-0.3f, 0.48f, 0f), new Vector3(0.1f, 0.07f, 0.02f), Black);
             Prims.Box(p, "RetroD", new Vector3(0.3f, 0.48f, 0f), new Vector3(0.1f, 0.07f, 0.02f), Black);
+            // Glaces des rétroviseurs (côté pilote, brillantes : visibles en vue 1re personne)
+            Prims.Box(p, "GlaceRetroG", new Vector3(-0.3f, 0.48f, -0.012f), new Vector3(0.085f, 0.055f, 0.004f), new Color(0.74f, 0.82f, 0.9f), false, 0.95f);
+            Prims.Box(p, "GlaceRetroD", new Vector3(0.3f, 0.48f, -0.012f), new Vector3(0.085f, 0.055f, 0.004f), new Color(0.74f, 0.82f, 0.9f), false, 0.95f);
             rig.HeadLamp = HeadLamp(p, new Vector3(0f, 0.1f, 0.3f));
 
             rig.CameraFirstPerson = Anchor(b, "CameraPremierePersonne", new Vector3(0f, 1.58f, -0.08f));
@@ -250,7 +253,7 @@ namespace BalulaMoto.Runtime
             rig.CargoAnchor = Anchor(b, "Bagages", new Vector3(0f, 0.98f, -L * 0.5f + 0.3f));
             if (withDriver)
             {
-                rig.Driver = BuildHuman(b, new Vector3(0f, 0.88f, -0.12f), "chauffeur", true, 7, true);
+                rig.Driver = BuildDriver(b, new Vector3(0f, 0.88f, -0.12f), 7, true);
                 SetArmsForward(rig.Driver, 52f);
                 HumanLibrary.SetupRider(rig.Driver, Anchor(p, "MainGauche", new Vector3(-0.3f, 0.2f, -0.07f)), Anchor(p, "MainDroite", new Vector3(0.3f, 0.2f, -0.07f)),
                     Anchor(b, "PiedGauche", new Vector3(-0.17f, 0.4f, 0.02f)), Anchor(b, "PiedDroit", new Vector3(0.17f, 0.4f, 0.02f)), 10f);
@@ -372,7 +375,7 @@ namespace BalulaMoto.Runtime
             rig.CameraDashboard = Anchor(b, "CameraTableauDeBord", new Vector3(0f, 1.38f, front - 0.75f));
             if (withDriver)
             {
-                rig.Driver = BuildHuman(b, new Vector3(0f, 0.92f, driverZ), "chauffeur", true, 11, false);
+                rig.Driver = BuildDriver(b, new Vector3(0f, 0.92f, driverZ), 11, false);
                 SetArmsForward(rig.Driver, 60f);
                 HumanLibrary.SetupRider(rig.Driver, Anchor(pivot.transform, "MainGauche", new Vector3(-0.3f, 0f, -0.02f)), Anchor(pivot.transform, "MainDroite", new Vector3(0.3f, 0f, -0.02f)), null, null, 4f);
             }
@@ -415,6 +418,14 @@ namespace BalulaMoto.Runtime
         // Personnages (maquettes) — tenues : pagne, costume, etudiant, uniforme, travail, civil,
         // blouse, police, roulage, mecano, chauffeur, vendeur
         // ==================================================================
+
+        /// <summary>Chauffeur du joueur : l'avatar choisi dans le menu « Chauffeur » s'il existe.</summary>
+        private static GameObject BuildDriver(Transform parent, Vector3 localPos, int seed, bool helmet)
+        {
+            GameObject chosen = HumanLibrary.FindPrefab(GameSettings.DriverAvatar);
+            if (chosen != null) return HumanLibrary.Instantiate(chosen, parent, localPos, "chauffeur", true, seed, helmet);
+            return BuildHuman(parent, localPos, "chauffeur", true, seed, helmet);
+        }
 
         public static GameObject BuildHuman(Transform parent, Vector3 localPos, string outfit, bool seated, int seed, bool helmet)
         {

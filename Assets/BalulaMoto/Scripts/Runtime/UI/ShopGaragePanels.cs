@@ -352,6 +352,9 @@ namespace BalulaMoto.Runtime
 
         private GameSession S { get { return BalulaGame.Instance.Session; } }
 
+        /// <summary>Vue affichée à l'ouverture : 0 fiche, 1 améliorations, 2 personnalisation (menu garage).</summary>
+        public void Preset(int v) { view = (View)Mathf.Clamp(v, 0, 2); }
+
         private OwnedVehicle Selected
         {
             get

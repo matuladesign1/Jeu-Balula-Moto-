@@ -13,61 +13,117 @@ namespace BalulaMoto.Runtime
     public class MainMenuPanel : UIPanel
     {
         private Button continueButton;
-        private Text savesText, worldText;
-        private RawImage logo;
+        private Text savesText, worldText, moneyText, levelText, vehicleText, fuelText, rideLabel;
+        private readonly List<Image> fuelSegments = new List<Image>();
+        private static readonly Color Tile = new Color(0.04f, 0.05f, 0.08f, 0.84f);
 
         protected override void Build()
         {
             Closable = false;
-            Image bg = UIKit.Box(Root, "Fond", new Color(0.02f, 0.03f, 0.06f, 0.72f), false);
-            UIKit.Stretch(bg.rectTransform, 0, 0, 0, 0);
+            // Le garage 3D est visible derrière : seulement un voile à gauche pour la lisibilité des boutons
+            Image shadeLeft = UIKit.Box(Root, "VoileGauche", new Color(0f, 0f, 0f, 0.38f), false);
+            shadeLeft.raycastTarget = false;
+            shadeLeft.rectTransform.anchorMin = new Vector2(0f, 0f);
+            shadeLeft.rectTransform.anchorMax = new Vector2(0.3f, 1f);
+            shadeLeft.rectTransform.offsetMin = Vector2.zero;
+            shadeLeft.rectTransform.offsetMax = Vector2.zero;
 
-            // Colonne gauche : logo et titre
-            RectTransform left = UIKit.Rect(Root, "Identite");
-            left.anchorMin = new Vector2(0f, 0f);
-            left.anchorMax = new Vector2(0.5f, 1f);
-            left.offsetMin = new Vector2(60f, 40f);
-            left.offsetMax = new Vector2(-20f, -40f);
-            logo = new GameObject("Logo", typeof(RectTransform)).AddComponent<RawImage>();
-            logo.transform.SetParent(left, false);
-            logo.raycastTarget = false;
-            UIKit.Place(logo.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(420f, 420f));
-            Text title = UIKit.Label(left, "BALULA MOTO", 92, UIKit.Accent, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UIKit.Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -440f), new Vector2(900f, 110f));
-            Text sub = UIKit.Label(left, "Taxi-moto & tricycle — République démocratique du Congo\nMATULA DESIGN", 30, UIKit.Text, TextAnchor.MiddleCenter);
-            UIKit.Place(sub.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -560f), new Vector2(900f, 100f));
-            savesText = UIKit.Label(left, "", 24, UIKit.TextDim, TextAnchor.UpperCenter);
-            UIKit.Place(savesText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 120f), new Vector2(900f, 80f));
-            worldText = UIKit.Label(left, "", 22, UIKit.TextDim, TextAnchor.LowerCenter);
-            UIKit.Place(worldText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 0f), new Vector2(900f, 110f));
+            // Barre du haut : GARAGE, titre, argent, rang, carburant
+            Image top = UIKit.Box(Root, "BarreHaut", new Color(0.02f, 0.02f, 0.04f, 0.8f), false);
+            top.rectTransform.anchorMin = new Vector2(0f, 1f);
+            top.rectTransform.anchorMax = new Vector2(1f, 1f);
+            top.rectTransform.pivot = new Vector2(0.5f, 1f);
+            top.rectTransform.sizeDelta = new Vector2(0f, 112f);
+            top.rectTransform.anchoredPosition = Vector2.zero;
+            Button garage = UIKit.Button(top.transform, "GARAGE", UIKit.Accent, Color.black, 34, () => RequireGame(() => ui.OpenGarage()));
+            UIKit.Place((RectTransform)garage.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(250f, 80f));
+            Text title = UIKit.Label(top.transform, "BALULA MOTO", 52, UIKit.Accent, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UIKit.Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-150f, -6f), new Vector2(640f, 64f));
+            Text studio = UIKit.Label(top.transform, "MATULA DESIGN · Kinshasa", 22, UIKit.TextDim, TextAnchor.MiddleCenter);
+            UIKit.Place(studio.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-150f, -70f), new Vector2(640f, 32f));
+            moneyText = UIKit.Label(top.transform, "", 40, UIKit.Accent, TextAnchor.MiddleRight, FontStyle.Bold);
+            UIKit.Place(moneyText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-30f, -6f), new Vector2(560f, 54f));
+            levelText = UIKit.Label(top.transform, "", 22, UIKit.Text, TextAnchor.MiddleRight);
+            UIKit.Place(levelText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-30f, -60f), new Vector2(560f, 30f));
+            Text fuelLabel = UIKit.Label(top.transform, "CARBURANT", 18, UIKit.TextDim, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UIKit.Place(fuelLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-480f, -14f), new Vector2(220f, 26f));
+            for (int i = 0; i < 10; i++)
+            {
+                Image seg = UIKit.Box(top.transform, "Segment", new Color(1f, 1f, 1f, 0.15f), false);
+                seg.raycastTarget = false;
+                UIKit.Place(seg.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-480f - (9 - i) * 22f, -44f), new Vector2(16f, 26f));
+                fuelSegments.Add(seg);
+            }
+            fuelText = UIKit.Label(top.transform, "", 18, UIKit.Text, TextAnchor.MiddleLeft);
+            UIKit.Place(fuelText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-480f, -76f), new Vector2(220f, 26f));
 
-            // Colonne droite : boutons
-            Image col = UIKit.Box(Root, "Boutons", new Color(0.08f, 0.1f, 0.15f, 0.9f));
-            col.rectTransform.anchorMin = new Vector2(0.55f, 0f);
-            col.rectTransform.anchorMax = new Vector2(1f, 1f);
-            col.rectTransform.offsetMin = new Vector2(20f, 40f);
-            col.rectTransform.offsetMax = new Vector2(-60f, -40f);
-            RectTransform listContent;
-            RectTransform view = UIKit.ScrollList(col.transform, out listContent);
-            UIKit.Stretch(view, 24, 24, 24, 24);
+            // Colonne gauche : grandes tuiles (comme l'écran de garage de l'exemple)
+            string[] labels = { "ACHETER", "AMÉLIORER", "PERSONNALISER", "CHAUFFEUR", "MISSIONS" };
+            string[] subs = { "Motos et tricycles neufs ou d'occasion", "Moteur, freins, suspension, réservoir", "Couleurs, jantes, autocollants", "Choisissez votre chauffeur", "Courses spéciales et objectifs" };
+            UnityAction[] acts =
+            {
+                () => RequireGame(() => ui.OpenShop()),
+                () => RequireGame(() => { ui.Garage.Preset(1); ui.OpenGarage(); }),
+                () => RequireGame(() => { ui.Garage.Preset(2); ui.OpenGarage(); }),
+                () => ui.Open(ui.Driver),
+                () => RequireGame(() => ui.OpenMissions())
+            };
+            for (int i = 0; i < labels.Length; i++)
+                TileButton(Root, labels[i], subs[i], new Vector2(40f, -150f - i * 128f), acts[i]);
 
-            Add(listContent, "Nouvelle partie", UIKit.Accent, Color.black, () => { ui.NewGame.Mode = GameMode.Carriere; ui.Open(ui.NewGame); });
-            continueButton = Add(listContent, "Continuer", UIKit.Green, Color.white, () => BalulaGame.Instance.ContinueLast());
-            Add(listContent, "Mode carrière", UIKit.PanelLight, Color.white, () => BalulaGame.Instance.PlayMode(GameMode.Carriere));
-            Add(listContent, "Mode libre", UIKit.PanelLight, Color.white, () => BalulaGame.Instance.PlayMode(GameMode.Libre));
-            Add(listContent, "Missions", UIKit.PanelLight, Color.white, () => RequireGame(() => ui.OpenMissions()));
-            Add(listContent, "Garage", UIKit.PanelLight, Color.white, () => RequireGame(() => ui.OpenGarage()));
-            Add(listContent, "Magasin", UIKit.PanelLight, Color.white, () => RequireGame(() => ui.OpenShop()));
-            Add(listContent, "Paramètres", UIKit.PanelLight, Color.white, () => ui.Open(ui.Settings));
-            Add(listContent, "Crédits et sources", UIKit.PanelLight, Color.white, () => ui.Open(ui.Credits));
-            Add(listContent, "Quitter", UIKit.Red, Color.white, () => BalulaGame.Instance.Quit());
+            // En bas à gauche : autres choix
+            string[] small = { "Mode libre", "Paramètres", "Crédits", "Quitter" };
+            UnityAction[] smallActs =
+            {
+                () => BalulaGame.Instance.PlayMode(GameMode.Libre),
+                () => ui.Open(ui.Settings),
+                () => ui.Open(ui.Credits),
+                () => BalulaGame.Instance.Quit()
+            };
+            for (int i = 0; i < small.Length; i++)
+            {
+                Button b = UIKit.Button(Root, small[i], i == 3 ? new Color(0.6f, 0.12f, 0.1f, 0.9f) : Tile, Color.white, 24, smallActs[i]);
+                UIKit.Place((RectTransform)b.transform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(40f + i * 196f, 30f), new Vector2(184f, 70f));
+            }
+
+            // En bas à droite : ROULER (continuer la dernière partie ou en commencer une)
+            continueButton = UIKit.Button(Root, "ROULER  ►", new Color(0.18f, 0.72f, 0.3f, 0.96f), Color.white, 50, Ride);
+            UIKit.Place((RectTransform)continueButton.transform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-40f, 40f), new Vector2(460f, 140f));
+            rideLabel = UIKit.Label(Root, "", 22, UIKit.Text, TextAnchor.MiddleRight);
+            UIKit.Place(rideLabel.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-44f, 186f), new Vector2(700f, 34f));
+            Button newGame = UIKit.Button(Root, "Nouvelle partie", Tile, UIKit.Accent, 26, () => { ui.NewGame.Mode = GameMode.Carriere; ui.Open(ui.NewGame); });
+            UIKit.Place((RectTransform)newGame.transform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-520f, 40f), new Vector2(260f, 80f));
+
+            // Fiche du véhicule exposé et informations sur la carte
+            vehicleText = UIKit.Label(Root, "", 26, Color.white, TextAnchor.LowerCenter, FontStyle.Bold);
+            UIKit.Place(vehicleText.rectTransform, new Vector2(0.62f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 230f), new Vector2(900f, 80f));
+            Outline vo = vehicleText.gameObject.AddComponent<Outline>();
+            vo.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            savesText = UIKit.Label(Root, "", 20, UIKit.TextDim, TextAnchor.UpperRight);
+            UIKit.Place(savesText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-30f, -122f), new Vector2(700f, 60f));
+            worldText = UIKit.Label(Root, "", 18, UIKit.TextDim, TextAnchor.LowerCenter);
+            UIKit.Place(worldText.rectTransform, new Vector2(0.45f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 120f), new Vector2(640f, 100f));
         }
 
-        private static Button Add(RectTransform list, string label, Color bg, Color fg, UnityAction a)
+        private static void TileButton(RectTransform root, string label, string sub, Vector2 pos, UnityAction a)
         {
-            Button b = UIKit.Button(list, label, bg, fg, 38, a);
-            UIKit.Size(b, 104f);
-            return b;
+            Button b = UIKit.Button(root, "", Tile, Color.white, 20, a);
+            UIKit.Place((RectTransform)b.transform, new Vector2(0f, 1f), new Vector2(0f, 1f), pos, new Vector2(470f, 112f));
+            Image stripe = UIKit.Box(b.transform, "Bande", UIKit.Accent, false);
+            stripe.raycastTarget = false;
+            UIKit.Place(stripe.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0f), new Vector2(10f, 112f));
+            Text t = UIKit.Label(b.transform, label, 40, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UIKit.Place(t.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(30f, -8f), new Vector2(430f, 56f));
+            Text st = UIKit.Label(b.transform, sub, 19, UIKit.TextDim, TextAnchor.MiddleLeft);
+            UIKit.Place(st.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(30f, -66f), new Vector2(430f, 34f));
+            Text old = b.GetComponentInChildren<Text>();
+            if (old != null && old != t && old != st && string.IsNullOrEmpty(old.text)) old.gameObject.SetActive(false);
+        }
+
+        private void Ride()
+        {
+            if (SaveService.Exists(SaveService.LastSlot)) BalulaGame.Instance.ContinueLast();
+            else { ui.NewGame.Mode = GameMode.Carriere; ui.Open(ui.NewGame); }
         }
 
         private void RequireGame(System.Action then)
@@ -75,7 +131,7 @@ namespace BalulaMoto.Runtime
             BalulaGame g = BalulaGame.Instance;
             if (g.Session == null)
             {
-                if (!SaveService.Exists(SaveService.LastSlot)) { ui.Toast("Commencez d'abord une nouvelle partie."); return; }
+                if (!SaveService.Exists(SaveService.LastSlot)) { ui.Toast("Commencez d'abord une nouvelle partie (bouton ROULER)."); return; }
                 g.ContinueLast();
             }
             if (g.Session != null) then();
@@ -84,16 +140,100 @@ namespace BalulaMoto.Runtime
         public override void Refresh()
         {
             BalulaGame g = BalulaGame.Instance;
-            if (logo != null && g != null && g.Logo != null) logo.texture = g.Logo;
-            if (logo != null) logo.gameObject.SetActive(logo.texture != null);
-            continueButton.interactable = SaveService.Exists(SaveService.LastSlot);
+            bool hasSave = SaveService.Exists(SaveService.LastSlot);
+            PlayerProfile p = hasSave ? SaveService.Load(SaveService.LastSlot) : null;
+            UIKit.SetButtonText(continueButton, p != null ? "ROULER  ►" : "COMMENCER  ►");
+            rideLabel.text = p != null ? "Continuer : " + (p.Mode == GameMode.Libre ? "mode libre" : "carrière") + " · jour " + p.jour : "Aucune partie : une nouvelle carrière commence";
             savesText.text = "Carrière : " + SaveService.Summary(SaveService.SlotCareer) + "\nLibre : " + SaveService.Summary(SaveService.SlotFree);
+            moneyText.text = p != null ? Cdf.Format(p.argent) : "— FC";
+            levelText.text = p != null ? (string.IsNullOrEmpty(p.nomJoueur) ? "" : p.nomJoueur + "  ·  ") + "Niveau " + p.niveau + "  ·  " + TextUtil.Stars(p.Reputation()) : "Nouveau chauffeur";
+            float frac = 0f;
+            string vehicleLine = "";
+            if (g != null && g.Db != null)
+            {
+                OwnedVehicle ov = p != null ? p.FindVehicle(p.vehiculeActif) : null;
+                VehicleDef def = ov != null ? g.Db.Vehicle(ov.defId) : null;
+                if (def != null && ov != null)
+                {
+                    VehicleStats st = VehicleStatsCalculator.Compute(def, ov, g.Db.Economy);
+                    frac = st.TankL > 0f ? Mathf.Clamp01(ov.carburantL / st.TankL) : 0f;
+                    fuelText.text = ov.carburantL.ToString("0.0").Replace('.', ',') + " / " + st.TankL.ToString("0") + " L";
+                    vehicleLine = def.nom + "\n" + UIKit.Colored(st.MaxSpeedKmh.ToString("0") + " km/h · état " + ov.OverallCondition().ToString("0") + " % · " + ov.plaque, UIKit.TextDim);
+                }
+                else fuelText.text = "";
+                if (GarageScene.Instance != null) GarageScene.Instance.Show(g.Db, p);
+                if (g.Cam != null && GarageScene.Instance != null) g.Cam.SetMenuShot(GarageScene.Instance.CameraPosition, GarageScene.Instance.CameraLook);
+            }
+            vehicleText.text = vehicleLine;
+            int lit = Mathf.CeilToInt(frac * fuelSegments.Count - 0.01f);
+            for (int i = 0; i < fuelSegments.Count; i++)
+            {
+                float t = i / (float)(fuelSegments.Count - 1);
+                Color c = t < 0.25f ? UIKit.Red : (t < 0.5f ? new Color(1f, 0.75f, 0.1f) : new Color(0.45f, 0.85f, 0.2f));
+                fuelSegments[i].color = i < lit ? c : new Color(1f, 1f, 1f, 0.13f);
+            }
             if (g != null && g.World != null)
             {
                 worldText.text = g.World.IsTestTrack
-                    ? "Monde actuel : piste d'essai (ce n'est pas Kinshasa). La carte réelle de Kinshasa se génère dans l'éditeur Unity avec l'import OpenStreetMap."
-                    : "Monde actuel : " + g.World.Name + "\n" + g.World.Attribution;
-                if (g.World.HasMatadi) worldText.text += "\nZone Matadi : maquette jouable du Pont Maréchal (province Kongo Central).";
+                    ? "Monde actuel : piste d'essai (ce n'est pas Kinshasa)."
+                    : "Carte : " + g.World.Name + " · " + g.World.Attribution;
+            }
+        }
+    }
+
+    // =====================================================================
+    // Choix du chauffeur (le personnage debout dans le garage change en direct)
+    // =====================================================================
+    public class DriverPanel : UIPanel
+    {
+        private readonly List<Button> buttons = new List<Button>();
+
+        protected override void Build()
+        {
+            // Panneau à droite : le garage et le chauffeur restent visibles à gauche
+            Image panel = UIKit.Box(Root, "Panneau", new Color(0.06f, 0.07f, 0.1f, 0.94f));
+            panel.rectTransform.anchorMin = new Vector2(0.6f, 0f);
+            panel.rectTransform.anchorMax = new Vector2(1f, 1f);
+            panel.rectTransform.offsetMin = new Vector2(0f, 20f);
+            panel.rectTransform.offsetMax = new Vector2(-20f, -130f);
+            Text title = UIKit.Label(panel.transform, "CHAUFFEUR", 40, UIKit.Accent, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UIKit.Place(title.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -10f), new Vector2(500f, 60f));
+            Button close = UIKit.Button(panel.transform, "Valider", UIKit.Green, Color.white, 28, () => ui.Close(this));
+            UIKit.Place((RectTransform)close.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-18f, -12f), new Vector2(200f, 64f));
+            RectTransform list;
+            RectTransform view = UIKit.ScrollList(panel.transform, out list);
+            UIKit.Stretch(view, 18, 90, 18, 18);
+            Button random = UIKit.Button(list, "Au hasard (selon la course)", UIKit.PanelLight, Color.white, 26, () => Choose(""));
+            UIKit.Size(random, 84f);
+            buttons.Add(random);
+            foreach (string[] c in HumanLibrary.DriverChoices)
+            {
+                string id = c[0];
+                Button b = UIKit.Button(list, c[1], UIKit.PanelLight, Color.white, 26, () => Choose(id));
+                UIKit.Size(b, 84f);
+                buttons.Add(b);
+            }
+            Text note = UIKit.Label(list, "Personnages 3D : Microsoft Rocketbox (licence MIT).", 18, UIKit.TextDim, TextAnchor.MiddleCenter);
+            UIKit.Size(note, 50f);
+        }
+
+        private void Choose(string id)
+        {
+            GameSettings.DriverAvatar = id;
+            Refresh();
+            BalulaGame g = BalulaGame.Instance;
+            if (g != null && g.Session == null && GarageScene.Instance != null)
+                GarageScene.Instance.Show(g.Db, SaveService.Exists(SaveService.LastSlot) ? SaveService.Load(SaveService.LastSlot) : null);
+            if (g != null && g.Session != null) ui.Toast("Le nouveau chauffeur prendra la moto au prochain départ.");
+        }
+
+        public override void Refresh()
+        {
+            string cur = GameSettings.DriverAvatar ?? "";
+            for (int i = 0; i < buttons.Count; i++)
+            {
+                string id = i == 0 ? "" : HumanLibrary.DriverChoices[i - 1][0];
+                UIKit.SetSelected(buttons[i], id == cur);
             }
         }
     }
@@ -344,6 +484,8 @@ namespace BalulaMoto.Runtime
                 "<b>Pont Maréchal (Matadi)</b> : maquette de jeu. Longueur 722 m et travée centrale 520 m d'après des sources publiques ; hauteurs, largeur et relief estimés, à vérifier.\n\n" +
                 "<b>Photos de référence</b> : fournies par le créateur (bibliothèque REF-KIN, REF-KCE). Les photos portant un filigrane (CoinAfrique, CnK, Radio Okapi, comptes de réseaux sociaux) restent la propriété de leurs auteurs : elles servent uniquement de référence de modélisation et ne sont pas intégrées au jeu.\n\n" +
                 "<b>Personnages 3D</b> : avatars et animations « Microsoft Rocketbox » (© 2020 Microsoft, licence MIT — github.com/microsoft/Microsoft-Rocketbox), textures réduites pour téléphone ; foulards, bassines, casques et accessoires créés pour le jeu.\n\n" +
+                "<b>Affiches publicitaires et garage</b> : marques fictives (Unités Mbote, Mayi Malamu, Banque Lisanga…) et textures créées pour le jeu ; toute ressemblance avec une marque réelle serait fortuite. Les parcelles, boutiques et immeubles placés entre les rues sont génériques et ne représentent pas des bâtiments réels.\n\n" +
+                "<b>Lieux du créateur</b> : positions issues des liens Google Maps fournis par le créateur (coordonnées uniquement, aucune image reprise).\n\n" +
                 "<b>Véhicules</b> : les modèles sont inspirés de véhicules réels du marché congolais. Les noms de marques (TVS, Bajaj, Honda, Yamaha, Haojue…) appartiennent à leurs propriétaires ; ce jeu n'est ni affilié ni approuvé par eux. Les caractéristiques indiquées « à vérifier » sont des estimations.\n\n" +
                 "<b>Police et amendes</b> : situations et montants fictifs, à but ludique. Le jeu ne représente pas de corruption et n'encourage aucune infraction.\n\n" +
                 "<b>Sons</b> : sons de synthèse générés par le jeu. Aucune musique commerciale n'est utilisée.\n\n" +

@@ -48,6 +48,40 @@ namespace BalulaMoto.Runtime
             return found.Count > 0 ? found[rnd.Next(found.Count)] : From(category, rnd);
         }
 
+        /// <summary>Avatars proposés pour le chauffeur (identifiant du modèle, description).</summary>
+        public static readonly string[][] DriverChoices =
+        {
+            new[] { "Male_Adult_04", "Homme — tenue de ville" },
+            new[] { "Male_Adult_12", "Homme — chemise" },
+            new[] { "Male_Adult_17", "Homme — décontracté" },
+            new[] { "Male_Adult_18", "Homme — veste" },
+            new[] { "Sports_Male_03", "Homme — sport" },
+            new[] { "Delivery_Male_01", "Homme — livreur" },
+            new[] { "Business_Male_05", "Homme — costume" },
+            new[] { "Wood_Male_01", "Homme — artisan" },
+            new[] { "Construction_Male_03", "Homme — chantier" },
+            new[] { "Business_Female_01", "Femme — tailleur" },
+            new[] { "Female_Party_02", "Femme — sortie" }
+        };
+
+        public static GameObject FindPrefab(string avatarId)
+        {
+            if (string.IsNullOrEmpty(avatarId) || !Available) return null;
+            foreach (string cat in new[] { "Hommes", "Ouvriers", "Femmes", "Sante", "Police", "Enfants" })
+                foreach (GameObject g in Load(cat))
+                    if (g != null && g.name == avatarId) return g;
+            return null;
+        }
+
+        /// <summary>Crée l'avatar demandé (chauffeur choisi dans le menu) ou, à défaut, un personnage selon la tenue.</summary>
+        public static GameObject SpawnNamed(string avatarId, Transform parent, Vector3 localPos, string outfit, bool seated, int seed, bool helmet)
+        {
+            if (!Available) return null;
+            GameObject prefab = FindPrefab(avatarId);
+            if (prefab == null) return Spawn(parent, localPos, outfit, seated, seed, helmet);
+            return Instantiate(prefab, parent, localPos, outfit, seated, seed, helmet);
+        }
+
         /// <summary>Une femme : modèles « Femmes », parfois l'infirmière.</summary>
         public static GameObject Woman(System.Random rnd)
         {
@@ -95,6 +129,7 @@ namespace BalulaMoto.Runtime
         {
             GameObject g = Object.Instantiate(prefab, parent, false);
             g.name = prefab.name;
+            EnsureVisible(g);
             g.transform.localPosition = localPos;
             g.transform.localRotation = Quaternion.identity;
             System.Random rnd = new System.Random(seed * 13 + 5);
@@ -114,6 +149,29 @@ namespace BalulaMoto.Runtime
             av.Play(seated ? HumanAction.Sit : HumanAction.Idle, 0f, true);
             HumanProps.Dress(av, outfit, helmet, rnd);
             return g;
+        }
+
+        /// <summary>Garantit que le personnage est dessiné : taille du groupe de détails et boîtes englobantes
+        /// des maillages animés (une valeur nulle les fait disparaître, seul le casque restait visible).</summary>
+        public static void EnsureVisible(GameObject g)
+        {
+            LODGroup lg = g.GetComponent<LODGroup>();
+            if (lg != null)
+            {
+                lg.localReferencePoint = new Vector3(0f, 0.9f, 0f);
+                lg.size = 1.9f;
+            }
+            foreach (SkinnedMeshRenderer smr in g.GetComponentsInChildren<SkinnedMeshRenderer>(true)) GenerousBounds(smr);
+        }
+
+        /// <summary>Boîte englobante de 4 m autour de l'os racine (quelle que soit son orientation ou son échelle).</summary>
+        public static void GenerousBounds(SkinnedMeshRenderer smr)
+        {
+            if (smr == null) return;
+            Transform rb = smr.rootBone != null ? smr.rootBone : smr.transform;
+            float scale = Mathf.Abs(rb.lossyScale.x);
+            if (scale < 1e-5f) scale = 1f;
+            smr.localBounds = new Bounds(Vector3.zero, Vector3.one * (4f / scale));
         }
 
         /// <summary>Conducteur de moto ou de tricycle : mains sur le guidon, pieds sur les repose-pieds.</summary>

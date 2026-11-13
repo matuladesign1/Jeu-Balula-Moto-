@@ -15,10 +15,13 @@ namespace BalulaMoto.Runtime
 
         private float orbitYaw, orbitPitch = 18f, orbitDistance = 9f;
         private Vector3 velocity;
-        private bool menuOrbit;
-        private Vector3 menuCenter;
+        private bool menuOrbit, menuShot;
+        private Vector3 menuCenter, shotPos, shotLook;
         private float menuRadius = 60f;
         private float menuAngle;
+        private float chaseYaw, armLength = -1f;
+        private bool chaseInit;
+        private static readonly RaycastHit[] hitBuffer = new RaycastHit[16];
 
         public static string Label(CameraMode m)
         {
@@ -55,6 +58,9 @@ namespace BalulaMoto.Runtime
         {
             Target = v;
             menuOrbit = false;
+            menuShot = false;
+            chaseInit = false;
+            armLength = -1f;
             if (v != null)
             {
                 orbitYaw = v.transform.eulerAngles.y;
@@ -66,8 +72,20 @@ namespace BalulaMoto.Runtime
         public void SetMenuOrbit(Vector3 center, float radius)
         {
             menuOrbit = true;
+            menuShot = false;
             menuCenter = center;
             menuRadius = radius;
+        }
+
+        /// <summary>Plan fixe du menu (garage) : la caméra respire légèrement autour de sa position.</summary>
+        public void SetMenuShot(Vector3 position, Vector3 lookAt)
+        {
+            menuShot = true;
+            menuOrbit = true;
+            shotPos = position;
+            shotLook = lookAt;
+            transform.position = position;
+            transform.LookAt(lookAt);
         }
 
         public CameraMode NextMode()
@@ -79,25 +97,23 @@ namespace BalulaMoto.Runtime
             return Mode;
         }
 
-        /// <summary>Glisser le doigt sur l'écran : orbite en caméra libre, regard en 3e personne.</summary>
+        /// <summary>Glisser le doigt sur l'écran : seulement en caméra libre. Les caméras de conduite restent
+        /// fixes derrière le véhicule (demande du créateur : caméra fixe qui suit la moto).</summary>
         public void AddOrbit(Vector2 delta)
         {
+            if (Mode != CameraMode.Libre) return;
             float k = 0.18f * Mathf.Max(0.3f, Sensitivity);
             orbitYaw += delta.x * k;
             orbitPitch = Mathf.Clamp(orbitPitch - delta.y * k, -5f, 75f);
-            if (Mode != CameraMode.Libre && Mode != CameraMode.TroisiemePersonne && Mode != CameraMode.Rapprochee) return;
-            lookOffsetTimer = 2.5f;
         }
 
-        public void Zoom(float amount) { orbitDistance = Mathf.Clamp(orbitDistance - amount, 3f, 40f); }
-
-        private float lookOffsetTimer;
+        public void Zoom(float amount) { if (Mode == CameraMode.Libre) orbitDistance = Mathf.Clamp(orbitDistance - amount, 3f, 40f); }
 
         private void SnapBehind()
         {
             if (Target == null) return;
             Vector3 pos, look;
-            Compute(out pos, out look, true);
+            Compute(out pos, out look, true, 0f);
             transform.position = pos;
             transform.LookAt(look);
         }
@@ -107,6 +123,15 @@ namespace BalulaMoto.Runtime
             float dt = Time.unscaledDeltaTime;
             if (menuOrbit || Target == null)
             {
+                if (menuShot)
+                {
+                    float tt = Time.unscaledTime;
+                    Vector3 sway = new Vector3(Mathf.Sin(tt * 0.21f) * 0.35f, Mathf.Sin(tt * 0.33f) * 0.12f, 0f);
+                    transform.position = Vector3.Lerp(transform.position, shotPos + sway, dt * 2f);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(shotLook - transform.position), dt * 4f);
+                    Cam.fieldOfView = Mathf.Lerp(Cam.fieldOfView, 50f, dt * 3f);
+                    return;
+                }
                 menuAngle += dt * 4f;
                 Vector3 p = menuCenter + Quaternion.Euler(0f, menuAngle, 0f) * new Vector3(0f, menuRadius * 0.45f, -menuRadius);
                 transform.position = Vector3.Lerp(transform.position, p, dt * 2f);
@@ -114,25 +139,48 @@ namespace BalulaMoto.Runtime
                 return;
             }
             Vector3 targetPos, lookAt;
-            Compute(out targetPos, out lookAt, false);
+            Compute(out targetPos, out lookAt, false, dt);
             bool inside = Mode == CameraMode.PremierePersonne || Mode == CameraMode.TableauDeBord;
             if (inside)
             {
                 transform.position = targetPos;
                 Transform anchor = Mode == CameraMode.PremierePersonne ? Target.Rig.CameraFirstPerson : Target.Rig.CameraDashboard;
                 Quaternion baseRot = anchor != null ? anchor.rotation : Target.transform.rotation;
-                transform.rotation = baseRot * Quaternion.Euler(4f, 0f, 0f);
+                transform.rotation = baseRot * Quaternion.Euler(Mode == CameraMode.PremierePersonne ? 9f : 4f, 0f, 0f);
             }
             else
             {
-                transform.position = Vector3.SmoothDamp(transform.position, targetPos, ref velocity, Mode == CameraMode.Libre ? 0.25f : 0.12f, Mathf.Infinity, dt);
+                // Pas de passage à travers les murs : la caméra se rapproche quand un mur ou une maison la gêne
+                Vector3 safe = AvoidWalls(lookAt, targetPos, dt);
+                if (Mode == CameraMode.Libre) transform.position = Vector3.SmoothDamp(transform.position, safe, ref velocity, 0.25f, Mathf.Infinity, dt);
+                else transform.position = safe;
                 transform.LookAt(lookAt);
             }
-            Cam.fieldOfView = Mathf.Lerp(Cam.fieldOfView, inside ? 70f : 60f + Mathf.Clamp(Target.SpeedKmh / 12f, 0f, 9f), dt * 3f);
-            if (lookOffsetTimer > 0f) lookOffsetTimer -= dt;
+            Cam.fieldOfView = Mathf.Lerp(Cam.fieldOfView, inside ? 72f : 60f + Mathf.Clamp(Target.SpeedKmh / 12f, 0f, 8f), dt * 3f);
         }
 
-        private void Compute(out Vector3 pos, out Vector3 look, bool snap)
+        private Vector3 AvoidWalls(Vector3 pivot, Vector3 desired, float dt)
+        {
+            Vector3 d = desired - pivot;
+            float len = d.magnitude;
+            if (len < 0.05f) return desired;
+            Vector3 dir = d / len;
+            int mask = ~(1 << RaycastVehicle.PlayerLayer);
+            int n = Physics.SphereCastNonAlloc(pivot, 0.3f, dir, hitBuffer, len, mask, QueryTriggerInteraction.Ignore);
+            float best = len;
+            for (int i = 0; i < n; i++)
+            {
+                RaycastHit h = hitBuffer[i];
+                if (h.collider == null || h.collider.attachedRigidbody != null || h.distance <= 0f) continue;
+                if (Target != null && h.collider.transform.IsChildOf(Target.transform)) continue;
+                best = Mathf.Min(best, Mathf.Max(0.8f, h.distance - 0.15f));
+            }
+            if (armLength < 0f || best < armLength) armLength = best;
+            else armLength = Mathf.MoveTowards(armLength, best, dt * 5f);
+            return pivot + dir * armLength;
+        }
+
+        private void Compute(out Vector3 pos, out Vector3 look, bool snap, float dt)
         {
             Transform t = Target.transform;
             bool moto = Target.Kind == VehicleKind.Moto;
@@ -142,7 +190,8 @@ namespace BalulaMoto.Runtime
             switch (Mode)
             {
                 case CameraMode.PremierePersonne:
-                    pos = Target.Rig.CameraFirstPerson != null ? Target.Rig.CameraFirstPerson.position : t.position + Vector3.up * 1.6f;
+                    // Un peu en avant des yeux : on voit le guidon, les rétroviseurs et la route, pas l'intérieur du casque
+                    pos = (Target.Rig.CameraFirstPerson != null ? Target.Rig.CameraFirstPerson.position : t.position + Vector3.up * 1.6f) + t.forward * 0.14f;
                     look = pos + t.forward;
                     return;
                 case CameraMode.TableauDeBord:
@@ -159,15 +208,17 @@ namespace BalulaMoto.Runtime
                     }
                 default:
                     {
+                        // Caméra de poursuite fixe : toujours derrière le véhicule, le cap est seulement adouci
                         bool close = Mode == CameraMode.Rapprochee;
-                        float dist = close ? (moto ? 3.2f : 4.6f) : (moto ? 5.6f : 7.6f);
-                        float height = close ? (moto ? 1.7f : 2.4f) : (moto ? 2.3f : 3.1f);
-                        Vector3 dir = flatFwd;
-                        if (lookOffsetTimer > 0f) dir = Quaternion.Euler(0f, orbitYaw - Quaternion.LookRotation(flatFwd).eulerAngles.y, 0f) * flatFwd;
-                        else orbitYaw = Quaternion.LookRotation(flatFwd).eulerAngles.y;
-                        float speedLook = Mathf.Clamp(Target.SpeedKmh / 20f, 0f, 2.5f);
+                        float dist = close ? (moto ? 3.4f : 4.8f) : (moto ? 5.4f : 7.4f);
+                        float height = close ? (moto ? 1.75f : 2.4f) : (moto ? 2.25f : 3.0f);
+                        float vehYaw = Quaternion.LookRotation(flatFwd).eulerAngles.y;
+                        if (snap || !chaseInit) { chaseYaw = vehYaw; chaseInit = true; }
+                        else chaseYaw = Mathf.LerpAngle(chaseYaw, vehYaw, 1f - Mathf.Exp(-dt * 8f));
+                        orbitYaw = chaseYaw;
+                        Vector3 dir = Quaternion.Euler(0f, chaseYaw, 0f) * Vector3.forward;
                         pos = t.position - dir * dist + Vector3.up * height;
-                        look = t.position + Vector3.up * (moto ? 1.1f : 1.4f) + flatFwd * speedLook;
+                        look = t.position + Vector3.up * (moto ? 1.15f : 1.45f) + dir * 2.2f;
                         return;
                     }
             }

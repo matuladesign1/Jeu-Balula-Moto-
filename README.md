@@ -7,9 +7,9 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
 
 ## Ce qui est jouable
 
-- **Menu principal** : Nouvelle partie, Continuer, Mode carrière, Mode libre, Missions, Garage, Magasin, Paramètres, Crédits, Quitter.
+- **Menu principal (garage)** : Rouler (continuer), Nouvelle partie, Acheter, Améliorer, Personnaliser, Chauffeur, Missions, Garage, Mode libre, Paramètres, Crédits, Quitter.
 - **Deux véhicules de départ** : moto TVS HLX 150 bleue (REF-KIN-001) ou tricycle jaune et noir 5 places : 2 à côté du chauffeur + 3 derrière (REF-KIN-002).
-- **Conduite** : physique à roues (suspension, adhérence selon goudron / terre / boue / poussière / nids-de-poule / pluie), freins avant et arrière séparés sur moto, marche arrière sur tricycle, chutes et tricycle renversé, usure progressive.
+- **Conduite** : physique à roues (suspension, adhérence selon goudron / terre / boue / poussière / nids-de-poule / pluie), freins avant et arrière séparés sur moto, marche arrière (tricycle) et recul aux pieds (moto), chutes et tricycle renversé, usure progressive.
 - **Clients** : ils font signe aux arrêts ; on négocie le prix (« Combien jusqu'à… ? »), en français, lingala ou mixte ; contre-offres, clients qui partent ; note de 1 à 5 étoiles selon le prix, le temps, la sécurité, la conduite, le confort et le respect ; pourboires.
 - **Économie en FC** : carburant (station, point de vente, Kadafi avec risque de mauvaise qualité), panne sèche (Kadafi livré ou pousser), atelier (moteur, pneus, freins, vidange, suspension, lavage, carrosserie), documents du véhicule (fictifs).
 - **Magasin** : 10 catégories, 15 modèles, fiche technique, **aperçu 3D tournant**, comparaison avec votre véhicule, favoris. Acheter n'oblige **jamais** à vendre.
@@ -18,8 +18,23 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
 - **Police** : feu rouge, excès de vitesse, sans phare la nuit, contrôle des documents, amendes fictives avec quittance, contestation polie, poursuite par le bus Kabasele en cas de fuite.
 - **Carrière** : niveaux et XP, réputation, 26 missions, 26 provinces à débloquer, finances et historique.
 - **Jour / nuit et météo** (saison des pluies), éclairage public, pluie et orage.
-- **Caméras** : arrière, rapprochée, 1re personne, tableau de bord (tricycle), libre (glisser le doigt).
+- **Caméras** : arrière fixe, rapprochée, 1re personne, tableau de bord (tricycle), libre (glisser le doigt).
+- **Carte** : mini-carte et carte plein écran avec légende.
 - **Sauvegardes automatiques** (carrière et libre séparées).
+
+### Nouveautés de la version 4.0
+
+- **Menu « garage »** (comme la première photo d'exemple) : garage 3D (briques, rideau métallique, établi, pneus, fûts, néons, affiches), votre moto exposée et votre **chauffeur debout à côté** ; tuiles **ACHETER**, **AMÉLIORER**, **PERSONNALISER**, **CHAUFFEUR**, **MISSIONS**, bouton **GARAGE**, argent, niveau, jauge de carburant et grand bouton **ROULER**.
+- **Choix du chauffeur** : 11 personnages (hommes et femmes) ; celui choisi conduit votre moto ou votre tricycle.
+- **Personnages enfin visibles** : conducteurs dans les voitures, motards, passagers et piétons (correction des niveaux de détail qui les cachaient ; seul le casque restait visible). La marche ne « glisse » plus.
+- **Ville pleine** : parcelles **clôturées** le long de toutes les rues (murs, portails métalliques, maisons à toit de tôle ou en béton, manguiers), boutiques avec rideaux et enseignes et petits immeubles au bord des avenues, sans vide entre les quartiers. Tout est **solide** : la moto ne traverse plus les maisons ni les murs, et la caméra ne passe plus à travers.
+- **Panneaux publicitaires** au bord des avenues (affiches de marques **fictives**, dont BALULA MOTO et MATULA DESIGN ; aucune marque réelle).
+- **Circulation dense et embouteillages** aux heures de pointe : files derrière un bus, un camion ou un minibus qui avance au pas, klaxons.
+- **Caméra fixe** qui suit la moto (plus de rotation au doigt pendant la conduite ; caméra libre toujours disponible), 1re personne avec guidon et rétroviseurs.
+- **Bouton ARRIÈRE** : marche arrière du tricycle et recul « aux pieds » de la moto.
+- **Carte** : mini-carte ronde (cap en haut) et **carte plein écran** avec légende : clients qui attendent, arrêts, stations-service, garages, ateliers, magasin, lieux de référence, contrôles de police, destination du client.
+- **Carte de Kinshasa agrandie** (rayon d'environ 4,8 km centré sur Kalamu / Kasa-Vubu : de la Gombe à Limete et Lemba) et **lieux de vos liens Google Maps** (coordonnées seulement) : Place de la Gare, station-service de l'avenue de l'Université, deux lieux dont le nom reste à préciser, Nsele (hors de la zone actuelle).
+- **Signature stable** de l'APK : les prochaines versions s'installeront par-dessus celle-ci sans perdre les sauvegardes (clé de test du projet, à remplacer par une clé privée avant le Play Store).
 
 ### Nouveautés de la version 0.3 (Unity)
 
@@ -57,16 +72,19 @@ Détails, conseils et solutions aux erreurs : [`Docs/COMPILER_APK.md`](Docs/COMP
 | Klaxon / phares / caméra | H / L / C |
 | Action (client, station, atelier…) | F ou Entrée |
 | Clignotants | Q / E |
-| Marche arrière (tricycle) | R |
+| Marche arrière / recul | R |
 | Missions / pause | M / Échap (bouton retour sur Android) |
 
 ## Carte réelle de Kinshasa
 
-La compilation cloud télécharge et importe automatiquement le centre de Kinshasa (rayon d'environ 2,5 km autour de la Gombe, bâtiments sur 1,7 km). Si le téléchargement échoue, le jeu démarre sur une **piste d'essai** clairement signalée comme n'étant **pas** Kinshasa. Pour importer une autre zone à la main :
+La compilation cloud télécharge et importe automatiquement Kinshasa sur un rayon d'environ 4,8 km autour de Kalamu / Kasa-Vubu (bâtiments OpenStreetMap sur 1,9 km, puis parcelles génériques le long de toutes les rues). Si le téléchargement échoue, le jeu démarre sur une **piste d'essai** clairement signalée comme n'étant **pas** Kinshasa. Pour importer une autre zone à la main :
 **BALULA MOTO > 4. Importer une carte OpenStreetMap…** — choisir un fichier `.osm` exporté depuis openstreetmap.org (quartier de 1,5 à 3 km de rayon conseillé pour un téléphone). L'outil reprend la géométrie OSM telle quelle (aucune avenue déplacée), les revêtements, les bâtiments, l'eau, les arrêts, les stations, les lieux nommés et crée des boucles de circulation sur les grandes avenues. Les lieux de référence du créateur gardent la priorité ; les correspondances OSM ne sont que des **suggestions à confirmer** (rapport dans le composant `ImportedWorld`).
 Données © les contributeurs d'OpenStreetMap, licence ODbL (attribution affichée dans les crédits).
 
 ## Limites actuelles (honnêtes)
+
+- **Relief (Mont-Ngafula, Mont-Ngaliema)** : pas encore fait. La carte est plate ; les collines demandent des données d'altitude et l'adaptation des rues, des parcelles et de la circulation à la pente. De plus, ces deux quartiers sont en dehors de la zone actuelle (ouest et sud-ouest). Prévu pour une prochaine version.
+- **Parcelles et boutiques** : ce sont des constructions **génériques** placées entre les rues réelles (jamais des bâtiments identifiés) ; les vrais bâtiments OSM restent au centre de la carte.
 
 - **Compilation** : le code est vérifié par analyse statique ; la compilation Unity se fait dans le cloud. Les éventuelles erreurs apparaissent dans le journal GitHub Actions et sont corrigées au fur et à mesure.
 - **Personnages** : réalistes (Rocketbox), mais le pack libre contient peu de femmes africaines (3 modèles adultes) : les variantes viennent des foulards, bassines, animations et tailles. Des modèles supplémentaires (scans ou achats sous licence) pourront être ajoutés dans `ThirdParty`.

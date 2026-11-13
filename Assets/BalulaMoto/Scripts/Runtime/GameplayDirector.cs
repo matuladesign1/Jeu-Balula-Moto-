@@ -192,14 +192,11 @@ namespace BalulaMoto.Runtime
 
         public void ToggleReverse()
         {
-            if (Player.Kind == VehicleKind.Moto && !Player.PushMode)
-            {
-                if (UI != null) UI.Toast("Pas de marche arrière sur une moto : poussez-la à l'arrêt.");
-                return;
-            }
-            if (Player.SpeedKmh > 4f) { if (UI != null) UI.Toast("Arrêtez-vous avant de passer la marche arrière."); return; }
+            if (Player == null) return;
+            if (!Player.ReverseGear && Player.SpeedKmh > 4f) { if (UI != null) UI.Toast("Arrêtez-vous avant de reculer."); return; }
             Player.ReverseGear = !Player.ReverseGear;
-            if (UI != null) UI.Toast(Player.ReverseGear ? "Marche arrière" : "Marche avant");
+            bool moto = Player.Kind == VehicleKind.Moto;
+            if (UI != null) UI.Toast(Player.ReverseGear ? (moto ? "Marche arrière : recul aux pieds (GAZ pour reculer)" : "Marche arrière (GAZ pour reculer)") : "Marche avant");
         }
 
         // ==================================================================

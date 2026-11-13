@@ -184,9 +184,10 @@ namespace BalulaMoto.Runtime
             hour = h;
             bool rush = (h >= 6.5f && h < 9f) || (h >= 16f && h < 19f);
             bool night = h >= 21f || h < 5f;
-            targetCount = rush ? 34 : (night ? 10 : 24);
-            if (GameSettings.Quality == 0) targetCount = Mathf.RoundToInt(targetCount * 0.6f);
-            else if (GameSettings.Quality == 2) targetCount = Mathf.RoundToInt(targetCount * 1.25f);
+            // Kinshasa : circulation dense, embouteillages aux heures de pointe
+            targetCount = rush ? 42 : (night ? 12 : 30);
+            if (GameSettings.Quality == 0) targetCount = Mathf.RoundToInt(targetCount * 0.55f);
+            else if (GameSettings.Quality == 2) targetCount = Mathf.RoundToInt(targetCount * 1.3f);
             BalulaGame g = BalulaGame.Instance;
             bool rain = g != null && g.Env != null && g.Env.RainIntensity > 0.3f;
             if (CrowdSystem.Instance != null) CrowdSystem.Instance.SetTimeOfDay(h, rain);
@@ -248,40 +249,162 @@ namespace BalulaMoto.Runtime
             }
         }
 
+        // Emplacements d'apparition (tous les 20 m de chaque boucle), rangés par cases de 60 m
+        private struct SpawnSlot { public int Path; public float S; public Vector3 Pos; }
+        private readonly Dictionary<long, List<SpawnSlot>> spawnGrid = new Dictionary<long, List<SpawnSlot>>();
+        private const float SpawnCell = 60f;
+        private int gridPathCount = -1;
+
+        private static long SpawnKey(Vector3 p)
+        {
+            return ((long)Mathf.FloorToInt(p.x / SpawnCell) << 32) ^ (uint)Mathf.FloorToInt(p.z / SpawnCell);
+        }
+
+        private void BuildSpawnGrid()
+        {
+            spawnGrid.Clear();
+            for (int i = 0; i < Paths.Count; i++)
+            {
+                TrafficPath tp = Paths[i];
+                for (float s = 0f; s < tp.Length; s += 20f)
+                {
+                    Vector3 pos = tp.PositionAt(s);
+                    long key = SpawnKey(pos);
+                    List<SpawnSlot> l;
+                    if (!spawnGrid.TryGetValue(key, out l)) { l = new List<SpawnSlot>(); spawnGrid[key] = l; }
+                    l.Add(new SpawnSlot { Path = i, S = s, Pos = pos });
+                }
+            }
+            gridPathCount = Paths.Count;
+        }
+
+        /// <summary>Fait apparaître un véhicule sur une rue entre 60 et 300 m du joueur, hors du champ de vision proche.</summary>
+        private bool TrySpawnNear(Vector3 pp)
+        {
+            Camera cam = Camera.main;
+            for (int attempt = 0; attempt < 8; attempt++)
+            {
+                float ang = Random.value * Mathf.PI * 2f;
+                float rad = Mathf.Lerp(65f, 300f, Mathf.Sqrt(Random.value));
+                Vector3 c = pp + new Vector3(Mathf.Cos(ang) * rad, 0f, Mathf.Sin(ang) * rad);
+                List<SpawnSlot> l;
+                if (!spawnGrid.TryGetValue(SpawnKey(c), out l) || l.Count == 0) continue;
+                SpawnSlot slot = l[Random.Range(0, l.Count)];
+                float d2 = (slot.Pos - pp).sqrMagnitude;
+                if (Player != null && d2 < 55f * 55f) continue;
+                if (cam != null && Player != null && d2 < 130f * 130f)
+                {
+                    Vector3 to = slot.Pos - cam.transform.position;
+                    if (to.sqrMagnitude > 1f && Vector3.Dot(cam.transform.forward, to.normalized) > 0.55f) continue;
+                }
+                bool ok = true;
+                foreach (AIVehicle o in Vehicles)
+                    if ((o.transform.position - slot.Pos).sqrMagnitude < 14f * 14f) { ok = false; break; }
+                if (!ok) continue;
+                AIVehicleType type = RandomType();
+                Spawn(type, Paths[slot.Path], slot.S, CruiseFor(type));
+                return true;
+            }
+            return false;
+        }
+
+        private static float ApproxLength(AIVehicleType t)
+        {
+            switch (t)
+            {
+                case AIVehicleType.MotoTaxi: return 2.1f;
+                case AIVehicleType.BusTransco: return 11f;
+                case AIVehicleType.CamionRemorque: return 13f;
+                case AIVehicleType.MinibusJaune:
+                case AIVehicleType.MinibusBlanc: return 5.2f;
+                default: return 4.5f;
+            }
+        }
+
+        /// <summary>Embouteillage aux heures de pointe : une file de véhicules derrière un bus, un camion ou un
+        /// minibus qui avance au pas. Les suivants se collent derrière (distance de sécurité) et klaxonnent.</summary>
+        private bool TrySpawnJam(Vector3 pp, out int added)
+        {
+            added = 0;
+            Camera cam = Camera.main;
+            for (int attempt = 0; attempt < 6; attempt++)
+            {
+                float ang = Random.value * Mathf.PI * 2f;
+                float rad = Mathf.Lerp(80f, 230f, Random.value);
+                Vector3 c = pp + new Vector3(Mathf.Cos(ang) * rad, 0f, Mathf.Sin(ang) * rad);
+                List<SpawnSlot> l;
+                if (!spawnGrid.TryGetValue(SpawnKey(c), out l) || l.Count == 0) continue;
+                SpawnSlot slot = l[Random.Range(0, l.Count)];
+                TrafficPath path = Paths[slot.Path];
+                if (path.Length < 200f) continue;
+                int n = Random.Range(4, 8);
+                AIVehicleType[] types = new AIVehicleType[n];
+                float[] ss = new float[n];
+                float r0 = Random.value;
+                types[0] = r0 < 0.4f ? AIVehicleType.BusTransco : (r0 < 0.65f ? AIVehicleType.CamionRemorque : AIVehicleType.MinibusJaune);
+                ss[0] = slot.S;
+                for (int k = 1; k < n; k++)
+                {
+                    types[k] = RandomType();
+                    ss[k] = ss[k - 1] - (ApproxLength(types[k - 1]) + ApproxLength(types[k])) * 0.5f - Random.Range(2.2f, 3.5f);
+                }
+                bool ok = true;
+                for (int k = 0; k < n && ok; k++)
+                {
+                    Vector3 pos = path.PositionAt(Mathf.Repeat(ss[k], path.Length));
+                    float d2 = (pos - pp).sqrMagnitude;
+                    if (Player != null && d2 < 60f * 60f) { ok = false; break; }
+                    if (cam != null && Player != null && d2 < 140f * 140f)
+                    {
+                        Vector3 to = pos - cam.transform.position;
+                        if (to.sqrMagnitude > 1f && Vector3.Dot(cam.transform.forward, to.normalized) > 0.5f) { ok = false; break; }
+                    }
+                    foreach (AIVehicle o in Vehicles)
+                        if ((o.transform.position - pos).sqrMagnitude < 10f * 10f) { ok = false; break; }
+                }
+                if (!ok) continue;
+                for (int k = 0; k < n; k++)
+                {
+                    AIVehicle v = Spawn(types[k], path, Mathf.Repeat(ss[k], path.Length), k == 0 ? Random.Range(2.2f, 4.2f) : CruiseFor(types[k]));
+                    v.Speed = k == 0 ? 2f : 1.5f;
+                }
+                added = n;
+                return true;
+            }
+            return false;
+        }
+
         private void Update()
         {
             densityTimer -= Time.deltaTime;
             if (densityTimer > 0f || Paths.Count == 0) return;
-            densityTimer = 1.5f;
+            densityTimer = 0.4f;
+            if (gridPathCount != Paths.Count) BuildSpawnGrid();
+            Vector3 pp = Player != null ? Player.transform.position : Vector3.zero;
             int normal = 0;
             AIVehicle far = null;
             foreach (AIVehicle v in Vehicles)
             {
                 if (v.Special) continue;
                 normal++;
-                if (far == null && Player != null && (v.transform.position - Player.transform.position).sqrMagnitude > 900f * 900f) far = v;
+                if (far == null && Player != null && (v.transform.position - pp).sqrMagnitude > 430f * 430f) far = v;
             }
-            if (far != null) { Despawn(far); return; }
+            if (far != null) { Despawn(far); normal--; }
+            bool rush = (hour >= 7f && hour < 9.5f) || (hour >= 16f && hour < 19.5f);
             if (normal < targetCount)
             {
-                TrafficPath p = Paths[Random.Range(0, Paths.Count)];
-                float s = Random.Range(0f, p.Length);
-                Vector3 pos = p.PositionAt(s);
-                bool ok = Player == null || ((pos - Player.transform.position).sqrMagnitude > 45f * 45f && (pos - Player.transform.position).sqrMagnitude < 700f * 700f);
-                foreach (AIVehicle o in Vehicles)
-                    if ((o.transform.position - pos).sqrMagnitude < 18f * 18f) { ok = false; break; }
-                if (ok)
-                {
-                    AIVehicleType type = RandomType();
-                    Spawn(type, p, s, CruiseFor(type));
-                }
+                int added;
+                if (rush && Random.value < 0.3f && TrySpawnJam(pp, out added)) normal += added;
+                // Jusqu'à deux véhicules par passage : la circulation se remplit vite autour du joueur
+                for (int k = 0; k < 2 && normal < targetCount; k++)
+                    if (TrySpawnNear(pp)) normal++;
             }
-            else if (normal > targetCount + 2)
+            else if (normal > targetCount + (rush ? 9 : 3))
             {
                 foreach (AIVehicle v in Vehicles)
                 {
                     if (v.Special) continue;
-                    if (Player == null || (v.transform.position - Player.transform.position).sqrMagnitude > 120f * 120f) { Despawn(v); break; }
+                    if (Player == null || (v.transform.position - pp).sqrMagnitude > 150f * 150f) { Despawn(v); break; }
                 }
             }
         }

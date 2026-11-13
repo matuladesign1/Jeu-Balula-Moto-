@@ -193,6 +193,13 @@ namespace BalulaMoto.Runtime
             set { PlayerPrefs.SetFloat("balula_sensibilite", Mathf.Clamp(value, 0.3f, 3f)); }
         }
 
+        /// <summary>Avatar du chauffeur choisi dans le menu (vide = tiré au hasard).</summary>
+        public static string DriverAvatar
+        {
+            get { return PlayerPrefs.GetString("balula_chauffeur", ""); }
+            set { PlayerPrefs.SetString("balula_chauffeur", value ?? ""); PlayerPrefs.Save(); }
+        }
+
         public static bool ShowHelp
         {
             get { return PlayerPrefs.GetInt("balula_aide", 1) == 1; }

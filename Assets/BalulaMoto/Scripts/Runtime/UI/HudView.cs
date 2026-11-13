@@ -17,7 +17,7 @@ namespace BalulaMoto.Runtime
         private readonly List<Image> fuelSegments = new List<Image>();
         private GameObject ridePanel, helpPanel;
         private Button actionButton;
-        private Image lightsImg, indLeftImg, indRightImg, hazardImg;
+        private Image lightsImg, indLeftImg, indRightImg, hazardImg, reverseImg;
         private bool steerLeft, steerRight, kindSet, lastMoto, helpDone;
         private float refreshTimer, helpTimer = 22f;
 
@@ -108,6 +108,9 @@ namespace BalulaMoto.Runtime
             RoundButton(root, "II", new Vector2(1f, 1f), new Vector2(-20f, -20f), 110f, UIKit.Dark, 46, () => ui.OpenPause());
             RoundButton(root, "Missions", new Vector2(1f, 1f), new Vector2(-140f, -26f), 98f, UIKit.Dark, 20, () => ui.OpenMissions());
             RoundButton(root, "Caméra", new Vector2(1f, 1f), new Vector2(-250f, -26f), 98f, UIKit.Dark, 20, () => { if (G != null) G.CycleCamera(); });
+            RoundButton(root, "Carte", new Vector2(1f, 1f), new Vector2(-360f, -26f), 98f, new Color(0.05f, 0.35f, 0.7f, 0.85f), 22, () => ui.OpenMap());
+            // Mini-carte sous les boutons (touchez-la pour ouvrir la carte complète)
+            MiniMapView.Build(root, ui, new Vector2(-20f, -146f), 290f);
         }
 
         private void BuildMissions(RectTransform root)
@@ -165,12 +168,17 @@ namespace BalulaMoto.Runtime
             TouchButton brake = Pedal3D(root, "FREIN", new Vector2(-220f, 40f), new Vector2(230f, 170f), Pedal, out brakeText);
             brake.Changed = p => { PlayerControls.TouchBrake = p ? 1f : 0f; };
             TouchButton brake2 = Pedal3D(root, "FREIN AR", new Vector2(-220f, 230f), new Vector2(230f, 100f), new Color(0.95f, 0.6f, 0.15f, 0.9f), out brake2Text);
-            brake2.Changed = p =>
-            {
-                if (G == null || G.Player == null) return;
-                if (G.Player.Kind == VehicleKind.Moto) PlayerControls.TouchBrakeRear = p ? 1f : 0f;
-                else if (p) G.ToggleReverse();
-            };
+            brake2.Changed = p => { PlayerControls.TouchBrakeRear = p ? 1f : 0f; };
+
+            // Marche arrière (moto : recul aux pieds ; tricycle : marche arrière) — allumé quand elle est engagée
+            reverseImg = UIKit.Disc(root, "MarcheArriere", ControlBg);
+            UIKit.Place(reverseImg.rectTransform, new Vector2(1f, 0f), new Vector2(0.5f, 0.5f), new Vector2(-335f, 425f), new Vector2(124f, 124f));
+            Text rl = UIKit.Label(reverseImg.transform, "ARRIÈRE", 22, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UIKit.Stretch(rl.rectTransform, 6, 6, 6, 6);
+            Button rb = reverseImg.gameObject.AddComponent<Button>();
+            rb.targetGraphic = reverseImg;
+            rb.transition = Selectable.Transition.None;
+            rb.onClick.AddListener(() => { if (G != null) G.ToggleReverse(); });
 
             // Klaxon rond à droite
             Image hornImg = UIKit.Disc(root, "Klaxon", ControlBg);
@@ -263,7 +271,7 @@ namespace BalulaMoto.Runtime
             kindSet = true;
             lastMoto = moto;
             brakeText.text = moto ? "FREIN AV" : "FREIN";
-            brake2Text.text = moto ? "FREIN AR" : "MARCHE AR.";
+            brake2Text.text = moto ? "FREIN AR" : "FREIN À MAIN";
             PlayerControls.ResetTouch();
         }
 
@@ -378,6 +386,7 @@ namespace BalulaMoto.Runtime
             indLeftImg.color = (v.Indicator == -1 || v.Indicator == 2) && blink ? Amber : UIKit.PanelLight;
             indRightImg.color = (v.Indicator == 1 || v.Indicator == 2) && blink ? Amber : UIKit.PanelLight;
             hazardImg.color = v.Indicator == 2 ? UIKit.Red : UIKit.PanelLight;
+            reverseImg.color = v.ReverseGear ? Amber : ControlBg;
 
             // Missions actives
             List<MissionProgress> act = s.Missions.Active();

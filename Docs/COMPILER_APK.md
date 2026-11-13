@@ -30,6 +30,9 @@ Ne les écrivez jamais dans un message, un fichier ou une discussion.
 - Onglet **Releases** du dépôt (ou https://github.com/matuladesign1/Jeu-Balula-Moto-/releases/latest) →
   **BalulaMoto.apk**. Ouvrez ce lien directement sur le téléphone Android.
 - Sur le téléphone : autoriser l'installation d'applications de « sources inconnues » pour le navigateur, puis installer.
+- **Version 4.0** : si le téléphone refuse l'installation (« application non installée »), désinstallez une fois
+  l'ancienne version (signée avec une autre clé), puis installez la 4.0. Les versions suivantes s'installeront
+  par-dessus sans perdre les sauvegardes (même clé de test pour toutes les compilations).
 
 ### Ce que fait la compilation
 
@@ -64,5 +67,7 @@ Ouvrez l'exécution en rouge dans l'onglet **Actions**, puis l'étape en échec 
 - Identifiant `com.matuladesign.balulamoto`, nom « BALULA MOTO », éditeur « MATULA DESIGN ».
 - Paysage uniquement, IL2CPP, ARM64 + ARMv7 (téléphones récents et plus anciens).
 - Icône et écran de démarrage : logo BALULA MOTO (REF-APP-001).
-- APK signé avec la clé de développement de Unity : suffisant pour installer et tester. Pour le Google Play Store,
-  il faudra une clé de publication et un fichier `.aab` (étape ultérieure).
+- APK signé avec la **clé de test du projet** (`Keystore/balula-test.keystore`, mot de passe connu) : la même pour
+  toutes les compilations, pour pouvoir mettre à jour le jeu sans le désinstaller. Ce n'est pas une clé secrète :
+  pour le Google Play Store, il faudra une clé de publication privée (gardée hors du dépôt, dans les secrets GitHub)
+  et un fichier `.aab` (étape ultérieure).
