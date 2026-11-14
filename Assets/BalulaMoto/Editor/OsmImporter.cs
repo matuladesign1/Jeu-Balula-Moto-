@@ -960,7 +960,18 @@ namespace BalulaMoto.EditorTools
             int skippedStations = 0, skippedRoads = 0, skippedBoulevards = 0, skippedGreen = 0;
             // Boulevards : 10 m libres devant les bâtiments ; boulevard Lumumba : aucune construction entre le grand et
             // le petit boulevard (espace vert construit par la ville au lancement du jeu)
-            BoulevardIndex bdIndex = new BoulevardIndex(roadAxes);
+            GreenAreas greenAreas = new GreenAreas();
+            foreach (OsmWay w in d.Ways) GreenPolygon(d, w, w.Tags, greenAreas);
+            foreach (OsmRelation rel in d.Relations)
+            {
+                if (!IsArea(rel.Tags)) continue;
+                foreach (OsmMember m in rel.Members)
+                {
+                    OsmWay w;
+                    if (m.Type == "way" && m.Role == "outer" && d.WayById.TryGetValue(m.Ref, out w)) GreenPolygon(d, w, rel.Tags, greenAreas);
+                }
+            }
+            BoulevardIndex bdIndex = new BoulevardIndex(roadAxes, greenAreas);
             if (buildings)
             {
                 System.Random rnd = new System.Random(243);
@@ -1419,6 +1430,7 @@ namespace BalulaMoto.EditorTools
             iw.buildingSpots = buildingSpots;
             iw.works = works;
             iw.clearZones = clearZones;
+            bdIndex.Store(iw.greenStripPts, iw.greenStripInfo);
             iw.waterways = waterAxes;
             iw.waterSegs = riverSegs;
             iw.waterHw = riverSegHw;
@@ -1433,7 +1445,8 @@ namespace BalulaMoto.EditorTools
                   .Append((edgeLength / 1000f).ToString("0")).Append(" km (").Append(edgeVerts).Append(" sommets). Chantiers : ").Append(works.Count).Append(".\n");
             report.Append("Boulevards : ").Append(bdIndex.Boulevards.Count).Append(" tronçons ; bâtiments OSM écartés à moins de 10 m d'un boulevard : ").Append(skippedBoulevards)
                   .Append(" ; bande verte du boulevard Lumumba (entre grand et petit boulevard) : ").Append(bdIndex.Strips.Count).Append(" morceaux, ")
-                  .Append((bdIndex.StripLength / 1000f).ToString("0.00")).Append(" km, ").Append(skippedGreen).Append(" bâtiments OSM retirés.\n");
+                  .Append((bdIndex.StripLength / 1000f).ToString("0.00")).Append(" km, ").Append(skippedGreen).Append(" bâtiments OSM retirés (espaces verts OSM : ")
+                  .Append(greenAreas.Count).Append(").\n");
             report.Append(roadCount).Append(" routes, ").Append(buildingCount).Append(" bâtiments, ").Append(areaCount).Append(" surfaces (eau/verdure), ").Append(places.Count).Append(" lieux, ").Append(paths.Count).Append(" boucles de circulation, ").Append(walks.Count).Append(" trottoirs.\n");
             report.Append("Lieux de référence :\n").Append(string.Join("\n", refsReport.ToArray()));
             iw.report = report.ToString();
@@ -1724,6 +1737,21 @@ namespace BalulaMoto.EditorTools
             if (t.TryGetValue("landuse", out v) && (v == "grass" || v == "forest" || v == "meadow" || v == "recreation_ground" || v == "cemetery")) return true;
             if (t.TryGetValue("leisure", out v) && (v == "park" || v == "pitch" || v == "garden")) return true;
             return false;
+        }
+
+        /// <summary>Espace vert fermé (pas l'eau) pour reconnaître la bande verte du boulevard Lumumba.</summary>
+        private void GreenPolygon(OsmData d, OsmWay w, Dictionary<string, string> tags, GreenAreas greens)
+        {
+            if (!IsArea(tags) || w.Refs.Count < 4 || w.Refs[0] != w.Refs[w.Refs.Count - 1]) return;
+            string v;
+            if ((tags.TryGetValue("natural", out v) && v == "water") || tags.ContainsKey("waterway")) return;
+            bool complete;
+            List<Vector2> pts = Points(d, w, out complete);
+            if (!complete || pts.Count < 4 || pts.Count > 6000) return;
+            pts.RemoveAt(pts.Count - 1);
+            bool near = false;
+            foreach (Vector2 p in pts) if (InRange(p)) { near = true; break; }
+            if (near) greens.Add(pts);
         }
 
         private void AddArea(OsmData d, OsmWay w, Dictionary<string, string> tags, Dictionary<string, MeshBatch> areas, ref int count)

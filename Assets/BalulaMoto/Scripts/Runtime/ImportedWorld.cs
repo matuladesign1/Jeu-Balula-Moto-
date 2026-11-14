@@ -37,6 +37,10 @@ namespace BalulaMoto.Runtime
         public List<float> waterHw = new List<float>();
         /// <summary>Terrains réservés (monuments clôturés) : x, z = centre, y = rayon. Ni parcelle ni poteau dedans.</summary>
         public List<Vector3> clearZones = new List<Vector3>();
+        /// <summary>Espace vert du boulevard Lumumba (entre grand et petit boulevard), calculé à l'import : 4 coins par
+        /// morceau (I0, I1, O1, O0) ; info = largeurs aux deux stations et voie du petit boulevard.</summary>
+        public List<Vector2> greenStripPts = new List<Vector2>();
+        public List<Vector3> greenStripInfo = new List<Vector3>();
         [TextArea(3, 12)] public string report;
     }
 

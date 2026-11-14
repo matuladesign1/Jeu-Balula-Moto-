@@ -22,6 +22,22 @@ namespace BalulaMoto.Runtime
         public Vector3 ShowroomCameraPosition { get { return Origin + new Vector3(-1.05f, 1.6f, -3.4f); } }
         public Vector3 ShowroomCameraLook { get { return Origin + new Vector3(-0.55f, 0.62f, 1.0f); } }
 
+        /// <summary>Cadrage du garage selon le véhicule : plus près pour une moto, un peu moins pour un tricycle.</summary>
+        public void ShowroomShot(VehicleDef def, out Vector3 pos, out Vector3 look)
+        {
+            float k = def != null && def.IsMoto ? 0.64f : 0.86f;
+            Vector3 t = Origin + new Vector3(0.45f, 0.5f, 1.0f);
+            pos = t + (ShowroomCameraPosition - t) * k;
+            look = t + (ShowroomCameraLook - t) * k;
+        }
+
+        /// <summary>Cadrage du chauffeur debout à côté du plateau (onglet CHAUFFEUR).</summary>
+        public void DriverShot(out Vector3 pos, out Vector3 look)
+        {
+            pos = Origin + new Vector3(0.75f, 1.45f, -2.3f);
+            look = Origin + new Vector3(1.55f, 1.0f, 0.15f);
+        }
+
         public static GarageScene Create()
         {
             GameObject g = new GameObject("GarageMenu");

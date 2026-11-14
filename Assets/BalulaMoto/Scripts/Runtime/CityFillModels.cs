@@ -194,15 +194,8 @@ namespace BalulaMoto.Runtime
                 }
                 AddBox(col, new Vector3(0f, H * 0.5f, hd), new Vector3(w, H, T));
                 Towers++;
-                // Lumières des bureaux la nuit (quelques fenêtres)
-                if (curLum != null)
-                {
-                    float top = m.Bounds.size.y;
-                    Vector3 face = hc - f * (fd * 0.5f + 0.05f);
-                    for (float y = 4.8f; y < top - 2f; y += 3.2f)
-                        for (float x = -fw * 0.5f + 1.6f; x < fw * 0.5f - 1f; x += 3.2f)
-                            if (rnd.Next(100) < 30) curLum.Panel(face + r * x + u * y, r, u, 1.1f, 0.9f, WindowLight(rnd));
-                }
+                // (pas de panneaux de fenêtres éclairées : la façade du modèle a déjà ses vitres, et le socle plus large
+                // que la tour les faisait flotter devant la façade)
             }
             else
             {
@@ -279,6 +272,8 @@ namespace BalulaMoto.Runtime
                     }
                     // Pas de barrière dans un carrefour : passage libre de 6 m au-delà de la rue qui croise
                     if (NearCrossing(sg.Road, name, q, 6f)) continue;
+                    // Ni dans l'espace vert clôturé du boulevard Lumumba
+                    if (InLawn(q, 0.8f, Mathf.FloorToInt(q.x / CellSize), Mathf.FloorToInt(q.y / CellSize))) continue;
                     bool a = ((int)(sd / Len)) % 2 == 0;
                     Quaternion rot = Quaternion.LookRotation(new Vector3(dir.x, 0f, dir.y), Vector3.up);
                     Vector3 pos = new Vector3(q.x, 0.02f, q.y);

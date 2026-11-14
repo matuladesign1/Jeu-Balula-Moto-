@@ -25,6 +25,8 @@ namespace BalulaMoto.Runtime
         private int index, avatarIndex;
         private PlayerProfile profile;
         private GameSession menuSession;
+        private readonly List<GameObject> statObjs = new List<GameObject>();
+        private CanvasGroup menuGroup;
 
         /// <summary>À l'ouverture : vrai = directement sur les modèles à acheter (bouton BOUTIQUE).</summary>
         public bool StartOnCatalog;
@@ -62,6 +64,7 @@ namespace BalulaMoto.Runtime
             nameText.resizeTextMaxSize = 38;
             ownedText = UIKit.Label(statsPanel, "", 20, new Color(0.85f, 0.88f, 0.92f), TextAnchor.MiddleCenter);
             UIKit.TopLeft(ownedText.rectTransform, 12, 104, 390, 34);
+            int firstStat = statsPanel.childCount;
             MenuStyle.StatRow(statsPanel, "Vitesse max", 146, out vSpeed, out fSpeed);
             MenuStyle.StatRow(statsPanel, "Accélération", 210, out vAccel, out fAccel);
             MenuStyle.StatRow(statsPanel, "Freinage", 274, out vBrake, out fBrake);
@@ -70,6 +73,7 @@ namespace BalulaMoto.Runtime
             MenuStyle.Line(statsPanel, "Consommation", 446, out vCons);
             MenuStyle.Line(statsPanel, "Places", 480, out vSeats);
             MenuStyle.Line(statsPanel, "État", 514, out vState);
+            for (int i = firstStat; i < statsPanel.childCount; i++) statObjs.Add(statsPanel.GetChild(i).gameObject);
             priceBox = UIKit.Box(statsPanel, "Prix", new Color(0.85f, 0.12f, 0.1f, 1f), false);
             UIKit.TopLeft(priceBox.rectTransform, 12, 560, 390, 70);
             Outline pbo = priceBox.gameObject.AddComponent<Outline>();
@@ -111,8 +115,7 @@ namespace BalulaMoto.Runtime
                 for (int i = 0; i < entries.Count; i++) if (entries[i].Own != null && entries[i].Own.instanceId == profile.vehiculeActif) { index = i; break; }
             if (catalog) JumpToCatalog();
             if (GarageScene.Instance != null) GarageScene.Instance.SetShowroom(true);
-            BalulaGame g = BalulaGame.Instance;
-            if (g.Cam != null && GarageScene.Instance != null) g.Cam.SetMenuShot(GarageScene.Instance.ShowroomCameraPosition, GarageScene.Instance.ShowroomCameraLook);
+            HideMainMenu(true);
             header.Money.text = profile != null ? Cdf.Format(profile.argent) : "0 FC";
             header.Level.text = profile != null ? profile.niveau.ToString() : "1";
             header.Rank.text = profile != null ? TextUtil.Stars(profile.Reputation()) : "";
@@ -132,6 +135,31 @@ namespace BalulaMoto.Runtime
 
         /// <summary>Ouvre l'onglet chauffeur (photos de contrôle).</summary>
         public void ShowDriverTab() { SetTab(true); }
+
+        /// <summary>Le menu principal reste ouvert sous le garage mais devient invisible et ne capte plus les touches.</summary>
+        private void HideMainMenu(bool hide)
+        {
+            if (ui.MainMenu == null || ui.MainMenu.Root == null) return;
+            if (menuGroup == null)
+            {
+                menuGroup = ui.MainMenu.Root.GetComponent<CanvasGroup>();
+                if (menuGroup == null) menuGroup = ui.MainMenu.Root.gameObject.AddComponent<CanvasGroup>();
+            }
+            menuGroup.alpha = hide ? 0f : 1f;
+            menuGroup.blocksRaycasts = !hide;
+            menuGroup.interactable = !hide;
+        }
+
+        /// <summary>Caméra du garage : cadrage du véhicule sur le plateau, ou du chauffeur debout à côté.</summary>
+        private void Frame(VehicleDef d)
+        {
+            BalulaGame g = BalulaGame.Instance;
+            if (g == null || g.Cam == null || GarageScene.Instance == null) return;
+            Vector3 pos, look;
+            if (driverTab) GarageScene.Instance.DriverShot(out pos, out look);
+            else GarageScene.Instance.ShowroomShot(d, out pos, out look);
+            g.Cam.SetMenuShot(pos, look);
+        }
 
         private void BuildEntries()
         {
@@ -195,10 +223,13 @@ namespace BalulaMoto.Runtime
                 noteText.text = "Personnages 3D : Microsoft Rocketbox (licence MIT). Le chauffeur choisi prend la moto au prochain départ.";
                 priceBox.gameObject.SetActive(false);
                 upgradeButton.gameObject.SetActive(false);
+                foreach (GameObject so in statObjs) so.SetActive(false);
                 MenuStyle.SetBigLabel(actionButton, "VALIDER");
+                Frame(null);
                 return;
             }
             priceBox.gameObject.SetActive(true);
+            foreach (GameObject so in statObjs) so.SetActive(true);
             if (entries.Count == 0) return;
             Entry e = entries[index];
             VehicleDef d = e.Def;
@@ -242,6 +273,7 @@ namespace BalulaMoto.Runtime
             upgradeButton.gameObject.SetActive(owned);
             countText.text = (owned ? "Vos véhicules" : "Modèles à acheter") + "  ·  " + (index + 1) + " / " + entries.Count;
             if (GarageScene.Instance != null) GarageScene.Instance.ShowVehicle(d, e.Own);
+            Frame(d);
         }
 
         private void Action()
@@ -294,6 +326,7 @@ namespace BalulaMoto.Runtime
 
         public override void OnClose()
         {
+            HideMainMenu(false);
             if (GarageScene.Instance != null) GarageScene.Instance.SetShowroom(false);
             BalulaGame g = BalulaGame.Instance;
             if (g != null && g.Session == null && ui.MainMenu.IsOpen) ui.MainMenu.Refresh();

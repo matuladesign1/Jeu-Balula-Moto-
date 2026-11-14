@@ -42,7 +42,13 @@ namespace BalulaMoto.Runtime
 
         private void PlanBoulevards()
         {
-            boulevards = new BoulevardIndex(map.roads);
+            // Bandes calculées à l'import (avec les espaces verts d'OpenStreetMap) ; sinon calcul d'après les rues seules
+            List<BoulevardRules.Strip> stored = BoulevardIndex.FromStored(map.greenStripPts, map.greenStripInfo);
+            boulevards = stored != null ? new BoulevardIndex(map.roads, stored) : new BoulevardIndex(map.roads);
+            // Le petit boulevard n'a pas de barrières au milieu ; une bande verte entre deux chaussées du même boulevard
+            // tient lieu de séparation (pas de barrières non plus)
+            foreach (BoulevardRules.Strip s in boulevards.Strips)
+                if (s.Outer >= 0) medianRoads.Remove(s.Outer);
             greenByCell.Clear();
             float wb = BoulevardRules.WalkBand;
             foreach (BoulevardRules.Strip s in boulevards.Strips)

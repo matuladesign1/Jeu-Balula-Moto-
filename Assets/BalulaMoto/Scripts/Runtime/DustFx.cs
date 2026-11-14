@@ -32,12 +32,12 @@ namespace BalulaMoto.Runtime
             main.playOnAwake = false;
             main.startLifetime = new ParticleSystem.MinMaxCurve(1.6f, 2.8f);
             main.startSpeed = new ParticleSystem.MinMaxCurve(0.2f, 0.9f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.7f, 1.5f);
+            main.startSize = new ParticleSystem.MinMaxCurve(1.0f, 2.1f);
             main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
             main.gravityModifier = -0.015f;
-            main.maxParticles = GameSettings.Quality == 0 ? 220 : 520;
+            main.maxParticles = GameSettings.Quality == 0 ? 260 : 640;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.startColor = new Color(0.74f, 0.62f, 0.47f, 0.42f);
+            main.startColor = new Color(0.87f, 0.79f, 0.66f, 0.62f);
             ParticleSystem.EmissionModule em = ps.emission;
             em.rateOverTime = 0f;
             ParticleSystem.ShapeModule sh = ps.shape;
@@ -124,7 +124,7 @@ namespace BalulaMoto.Runtime
                 if (dusty)
                 {
                     Vector3 back = -t.forward;
-                    Puff(t.position + back * (v.Kind == VehicleKind.Moto ? 0.75f : 1.1f), back, sp, sp > 11f ? 3 : 2);
+                    Puff(t.position + back * (v.Kind == VehicleKind.Moto ? 0.75f : 1.1f), back, sp, sp > 11f ? 4 : 3);
                 }
             }
             // Circulation : véhicules proches qui roulent dans une rue de terre (boucle non goudronnée)
