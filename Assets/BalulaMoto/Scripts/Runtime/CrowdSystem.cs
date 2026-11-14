@@ -1005,14 +1005,14 @@ namespace BalulaMoto.Runtime
                 if (p.Flee <= 0f && p.Av != null) p.Av.SetPlaybackSpeed(p.Speed / Mathf.Max(0.1f, p.Slow ? p.Av.WalkCycleSpeed * 0.7f : p.Av.WalkCycleSpeed));
             }
             p.Dodge = Mathf.MoveTowards(p.Dodge, dodgeTarget, dt * (dodgeTarget != 0f ? 6f : 1f));
-            float want = p.BaseSide + p.Dodge;
+            float wantSide = p.BaseSide + p.Dodge;
             // Jamais debout ni en marche sur la chaussée goudronnée : au moins 0,6 m du bord
             if (p.LanePaved)
             {
                 float minAway = 0.6f - p.LaneEdge;
-                if (want * p.AwaySign < minAway) want = minAway * p.AwaySign;
+                if (wantSide * p.AwaySign < minAway) wantSide = minAway * p.AwaySign;
             }
-            p.Side = Mathf.MoveTowards(p.Side, want, dt * (p.Flee > 0f ? 4.5f : 2f));
+            p.Side = Mathf.MoveTowards(p.Side, wantSide, dt * (p.Flee > 0f ? 4.5f : 2f));
 
             Vector3 pos = basePos + right * p.Side;
             p.GroundTimer -= dt;

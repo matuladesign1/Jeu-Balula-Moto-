@@ -1253,6 +1253,15 @@ namespace BalulaMoto.EditorTools
             Render(name, cam);
         }
 
+        private static void Shoot(string name, Vector3 pos, Vector3 look)
+        {
+            Camera cam = SnapCamera();
+            cam.transform.position = pos;
+            Vector3 d = look - pos;
+            cam.transform.rotation = d.sqrMagnitude > 1e-4f ? Quaternion.LookRotation(d.normalized, Vector3.up) : Quaternion.identity;
+            Render(name, cam);
+        }
+
         private static RenderMode uiPrevMode;
         private static bool uiPrepared;
 
