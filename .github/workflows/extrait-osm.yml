@@ -1,0 +1,52 @@
+# BALULA MOTO — extrait compact de la carte de Kinshasa (OpenStreetMap, ODbL) pour l'analyse hors Unity :
+# rues avec leurs étiquettes, espaces verts, terrains de sport, lieux nommés, plus une recherche Overpass ciblée
+# (Motel Fikin, quartiers nommés, écoles, ronds-points). Publié sur la branche ci-osm. Lancement manuel.
+name: Extrait de la carte OSM
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extrait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Récupérer le projet
+        uses: actions/checkout@v4
+
+      - name: Mois courant (cache de la carte)
+        id: mois
+        run: echo "valeur=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache de la carte de Kinshasa
+        uses: actions/cache@v4
+        with:
+          path: osm
+          key: osm-kinshasa-${{ steps.mois.outputs.valeur }}-${{ hashFiles('scripts/fetch_osm.sh') }}
+
+      - name: Télécharger la carte (si absente du cache)
+        run: if [ -s osm/kinshasa.osm ]; then echo "Carte en cache ($(du -h osm/kinshasa.osm | cut -f1))."; else bash scripts/fetch_osm.sh osm/kinshasa.osm; fi
+
+      - name: Extraire les données utiles
+        run: |
+          mkdir -p extrait
+          python3 scripts/extrait_osm.py osm/kinshasa.osm extrait
+          for srv in https://overpass-api.de/api/interpreter https://overpass.kumi.systems/api/interpreter; do
+            if curl -sS --max-time 150 -A "BalulaMoto-CI (github.com/matuladesign1)" --data-urlencode "data@scripts/requete_fikin.overpassql" "$srv" -o extrait/overpass_cible.json && grep -q '"elements"' extrait/overpass_cible.json; then echo "Overpass : $srv"; break; fi
+          done
+          gzip -9 -f extrait/*.json || true
+          ls -la extrait
+
+      - name: Publier (branche ci-osm)
+        run: |
+          cd extrait
+          git init -q
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout -q -b ci-osm
+          git add -A
+          git commit -q -m "Extrait OSM n°${{ github.run_number }}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-osm
