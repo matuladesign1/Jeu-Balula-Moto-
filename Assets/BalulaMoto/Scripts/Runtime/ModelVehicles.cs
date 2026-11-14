@@ -7,6 +7,7 @@
 // chauffeur et les passagers). Tricycle du joueur « Bajaj RE » et tous les tricycles de la circulation. Design
 // commercial respecté, sans prétendre à un partenariat officiel avec Bajaj.
 using System.Collections.Generic;
+using BalulaMoto.Core;
 using UnityEngine;
 
 namespace BalulaMoto.Runtime
