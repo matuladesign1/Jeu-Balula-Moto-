@@ -1,0 +1,24 @@
+newmtl Metal_Noirci
+Kd 0.1100 0.1150 0.1200
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+Ns 20
+d 1
+illum 2
+
+newmtl Bois
+Kd 0.4200 0.2100 0.1000
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+Ns 20
+d 1
+illum 2
+
+newmtl Bretelle
+Kd 0.1600 0.1500 0.1200
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+Ns 20
+d 1
+illum 2
+

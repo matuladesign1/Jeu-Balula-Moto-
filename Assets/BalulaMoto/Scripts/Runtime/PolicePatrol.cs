@@ -1,8 +1,10 @@
 // BALULA MOTO — policiers à pied aux carrefours de toute la ville (comme la police de circulation routière à Kinshasa).
-// Le personnage reproduit à l'identique celui du script Blender fourni par MATULA DESIGN
-// (Docs/ModelesSources/Police_Officer_RDC_Blender_Export.py) : mêmes formes, mêmes tailles, mêmes couleurs, même pose
-// (arme de service en main droite), béret à insigne, ceinturon, poches cargo. Le script annonce 1,82 m mais ses volumes
-// montent à 2,18 m : le personnage est ramené à 1,82 m pour avoir la taille des autres habitants.
+// Agent : personnage réaliste animé, comme les autres habitants (avatar Rocketbox « Police_Male_01 », licence MIT),
+// habillé d'après la photo fournie par MATULA DESIGN : tenue bleu roi de la police congolaise, béret noir, ceinturon
+// et rangers noirs (scripts/police_congolaise.py), fusil d'assaut de type Kalachnikov porté en bandoulière dans le dos
+// (Resources/BalulaMoto/Accessoires/FusilAK, scripts/generer_fusil.py). Aucun insigne officiel n'est reproduit.
+// Si les personnages réalistes manquent, le policier dessiné d'après le script Blender de MATULA DESIGN
+// (Docs/ModelesSources/Police_Officer_RDC_Blender_Export.py, PoliceOfficerModel) sert de secours.
 // Les postes sont construits autour du joueur seulement (téléphones) ; un agent qui voit une infraction siffle,
 // le joueur se range, l'agent vient au véhicule et dresse l'amende.
 using System.Collections.Generic;
@@ -310,6 +312,142 @@ namespace BalulaMoto.Runtime
         public static int Triangles(bool low) { return (low ? Lod1 : Lod0).triangles.Length / 3; }
     }
 
+    /// <summary>Agent de police réaliste (avatar animé en tenue de la police congolaise, fusil en bandoulière).</summary>
+    public static class PoliceAgent
+    {
+        /// <summary>Vrai si les agents sont des personnages réalistes (sinon : policier dessiné de secours).</summary>
+        public static bool Realistic { get { return HumanLibrary.Available && HumanLibrary.Load("Police").Length > 0; } }
+
+        /// <summary>Un agent debout (pieds au point donné, regard selon la rotation).</summary>
+        public static GameObject Create(Transform parent, Vector3 pos, Quaternion rot, int seed)
+        {
+            GameObject g = Realistic ? HumanLibrary.Spawn(parent, Vector3.zero, "police", false, seed, false) : null;
+            if (g == null) return PoliceOfficerModel.Create(parent, pos, rot);
+            g.name = "Policier";
+            g.transform.SetPositionAndRotation(pos, rot);
+            HumanAvatar av = g.GetComponent<HumanAvatar>();
+            if (av != null)
+            {
+                // en faction : attente, bras le long du corps, de temps en temps une autre attitude
+                av.Play(seed % 3 == 0 ? HumanAction.Wait : HumanAction.Idle, 0f, true);
+                if (av.Anim != null) av.Anim.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+                PoliceKit.Equip(av);
+            }
+            return g;
+        }
+
+        public static void SetAction(Transform officer, HumanAction a)
+        {
+            if (officer == null) return;
+            HumanAvatar av = officer.GetComponent<HumanAvatar>();
+            if (av != null) av.Play(a, 0.25f);
+        }
+    }
+
+    /// <summary>Fusil d'assaut de type Kalachnikov porté en bandoulière dans le dos de l'agent (accessoire, sans tir).</summary>
+    public static class PoliceKit
+    {
+        private static GameObject rifle;
+        private static bool tried;
+        private static Material metal, wood, strap;
+
+        private static GameObject Rifle
+        {
+            get
+            {
+                if (!tried)
+                {
+                    tried = true;
+                    rifle = Resources.Load<GameObject>("BalulaMoto/Accessoires/FusilAK");
+                    if (rifle == null) Debug.LogWarning("[BalulaMoto] Modèle du fusil absent : fusil simplifié.");
+                }
+                return rifle;
+            }
+        }
+
+        private static Material Mat(string n)
+        {
+            if (metal == null)
+            {
+                metal = Mats.Lit(new Color(0.11f, 0.115f, 0.12f), 0.55f);
+                wood = Mats.Lit(new Color(0.42f, 0.21f, 0.1f), 0.35f);
+                strap = Mats.Lit(new Color(0.16f, 0.15f, 0.12f), 0.15f);
+            }
+            if (n.Contains("Bois")) return wood;
+            if (n.Contains("Bretelle")) return strap;
+            return metal;
+        }
+
+        public static void Equip(HumanAvatar av)
+        {
+            if (av == null) return;
+            Transform spine = av.Spine2 != null ? av.Spine2 : av.Spine1;
+            if (spine == null) return;
+            Transform root = av.transform;
+            GameObject g = new GameObject("FusilEnBandouliere");
+            // dans le dos, en travers : canon vers le haut au-dessus de l'épaule droite, crosse vers la hanche gauche
+            float a = 38f * Mathf.Deg2Rad;
+            Vector3 barrel = root.right * Mathf.Sin(a) + root.up * Mathf.Cos(a);
+            Vector3 top = -root.right * Mathf.Cos(a) + root.up * Mathf.Sin(a);
+            g.transform.SetPositionAndRotation(spine.position - root.up * 0.08f - root.forward * 0.165f, Quaternion.LookRotation(barrel, top));
+            List<Renderer> rs = new List<Renderer>();
+            GameObject model = Rifle;
+            if (model != null)
+            {
+                Matrix4x4 toModel = model.transform.worldToLocalMatrix;
+                foreach (MeshFilter src in model.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    if (src.sharedMesh == null) continue;
+                    GameObject part = new GameObject(src.name);
+                    part.transform.SetParent(g.transform, false);
+                    Matrix4x4 m = toModel * src.transform.localToWorldMatrix;
+                    part.transform.localPosition = m.GetColumn(3);
+                    part.transform.localRotation = m.rotation;
+                    part.transform.localScale = m.lossyScale;
+                    part.AddComponent<MeshFilter>().sharedMesh = src.sharedMesh;
+                    MeshRenderer mr = part.AddComponent<MeshRenderer>();
+                    MeshRenderer smr = src.GetComponent<MeshRenderer>();
+                    mr.sharedMaterial = Mat(smr != null && smr.sharedMaterial != null ? smr.sharedMaterial.name : src.name);
+                    rs.Add(mr);
+                }
+            }
+            else
+            {
+                // secours : silhouette simplifiée (carcasse, canon, chargeur, crosse en bois)
+                rs.Add(Part(g.transform, Prims.Cube, new Vector3(0f, 0f, 0f), new Vector3(0.04f, 0.06f, 0.24f), Mat("Metal")));
+                rs.Add(Part(g.transform, Prims.Cube, new Vector3(0f, 0f, 0.3f), new Vector3(0.018f, 0.018f, 0.36f), Mat("Metal")));
+                rs.Add(Part(g.transform, Prims.Cube, new Vector3(0f, -0.12f, 0.09f), new Vector3(0.026f, 0.18f, 0.05f), Mat("Metal")));
+                rs.Add(Part(g.transform, Prims.Cube, new Vector3(0f, -0.03f, -0.27f), new Vector3(0.036f, 0.09f, 0.28f), Mat("Bois")));
+            }
+            g.transform.SetParent(spine, true);
+            // le fusil suit les niveaux de détail de l'agent (pas de fusil flottant quand l'agent n'est plus dessiné)
+            LODGroup lg = av.GetComponent<LODGroup>();
+            if (lg != null && rs.Count > 0)
+            {
+                LOD[] lods = lg.GetLODs();
+                for (int i = 0; i < lods.Length; i++)
+                {
+                    List<Renderer> l = new List<Renderer>(lods[i].renderers);
+                    l.AddRange(rs);
+                    lods[i].renderers = l.ToArray();
+                }
+                lg.SetLODs(lods);
+            }
+        }
+
+        private static Renderer Part(Transform parent, Mesh mesh, Vector3 pos, Vector3 size, Material mat)
+        {
+            GameObject p = new GameObject("Piece");
+            p.transform.SetParent(parent, false);
+            p.transform.localPosition = pos;
+            p.transform.localScale = size;
+            p.AddComponent<MeshFilter>().sharedMesh = mesh;
+            MeshRenderer mr = p.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = mat;
+            return mr;
+        }
+    }
+
     /// <summary>Postes de police aux carrefours, construits autour du joueur ; agents qui arrêtent les contrevenants.</summary>
     public class PolicePatrol : MonoBehaviour
     {
@@ -335,7 +473,8 @@ namespace BalulaMoto.Runtime
         private Transform moving;
         private Vector3 moveFrom, moveTo, home;
         private Quaternion rotFrom, rotTo, homeRot;
-        private float moveT = 1f;
+        private float moveT = 1f, moveDur = 1.2f;
+        private bool returning;
 
         public int PostCount { get { return posts.Count; } }
         public int ActiveOfficers
@@ -488,10 +627,15 @@ namespace BalulaMoto.Runtime
             // Agent qui s'avance vers le véhicule (ou retourne à son poste)
             if (moving != null && moveT < 1f)
             {
-                moveT = Mathf.Min(1f, moveT + Time.unscaledDeltaTime / 1.2f);
+                moveT = Mathf.Min(1f, moveT + Time.unscaledDeltaTime / moveDur);
                 float e = moveT * moveT * (3f - 2f * moveT);
                 moving.position = Vector3.Lerp(moveFrom, moveTo, e);
-                moving.rotation = Quaternion.Slerp(rotFrom, rotTo, e);
+                // l'agent se tourne d'abord vers où il va, puis vers le conducteur (ou son poste) à l'arrivée
+                Vector3 dir = moveTo - moveFrom;
+                dir.y = 0f;
+                Quaternion walk = dir.sqrMagnitude > 0.04f ? Quaternion.LookRotation(dir) : rotTo;
+                moving.rotation = moveT < 0.8f ? Quaternion.Slerp(rotFrom, walk, Mathf.Clamp01(moveT * 5f)) : Quaternion.Slerp(walk, rotTo, (moveT - 0.8f) / 0.2f);
+                if (moveT >= 1f) PoliceAgent.SetAction(moving, returning ? HumanAction.Idle : HumanAction.Talk);
             }
             timer -= Time.unscaledDeltaTime;
             if (timer > 0f) return;
@@ -523,8 +667,8 @@ namespace BalulaMoto.Runtime
                     {
                         Post p = posts[i];
                         if (p.G1 != null || (p.Junction - pp).sqrMagnitude > BuildDist * BuildDist) continue;
-                        p.G1 = PoliceOfficerModel.Create(transform, new Vector3(p.P1.x, GroundAt(p.P1), p.P1.z), p.R1);
-                        if (p.Two) p.G2 = PoliceOfficerModel.Create(transform, new Vector3(p.P2.x, GroundAt(p.P2), p.P2.z), p.R2);
+                        p.G1 = PoliceAgent.Create(transform, new Vector3(p.P1.x, GroundAt(p.P1), p.P1.z), p.R1, i * 2 + 1);
+                        if (p.Two) p.G2 = PoliceAgent.Create(transform, new Vector3(p.P2.x, GroundAt(p.P2), p.P2.z), p.R2, i * 2 + 2);
                         built.Add(i);
                     }
                 }
@@ -590,7 +734,10 @@ namespace BalulaMoto.Runtime
             rotFrom = officer.rotation;
             moveTo = target;
             rotTo = Quaternion.LookRotation(Flat(vehicle.position - target));
+            moveDur = Mathf.Clamp(Vector3.Distance(moveFrom, moveTo) / 2.4f, 1.2f, 3f);
             moveT = 0f;
+            returning = false;
+            PoliceAgent.SetAction(officer, HumanAction.Walk);
         }
 
         /// <summary>Fin du contrôle : l'agent retourne à son poste.</summary>
@@ -601,7 +748,10 @@ namespace BalulaMoto.Runtime
             rotFrom = moving.rotation;
             moveTo = home;
             rotTo = homeRot;
+            moveDur = Mathf.Clamp(Vector3.Distance(moveFrom, moveTo) / 1.6f, 1.2f, 4f);
             moveT = 0f;
+            returning = true;
+            PoliceAgent.SetAction(moving, HumanAction.Walk);
             Transform m = moving;
             // Le suivi reste actif le temps du retour ; l'agent n'est plus « occupé »
             StartCoroutine(Forget(m));
@@ -609,7 +759,7 @@ namespace BalulaMoto.Runtime
 
         private System.Collections.IEnumerator Forget(Transform m)
         {
-            yield return new WaitForSecondsRealtime(1.3f);
+            yield return new WaitForSecondsRealtime(moveDur + 0.1f);
             if (moving == m) moving = null;
         }
 

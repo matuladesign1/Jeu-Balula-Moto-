@@ -24,11 +24,25 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
 
 ### Nouveautés de la version 4.3.1
 
-- **Tricycle Bajaj RE de MATULA DESIGN** : le tricycle « Bajaj RE » du joueur et tous les tricycles de la circulation utilisent désormais le modèle fourni (caisse bleue, bâche crème, vitres, rétroviseurs, feux, plaque jaune). Hauteur ramenée à celle du vrai Bajaj RE (1,71 m), roues au diamètre réel, intérieur aménagé pour le chauffeur et 5 passagers assis ; l'essuie-glace balaie le pare-brise quand il pleut.
+- **Nouveau tricycle, modélisé d'après les photos** envoyées par MATULA DESIGN (`scripts/generer_tricycle.py`) : caisse
+  bleue à bâche blanche comme sur les photos, aux proportions du vrai Bajaj RE (2,64 m × 1,30 m × 1,71 m). Capot avant
+  arrondi, calandre noire et phares ronds chromés, clignotants orange, plaque jaune, pare-brise incliné avec
+  essuie-glace monté en haut (il balaie sous la pluie), rétroviseurs sur tiges, montants bleus, banquette avant
+  (chauffeur et 2 places) avec dossier capitonné, banquette arrière (3 places), planche de bord avec compteur (visible
+  en vue du chauffeur), guidon, bâche avec grande lunette arrière et petites vitres latérales, face arrière avec grille,
+  feux verticaux rouges et clignotants, passages de roue à bord roulé, petites roues de 8 pouces à jantes chromées.
+  Le garde-boue et le bras de la roue avant tournent avec le guidon. Aucun logo reproduit.
+- **Dans la circulation** : tous les tricycles utilisent ce modèle, en bleu à bâche blanche (le plus souvent), en
+  blanc ou en rouge à bâche noire, comme les autres photos.
+- **Policiers réalistes** : les agents aux carrefours sont maintenant des personnages réalistes animés, comme les autres
+  habitants, en tenue de la police congolaise d'après la photo : uniforme bleu roi, béret noir, ceinturon et rangers
+  noirs, fusil d'assaut de type Kalachnikov porté en bandoulière dans le dos. Ils marchent jusqu'au véhicule pour
+  l'amende puis retournent à leur poste. Les écussons étrangers du modèle d'origine ont été effacés ; aucun insigne
+  officiel n'est reproduit (`scripts/police_congolaise.py`, `scripts/generer_fusil.py`).
 
 ### Nouveautés de la version 4.3
 
-- **Policiers dans les rues** : agents à pied aux carrefours (dessin fourni par MATULA DESIGN). Si vous bousculez un piéton ou accrochez une voiture devant un agent, il siffle, vient au véhicule, vous payez l'amende et vous repartez.
+- **Policiers dans les rues** : agents à pied aux carrefours. Si vous bousculez un piéton ou accrochez une voiture devant un agent, il siffle, vient au véhicule, vous payez l'amende et vous repartez.
 - **Bus TRANSCO** (modèle 3D fourni par MATULA DESIGN) dans toute la circulation, avec arrêts et passagers. Design respecté, sans partenariat officiel.
 - **Rivières en tranchée** : eau turquoise plus bas que le sol, berges en pente d'herbe et de terre, parois de béton pour les canaux et caniveaux. Plus aucune maison ni clôture sur l'eau ou sur les berges ; **un pont (trottoirs, parapets) partout où une rue croise l'eau** ; on ne peut plus rouler dans le lit.
 - **Murs de parcelles bruts** : parpaings, ciment gris sale, chaux tachée, inscriptions peintes « Cette parcelle n'est pas à vendre », barbelé en spirale sur certains murs.

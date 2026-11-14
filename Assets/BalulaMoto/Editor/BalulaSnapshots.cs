@@ -332,7 +332,7 @@ namespace BalulaMoto.EditorTools
             game.Director.SpawnPlayer(new Vector3(best.x, 0.3f, best.z), Quaternion.LookRotation(look.normalized, Vector3.up));
             moneyBeforeFine = game.Session != null ? game.Session.Profile.argent : 0;
             report.AppendLine("=== police : " + pp.PostCount + " postes dans la ville ; poste le plus proche, carrefour " + j.ToString("F0") + ", agent " + spot.ToString("F0") +
-                              " ; maillage de l'agent " + PoliceOfficerModel.Triangles(false) + " triangles (" + PoliceOfficerModel.Triangles(true) + " de loin) ===");
+                              " ; agents réalistes (avatar en tenue congolaise, fusil) " + PoliceAgent.Realistic + " ===");
         }
 
         private static Transform NearestAgent(BalulaGame game, float radius)
@@ -351,6 +351,12 @@ namespace BalulaMoto.EditorTools
             Shoot("police_agent_face", a.position + a.forward * 2.6f + Vector3.up * 1.55f, c + Vector3.up * 0.35f);
             Shoot("police_agent_trois_quarts", a.position + a.forward * 2.2f + a.right * 1.8f + Vector3.up * 1.4f, c);
             Shoot("police_agent_profil", a.position + a.right * 3.2f + Vector3.up * 1.2f, c);
+            Shoot("police_agent_dos_fusil", a.position - a.forward * 2.4f + a.right * 1.0f + Vector3.up * 1.6f, c + Vector3.up * 0.3f);
+            Shoot("police_agent_visage", a.position + a.forward * 1.1f + Vector3.up * 1.72f, a.position + Vector3.up * 1.62f);
+            HumanAvatar hav = a.GetComponent<HumanAvatar>();
+            bool hasGun = false;
+            foreach (Transform tr in a.GetComponentsInChildren<Transform>(true)) if (tr.name == "FusilEnBandouliere") hasGun = true;
+            report.AppendLine("   agent réaliste " + (hav != null) + " (" + (hav != null ? hav.AvatarId : "policier dessiné") + "), fusil en bandoulière " + hasGun);
             RaycastVehicle pl = game.Director.Player;
             Vector3 mid = (a.position + pl.transform.position) * 0.5f;
             Shoot("police_carrefour", mid + (pl.transform.position - a.position).normalized * 4f + Vector3.up * 9f - pl.transform.forward * 14f, mid);
@@ -581,6 +587,9 @@ namespace BalulaMoto.EditorTools
             Shoot("bajaj_joueur_cote", c - bt.right * 5.0f + Vector3.up * 0.1f, c);
             Shoot("bajaj_joueur_arriere", c - bt.forward * 4.4f + bt.right * 2.6f + Vector3.up * 0.5f, c);
             Shoot("bajaj_joueur_interieur", c + bt.forward * 2.2f + Vector3.up * 1.6f - bt.right * 0.9f, c - Vector3.up * 0.2f);
+            Shoot("bajaj_joueur_face", c + bt.forward * 5.2f + Vector3.up * 0.25f, c);
+            Shoot("bajaj_joueur_trois_quarts_arriere_gauche", c - bt.forward * 4.0f - bt.right * 3.0f + Vector3.up * 0.9f, c);
+            Shoot("bajaj_joueur_vue_du_chauffeur", bt.TransformPoint(new Vector3(0f, 1.37f, 0.03f)), bt.TransformPoint(new Vector3(0f, 1.05f, 2.5f)));
             Describe("Bajaj RE du joueur", bajajShow, c - bt.right * 5.0f);
             UnityEngine.Object.Destroy(bajajShow);
             bajajShow = null;

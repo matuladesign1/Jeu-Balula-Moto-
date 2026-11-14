@@ -2,10 +2,10 @@
 // Bus TRANSCO : fichier Resources/BalulaMoto/Vehicules/BusTransco.obj, converti du FBX d'origine par
 // scripts/convertir_bus.py (avant vers +Z, roues au sol, roues/phares/feux séparés). Design commercial respecté,
 // sans prétendre à un partenariat officiel avec TRANSCO.
-// Tricycle Bajaj RE : fichier Resources/BalulaMoto/Vehicules/BajajRE.obj, construit par scripts/generer_bajaj_re.py
-// d'après le script Blender de MATULA DESIGN (hauteur ramenée à celle du vrai Bajaj RE, intérieur aménagé pour le
-// chauffeur et les passagers). Tricycle du joueur « Bajaj RE » et tous les tricycles de la circulation. Design
-// commercial respecté, sans prétendre à un partenariat officiel avec Bajaj.
+// Tricycle taxi (type Bajaj RE) : fichier Resources/BalulaMoto/Vehicules/BajajRE.obj, modélisé par
+// scripts/generer_tricycle.py d'après les photos de référence de MATULA DESIGN (version bleue à bâche blanche, versions
+// blanche et rouge à bâche noire). Tricycle du joueur « Bajaj RE » et tous les tricycles de la circulation. Design
+// commercial respecté, sans logo et sans prétendre à un partenariat officiel avec Bajaj.
 using System.Collections.Generic;
 using BalulaMoto.Core;
 using UnityEngine;
@@ -137,12 +137,12 @@ namespace BalulaMoto.Runtime
         }
 
         // ==================================================================
-        // Tricycle Bajaj RE de MATULA DESIGN
+        // Tricycle taxi (type Bajaj RE) modélisé d'après les photos de MATULA DESIGN
         // ==================================================================
         private static GameObject bajajModel;
         private static bool bajajTried;
 
-        /// <summary>Modèle du Bajaj RE (null s'il manque : le tricycle dessiné par le jeu sert alors de secours).</summary>
+        /// <summary>Modèle du tricycle (null s'il manque : le tricycle dessiné par le jeu sert alors de secours).</summary>
         public static GameObject BajajModel
         {
             get
@@ -151,56 +151,70 @@ namespace BalulaMoto.Runtime
                 {
                     bajajTried = true;
                     bajajModel = Resources.Load<GameObject>("BalulaMoto/Vehicules/BajajRE");
-                    if (bajajModel == null) Debug.LogWarning("[BalulaMoto] Modèle du Bajaj RE absent : tricycle dessiné par le jeu.");
+                    if (bajajModel == null) Debug.LogWarning("[BalulaMoto] Modèle du tricycle absent : tricycle dessiné par le jeu.");
                 }
                 return bajajModel;
             }
         }
 
-        // Places dans le modèle (hanches sur l'assise) : banquette avant (chauffeur au milieu, 2 places à côté de lui,
-        // comme à Kinshasa), banquette arrière (3 places)
-        private static readonly Vector3 BajajDriverSeat = new Vector3(0f, 0.6f, -0.075f);
-        private static readonly Vector3[] BajajFrontSeats = { new Vector3(-0.39f, 0.6f, -0.075f), new Vector3(0.39f, 0.6f, -0.075f) };
-        private static readonly Vector3[] BajajRearSeats = { new Vector3(-0.33f, 0.61f, -0.655f), new Vector3(0f, 0.61f, -0.655f), new Vector3(0.33f, 0.61f, -0.655f) };
-        private static readonly Vector3 BajajHandlebar = new Vector3(0f, 1.04f, 0.36f);
-        private static readonly Vector3 BajajWiperPivot = new Vector3(0f, 1.036f, 0.64f);
+        // Places dans le modèle (hanches sur l'assise, à 0,60 m) : banquette avant (chauffeur au milieu, 2 places à côté de
+        // lui, comme à Kinshasa), banquette arrière (3 places) au-dessus du moteur
+        private static readonly Vector3 BajajDriverSeat = new Vector3(0f, 0.6f, -0.04f);
+        private static readonly Vector3[] BajajFrontSeats = { new Vector3(-0.37f, 0.6f, -0.04f), new Vector3(0.37f, 0.6f, -0.04f) };
+        private static readonly Vector3[] BajajRearSeats = { new Vector3(-0.36f, 0.6f, -0.86f), new Vector3(0f, 0.6f, -0.86f), new Vector3(0.36f, 0.6f, -0.86f) };
+        private static readonly Vector3 BajajHandlebar = new Vector3(0f, 1.0f, 0.45f);
+        // Essuie-glace monté en haut du pare-brise (axe perpendiculaire à la vitre, inclinée de 12,8°)
+        private static readonly Vector3 BajajWiperPivot = new Vector3(-0.18f, 1.474f, 0.795f);
+        private static readonly Quaternion BajajWiperTilt = Quaternion.Euler(-12.8f, 0f, 0f);
+        // Fourche avant (garde-boue, bras) : tourne autour de l'axe vertical de la roue avant
+        private static readonly Vector3 BajajFrontAxle = new Vector3(0f, 0.24f, 1.1f);
         private const float BajajWheelRadius = 0.24f;
-        // Couleurs du script Blender (bleu de référence, bâche crème), converties pour Unity
-        public static readonly Color BajajBlue = new Color(0.128f, 0.506f, 0.809f);
-        public static readonly Color BajajCanvas = new Color(0.887f, 0.872f, 0.835f);
+        // Couleurs des photos : bleu à bâche blanche ; versions blanche et rouge à bâche noire
+        public static readonly Color BajajBlue = new Color(0.11f, 0.53f, 0.86f);
+        public static readonly Color BajajCanvas = new Color(0.89f, 0.875f, 0.85f);
+        private static readonly Color BajajWhite = new Color(0.92f, 0.92f, 0.91f);
+        private static readonly Color BajajRed = new Color(0.8f, 0.04f, 0.035f);
+        private static readonly Color BajajBlackCanvas = new Color(0.1f, 0.1f, 0.11f);
+        private static readonly Color BajajSeatLight = new Color(0.9f, 0.89f, 0.87f);
+        private static readonly Color BajajSeatDark = new Color(0.12f, 0.12f, 0.13f);
 
         private class BajajParts
         {
             public readonly Dictionary<string, Renderer> Lamps = new Dictionary<string, Renderer>();
             public readonly List<Transform> Wheels = new List<Transform>();   // avant, arrière gauche, arrière droite
             public Transform Wiper;
+            public Transform Fork;
             public Vector3 PlatePos;
             public bool HasPlate;
         }
 
-        private static Material MapBajajMaterial(Material src, Color body, Color canvas, Color rim)
+        private static Material MapBajajMaterial(Material src, Color body, Color canvas, Color seat, Color rim)
         {
             string n = src != null ? src.name : "";
-            if (n.Contains("Body_Blue")) return Paint(body, 0.25f, 0.72f);
-            if (n.Contains("Canopy")) return Paint(canvas, 0f, 0.2f);
-            if (n.Contains("Glass")) return CarGlass();
-            if (n.Contains("Tyre")) return Paint(new Color(0.08f, 0.085f, 0.09f), 0f, 0.1f);
-            if (n.Contains("Metal")) return Paint(rim, 0.78f, 0.75f);
-            if (n.Contains("Seat")) return Paint(new Color(0.79f, 0.78f, 0.76f), 0f, 0.15f);
-            if (n.Contains("Plate")) return Paint(new Color(1f, 0.83f, 0.13f), 0f, 0.6f);
-            if (n.Contains("Headlamp")) return Paint(new Color(0.91f, 0.93f, 0.91f), 0.1f, 0.9f);
-            if (n.Contains("Tail")) return Mats.Lit(RedLight, 0.5f);
-            if (n.Contains("Amber")) return Mats.Lit(ColorUtil.Shade(Amber, 0.3f), 0.5f);
-            if (n.Contains("Bumper")) return Paint(new Color(0.21f, 0.22f, 0.25f), 0.1f, 0.6f);
-            return src != null ? Paint(src.color, 0.1f, 0.5f) : Paint(new Color(0.21f, 0.22f, 0.25f), 0.1f, 0.6f);
+            if (n.Contains("Carrosserie")) return Paint(body, 0.25f, 0.72f);
+            if (n.Contains("Bache")) return Paint(canvas, 0f, 0.2f);
+            if (n.Contains("Siege")) return Paint(seat, 0f, 0.25f);
+            if (n.Contains("Vitre")) return CarGlass();
+            if (n.Contains("Pneu")) return Paint(new Color(0.08f, 0.085f, 0.09f), 0f, 0.1f);
+            if (n.Contains("Chrome")) return Paint(rim, 0.78f, 0.75f);
+            if (n.Contains("Phare")) return Paint(new Color(0.93f, 0.94f, 0.95f), 0.1f, 0.92f);
+            if (n.Contains("Feu_Rouge")) return Mats.Lit(RedLight, 0.5f);
+            if (n.Contains("Orange")) return Mats.Lit(ColorUtil.Shade(Amber, 0.3f), 0.5f);
+            if (n.Contains("Plaque")) return Paint(new Color(1f, 0.83f, 0.13f), 0f, 0.6f);
+            if (n.Contains("Cadran")) return Paint(new Color(0.93f, 0.93f, 0.9f), 0f, 0.7f);
+            if (n.Contains("Tapis")) return Paint(new Color(0.05f, 0.05f, 0.055f), 0f, 0.1f);
+            if (n.Contains("Grille")) return Paint(new Color(0.1f, 0.105f, 0.11f), 0.1f, 0.3f);
+            return Paint(new Color(0.075f, 0.08f, 0.085f), 0.05f, 0.45f);   // plastique noir
         }
 
-        /// <summary>Pose les pièces du modèle sous « parent » : caisse, roues (pivot au moyeu), feux, essuie-glace (pivot).</summary>
-        private static BajajParts PlaceBajaj(GameObject model, Transform parent, Color body, Color canvas, Color rim)
+        /// <summary>Pose les pièces du modèle sous « parent » : caisse, roues (pivot au moyeu), fourche (pivot de direction),
+        /// feux, essuie-glace (pivot dans le plan du pare-brise).</summary>
+        private static BajajParts PlaceBajaj(GameObject model, Transform parent, Color body, Color canvas, Color seat, Color rim)
         {
             BajajParts res = new BajajParts();
             Matrix4x4 toModel = model.transform.worldToLocalMatrix;
             Dictionary<string, Transform> wheelPivots = new Dictionary<string, Transform>();
+            Dictionary<string, Material> matCache = new Dictionary<string, Material>();
             foreach (MeshFilter src in model.GetComponentsInChildren<MeshFilter>(true))
             {
                 Mesh mesh = src.sharedMesh;
@@ -208,24 +222,49 @@ namespace BalulaMoto.Runtime
                 MeshRenderer smr = src.GetComponent<MeshRenderer>();
                 Material[] srcMats = smr != null ? smr.sharedMaterials : new Material[0];
                 Material[] mats = new Material[Mathf.Max(1, mesh.subMeshCount)];
-                for (int i = 0; i < mats.Length; i++) mats[i] = MapBajajMaterial(i < srcMats.Length ? srcMats[i] : null, body, canvas, rim);
-                Matrix4x4 m = toModel * src.transform.localToWorldMatrix;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    Material sm = i < srcMats.Length ? srcMats[i] : null;
+                    string key = sm != null ? sm.name : "";
+                    Material m;
+                    if (!matCache.TryGetValue(key, out m))
+                    {
+                        m = MapBajajMaterial(sm, body, canvas, seat, rim);
+                        matCache[key] = m;
+                    }
+                    mats[i] = m;
+                }
+                Matrix4x4 mm = toModel * src.transform.localToWorldMatrix;
                 string n = src.name;
                 if (n.StartsWith("Roue_") && n.LastIndexOf('_') > 5)
                 {
-                    // Roue : pivot au moyeu, elle tourne autour de l'axe X ; pneu (et enjoliveur) puis jante (moyeu)
+                    // Roue : pivot au moyeu, elle tourne autour de l'axe X ; pneu puis jante
                     string key = n.Substring(0, n.LastIndexOf('_'));
                     Transform pivot;
                     if (!wheelPivots.TryGetValue(key, out pivot))
                     {
+                        Vector3 c = mm.MultiplyPoint3x4(mesh.bounds.center);
                         GameObject pg = new GameObject(key);
                         pg.transform.SetParent(parent, false);
-                        pg.transform.localPosition = m.MultiplyPoint3x4(mesh.bounds.center);
+                        pg.transform.localPosition = new Vector3(c.x, BajajWheelRadius, c.z);
                         pivot = pg.transform;
                         wheelPivots[key] = pivot;
                     }
                     GameObject part = MeshPart(pivot, n.EndsWith("Jante") ? "Jante" : "Pneu", mesh, mats, Vector3.zero);
-                    ApplyMatrix(part.transform, Matrix4x4.Translate(-pivot.localPosition) * m);
+                    ApplyMatrix(part.transform, Matrix4x4.Translate(-pivot.localPosition) * mm);
+                    continue;
+                }
+                if (n.StartsWith("Fourche"))
+                {
+                    if (res.Fork == null)
+                    {
+                        GameObject fg = new GameObject("FourcheAvant");
+                        fg.transform.SetParent(parent, false);
+                        fg.transform.localPosition = BajajFrontAxle;
+                        res.Fork = fg.transform;
+                    }
+                    GameObject part = MeshPart(res.Fork, n, mesh, mats, Vector3.zero);
+                    ApplyMatrix(part.transform, Matrix4x4.Translate(-BajajFrontAxle) * mm);
                     continue;
                 }
                 if (n.StartsWith("Essuie"))
@@ -233,8 +272,9 @@ namespace BalulaMoto.Runtime
                     GameObject pv = new GameObject("EssuieGlace");
                     pv.transform.SetParent(parent, false);
                     pv.transform.localPosition = BajajWiperPivot;
+                    pv.transform.localRotation = BajajWiperTilt;
                     GameObject part = MeshPart(pv.transform, "Balai", mesh, mats, Vector3.zero);
-                    ApplyMatrix(part.transform, Matrix4x4.Translate(-BajajWiperPivot) * m);
+                    ApplyMatrix(part.transform, Matrix4x4.Rotate(Quaternion.Inverse(BajajWiperTilt)) * Matrix4x4.Translate(-BajajWiperPivot) * mm);
                     res.Wiper = pv.transform;
                     continue;
                 }
@@ -242,17 +282,17 @@ namespace BalulaMoto.Runtime
                 {
                     // Les phares s'appellent « Phare » : la circulation les reconnaît et les allume la nuit
                     GameObject lp = MeshPart(parent, n.StartsWith("Phare") ? "Phare" : n, mesh, mats, Vector3.zero);
-                    ApplyMatrix(lp.transform, m);
+                    ApplyMatrix(lp.transform, mm);
                     res.Lamps[n] = lp.GetComponent<Renderer>();
                     continue;
                 }
                 if (n.StartsWith("Plaque"))
                 {
-                    res.PlatePos = m.MultiplyPoint3x4(mesh.bounds.center);
+                    res.PlatePos = mm.MultiplyPoint3x4(mesh.bounds.center);
                     res.HasPlate = true;
                 }
                 GameObject bp = MeshPart(parent, n, mesh, mats, Vector3.zero);
-                ApplyMatrix(bp.transform, m);
+                ApplyMatrix(bp.transform, mm);
             }
             foreach (string k in new[] { "Roue_AV", "Roue_ARG", "Roue_ARD" })
             {
@@ -268,30 +308,33 @@ namespace BalulaMoto.Runtime
             return p.Lamps.TryGetValue(name, out r) ? r : null;
         }
 
-        /// <summary>Guidon (le pivot de direction tourne avec le volant de la physique), colonne cachée dans la caisse avant.</summary>
+        /// <summary>Guidon de type moto (le pivot de direction tourne avec la physique), colonne qui rentre dans la planche de bord.</summary>
         private static Transform BajajHandlebarPivot(Transform parent)
         {
             GameObject pivot = new GameObject("Direction");
             pivot.transform.SetParent(parent, false);
             pivot.transform.localPosition = BajajHandlebar;
-            Prims.Tube(pivot.transform, "Guidon", new Vector3(-0.34f, 0f, 0f), new Vector3(0.34f, 0f, 0f), 0.025f, Black);
-            Prims.Tube(pivot.transform, "Colonne", new Vector3(0f, -0.3f, 0.08f), Vector3.zero, 0.03f, Black);
-            Prims.Tube(pivot.transform, "PoigneeG", new Vector3(-0.36f, 0f, 0f), new Vector3(-0.25f, 0f, 0f), 0.034f, new Color(0.12f, 0.12f, 0.13f));
-            Prims.Tube(pivot.transform, "PoigneeD", new Vector3(0.25f, 0f, 0f), new Vector3(0.36f, 0f, 0f), 0.034f, new Color(0.12f, 0.12f, 0.13f));
+            Prims.Tube(pivot.transform, "Guidon", new Vector3(-0.33f, 0.03f, -0.02f), new Vector3(0.33f, 0.03f, -0.02f), 0.022f, Black);
+            Prims.Tube(pivot.transform, "Potence", new Vector3(0f, 0.03f, -0.02f), new Vector3(0f, -0.1f, 0.2f), 0.03f, Black);
+            Prims.Tube(pivot.transform, "PoigneeG", new Vector3(-0.37f, 0.03f, -0.02f), new Vector3(-0.25f, 0.03f, -0.02f), 0.032f, new Color(0.12f, 0.12f, 0.13f));
+            Prims.Tube(pivot.transform, "PoigneeD", new Vector3(0.25f, 0.03f, -0.02f), new Vector3(0.37f, 0.03f, -0.02f), 0.032f, new Color(0.12f, 0.12f, 0.13f));
+            Prims.Tube(pivot.transform, "Levier", new Vector3(0.22f, 0.045f, 0.0f), new Vector3(0.33f, 0.04f, 0.05f), 0.007f, new Color(0.7f, 0.72f, 0.74f));
             return pivot.transform;
         }
 
-        /// <summary>Bajaj RE du joueur à partir du modèle fourni. Faux si le modèle est absent (tricycle dessiné en secours).</summary>
+        private static bool IsDark(Color c) { return c.r * 0.3f + c.g * 0.59f + c.b * 0.11f < 0.35f; }
+
+        /// <summary>Tricycle du joueur à partir du modèle. Faux si le modèle est absent (tricycle dessiné en secours).</summary>
         private static bool BuildModelTricycle(VehicleRig rig, VehicleDef d, Color main, Color second, Color rim, bool withDriver)
         {
             GameObject model = BajajModel;
             if (model == null) return false;
             Transform b = rig.Body;
-            // Peinture d'origine (bleu et crème du modèle) ; l'ancienne teinte par défaut (noir et jaune) compte comme d'origine
+            // Peinture d'origine (bleu et bâche blanche) ; l'ancienne teinte par défaut (noir et jaune) compte comme d'origine
             string mh = ColorUtility.ToHtmlStringRGB(main), sh = ColorUtility.ToHtmlStringRGB(second);
             if (mh == "151515") main = BajajBlue;
             if (sh == "F2B705") second = BajajCanvas;
-            BajajParts p = PlaceBajaj(model, b, main, second, rim);
+            BajajParts p = PlaceBajaj(model, b, main, second, IsDark(second) ? BajajSeatDark : BajajSeatLight, rim);
             if (p.Wheels.Count < 3)
             {
                 for (int i = b.childCount - 1; i >= 0; i--) Object.Destroy(b.GetChild(i).gameObject);
@@ -308,48 +351,58 @@ namespace BalulaMoto.Runtime
                 w.localScale = Vector3.one * (r / BajajWheelRadius);
                 rig.Wheels.Add(w);
             }
+            if (p.Fork != null)
+            {
+                // Garde-boue et bras avant : suivent le braquage de la roue avant
+                p.Fork.localPosition = new Vector3(anchors[0].x, BajajFrontAxle.y, anchors[0].z);
+                p.Fork.gameObject.AddComponent<SuitBraquage>().Wheel = p.Wheels[0];
+            }
             if (p.Wiper != null) p.Wiper.gameObject.AddComponent<Essuieglace>();
 
             // Places : banquette avant (2 à côté du chauffeur) puis banquette arrière (3)
             for (int i = 0; i < d.placesAvant && i < BajajFrontSeats.Length; i++) rig.Seats.Add(Anchor(b, "PlaceAvant" + i, BajajFrontSeats[i]));
             for (int i = 0; i < d.placesArriere && i < BajajRearSeats.Length; i++) rig.Seats.Add(Anchor(b, "Place", BajajRearSeats[i]));
-            rig.CargoAnchor = Anchor(b, "Bagages", new Vector3(0f, 0.68f, -0.655f));
+            rig.CargoAnchor = Anchor(b, "Bagages", new Vector3(0f, 0.68f, -0.86f));
 
             Transform pivot = BajajHandlebarPivot(b);
             rig.SteerPivot = pivot;
             Renderer lamp;
             if ((lamp = BajajLamp(p, "Phare_G")) != null) rig.HeadLights.Add(lamp);
             if ((lamp = BajajLamp(p, "Phare_D")) != null) rig.HeadLights.Add(lamp);
-            rig.HeadLamp = HeadLamp(b, new Vector3(0f, 0.56f, 1.26f));
+            rig.HeadLamp = HeadLamp(b, new Vector3(0f, 0.69f, 1.4f));
             if ((lamp = BajajLamp(p, "Feu_ARG")) != null) rig.TailLights.Add(lamp);
             if ((lamp = BajajLamp(p, "Feu_ARD")) != null) rig.TailLights.Add(lamp);
             if ((lamp = BajajLamp(p, "Cligno_AVG")) != null) rig.IndicatorsLeft.Add(lamp);
             if ((lamp = BajajLamp(p, "Cligno_ARG")) != null) rig.IndicatorsLeft.Add(lamp);
             if ((lamp = BajajLamp(p, "Cligno_AVD")) != null) rig.IndicatorsRight.Add(lamp);
             if ((lamp = BajajLamp(p, "Cligno_ARD")) != null) rig.IndicatorsRight.Add(lamp);
-            // Plaque d'immatriculation du joueur posée sur la plaque jaune du modèle, autocollant sur le flanc arrière
-            if (p.HasPlate) rig.PlateAnchor = Anchor(b, "PlaqueJoueur", p.PlatePos + new Vector3(0f, 0f, -0.02f));
-            rig.StickerAnchor = Anchor(b, "Autocollant", new Vector3(0.675f, 0.72f, -0.62f));
+            // Plaque d'immatriculation du joueur posée sur la plaque jaune du modèle, autocollant sur le flanc arrière droit
+            if (p.HasPlate) rig.PlateAnchor = Anchor(b, "PlaqueJoueur", p.PlatePos + new Vector3(0f, 0f, -0.012f));
+            rig.StickerAnchor = Anchor(b, "Autocollant", new Vector3(0.672f, 0.7f, -0.78f));
 
-            rig.CameraFirstPerson = Anchor(b, "CameraPremierePersonne", new Vector3(0f, 1.36f, -0.02f));
-            rig.CameraDashboard = Anchor(b, "CameraTableauDeBord", new Vector3(0f, 1.2f, 0.3f));
+            rig.CameraFirstPerson = Anchor(b, "CameraPremierePersonne", new Vector3(0f, 1.37f, 0.03f));
+            rig.CameraDashboard = Anchor(b, "CameraTableauDeBord", new Vector3(0f, 1.22f, 0.3f));
             if (withDriver)
             {
                 rig.Driver = BuildDriver(b, BajajDriverSeat, 11, false);
                 SetArmsForward(rig.Driver, 60f);
-                HumanLibrary.SetupRider(rig.Driver, Anchor(pivot, "MainGauche", new Vector3(-0.3f, 0f, -0.02f)), Anchor(pivot, "MainDroite", new Vector3(0.3f, 0f, -0.02f)), null, null, 4f);
+                HumanLibrary.SetupRider(rig.Driver, Anchor(pivot, "MainGauche", new Vector3(-0.3f, 0.03f, -0.02f)), Anchor(pivot, "MainDroite", new Vector3(0.3f, 0.03f, -0.02f)), null, null, 4f);
             }
             return true;
         }
 
-        /// <summary>Tricycle de la circulation : Bajaj RE de MATULA DESIGN (couleurs du modèle), chauffeur, parfois des passagers.</summary>
+        /// <summary>Tricycle de la circulation : bleu à bâche blanche (le plus courant), blanc ou rouge à bâche noire ;
+        /// chauffeur, parfois des passagers.</summary>
         private static GameObject BuildModelTricycleTraffic(GameObject root, System.Random rnd, int seed, out float length, List<Renderer> brakeLights, List<Renderer> hazards, List<Transform> wheels)
         {
             length = 2.75f;
             GameObject model = BajajModel;
             if (model == null) return null;
             Transform t = root.transform;
-            BajajParts p = PlaceBajaj(model, t, BajajBlue, BajajCanvas, Silver);
+            int v = rnd.Next(100);
+            Color body = v < 55 ? BajajBlue : (v < 78 ? BajajWhite : BajajRed);
+            Color canvas = v < 55 ? BajajCanvas : BajajBlackCanvas;
+            BajajParts p = PlaceBajaj(model, t, body, canvas, v < 55 ? BajajSeatLight : BajajSeatDark, Silver);
             if (p.Wheels.Count < 3)
             {
                 for (int i = t.childCount - 1; i >= 0; i--) Object.Destroy(t.GetChild(i).gameObject);
@@ -363,8 +416,8 @@ namespace BalulaMoto.Runtime
             }
             Transform pivot = BajajHandlebarPivot(t);
             GameObject drv = BuildHuman(t, BajajDriverSeat, "chauffeur", true, seed, false);
-            HumanLibrary.SetupRider(drv, Anchor(pivot, "MainGauche", new Vector3(-0.3f, 0f, -0.02f)), Anchor(pivot, "MainDroite", new Vector3(0.3f, 0f, -0.02f)),
-                Anchor(t, "PiedGauche", new Vector3(-0.15f, 0.37f, 0.25f)), Anchor(t, "PiedDroit", new Vector3(0.15f, 0.37f, 0.25f)), 4f);
+            HumanLibrary.SetupRider(drv, Anchor(pivot, "MainGauche", new Vector3(-0.3f, 0.03f, -0.02f)), Anchor(pivot, "MainDroite", new Vector3(0.3f, 0.03f, -0.02f)),
+                Anchor(t, "PiedGauche", new Vector3(-0.16f, 0.37f, 0.42f)), Anchor(t, "PiedDroit", new Vector3(0.16f, 0.37f, 0.42f)), 4f);
             HumanLibrary.MakeStatic(drv, true);
             if (GameSettings.Quality > 0)
             {
@@ -376,18 +429,22 @@ namespace BalulaMoto.Runtime
                     HumanLibrary.MakeStatic(ps, true);
                 }
             }
-            // Caisse : 1,32 m de large, 2,75 m de long, du bas de caisse au toit (1,70 m)
-            AddTrafficBody(root, new Vector3(1.32f, 1.62f, 2.72f), new Vector3(0f, 0.89f, -0.07f));
+            // Caisse : 1,32 m de large, 2,74 m de long, du bas de caisse au toit (1,71 m)
+            AddTrafficBody(root, new Vector3(1.32f, 1.62f, 2.7f), new Vector3(0f, 0.9f, 0f));
             return root;
         }
     }
 
-    /// <summary>Essuie-glace du tricycle : balaie le pare-brise quand il pleut (comme l'animation du modèle), rangé sinon.</summary>
+    /// <summary>Essuie-glace monté en haut du pare-brise : balaie la vitre quand il pleut, revient au repos sinon.
+    /// Le balai est modélisé au repos (penché vers la droite) ; il pivote dans le plan de la vitre vers la gauche.</summary>
     public class Essuieglace : MonoBehaviour
     {
-        public float Amplitude = 22f;
+        public float Sweep = -66f;
         private float phase;
-        private float angle = 22f;
+        private float angle;
+        private Quaternion baseRot;
+
+        private void Awake() { baseRot = transform.localRotation; }
 
         private void Update()
         {
@@ -396,14 +453,28 @@ namespace BalulaMoto.Runtime
             if (rain)
             {
                 phase += Time.deltaTime * 0.8f;
-                angle = Amplitude * Mathf.Cos(phase * Mathf.PI * 2f);
+                angle = Sweep * 0.5f * (1f - Mathf.Cos(phase * Mathf.PI * 2f));
             }
             else
             {
                 phase = 0f;
-                angle = Mathf.MoveTowards(angle, Amplitude, Time.deltaTime * 90f);
+                angle = Mathf.MoveTowards(angle, 0f, Time.deltaTime * 120f);
             }
-            transform.localRotation = Quaternion.Euler(0f, 0f, angle);
+            transform.localRotation = baseRot * Quaternion.Euler(0f, 0f, angle);
+        }
+    }
+
+    /// <summary>Garde-boue et bras avant du tricycle : tournent avec la roue avant (braquage lu sur la roue).</summary>
+    public class SuitBraquage : MonoBehaviour
+    {
+        public Transform Wheel;
+
+        private void LateUpdate()
+        {
+            if (Wheel == null) return;
+            Vector3 r = Wheel.localRotation * Vector3.right;
+            float steer = Mathf.Atan2(-r.z, r.x) * Mathf.Rad2Deg;
+            transform.localRotation = Quaternion.Euler(0f, steer, 0f);
         }
     }
 }

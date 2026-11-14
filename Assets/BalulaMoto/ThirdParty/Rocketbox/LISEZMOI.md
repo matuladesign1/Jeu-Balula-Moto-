@@ -23,6 +23,11 @@ Source : https://github.com/microsoft/Microsoft-Rocketbox — © 2020 Microsoft,
   cartes de brillance (specular) non reprises, remplacées par une valeur fixe.
 - Fichiers d'animation renommés sans « .max ».
 - Les animations du jeu sont dérivées automatiquement (rotations seules) par `Editor/HumanBuilder.cs`.
+- `Police_Male_01` habillé en agent de la police congolaise (`scripts/police_congolaise.py`, à lancer après
+  `africaniser_avatars.py`) : la casquette à visière du modèle (coque séparée, attachée à l'os de la tête) est
+  remodelée en béret noir posé sur le crâne déjà modélisé dessous ; écussons étrangers des manches (drapeau et insigne
+  de la police afghane du pack) effacés ; tissu passé au bleu roi de la tenue congolaise. Seuls les sommets et les
+  normales de la casquette changent dans le FBX, le reste du fichier est réécrit octet pour octet (`scripts/fbxrw.py`).
 
 ## Licence (résumé)
 
