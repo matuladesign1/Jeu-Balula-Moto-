@@ -1,0 +1,643 @@
+BALULA MOTO — photos de contrôle 2026-11-14 22:39 UTC
+Unity 6000.0.85f2 — cible active : Android
+Carte graphique : llvmpipe (LLVM 21.1.8, 256 bits) / OpenGLCore / OpenGL 4.5 (Core Profile) Mesa 26.0.8-1ubuntu0.3
+Compute shaders : True — instanciation : True
+Qualité : High — lodBias 1 — maximumLODLevel 0 — skinWeights TwoBones
+Android : API graphiques OpenGLES3 (par défaut : False)
+Déformation des maillages (skinning) : CPU
+Avatars disponibles : True (hommes 9, femmes 5)
+Musique : Nzela Malamu — volume réglé 0.6
+   Grand objet : Plateau (MeshRenderer) centre (7327, 25, 481) taille (2400, 50, 240) — MatLit couleur RGBA(0.330, 0.470, 0.200, 1.000)
+   Grand objet : Fleuve_Congo (MeshRenderer) centre (7327, 0, 0) taille (2400, 0, 560) — MatLit couleur RGBA(0.270, 0.360, 0.330, 1.000)
+   Grand objet : Plateau (MeshRenderer) centre (7327, 25, -481) taille (2400, 50, 240) — MatLit couleur RGBA(0.330, 0.470, 0.200, 1.000)
+   Grand objet : Berge (MeshRenderer) centre (7327, 23, -316) taille (2400, 56, 98) — MatLit couleur RGBA(0.450, 0.420, 0.360, 1.000)
+   Grand objet : Berge (MeshRenderer) centre (7327, 23, 316) taille (2400, 56, 98) — MatLit couleur RGBA(0.450, 0.420, 0.360, 1.000)
+Objets de plus de 1,2 km ou à boîte invalide : 5
+Photo 01_menu_accueil.png — caméra (-7000.6, 1.7, -7003.5)
+Photo 02_menu_garage.png — caméra (-7000.6, 1.7, -7003.5)
+— Chauffeur du garage : Male_Adult_09 à (-6998.25, 0.00, -6999.65) échelle (0.98, 0.98, 0.98)
+   LODGroup Male_Adult_09 : taille 1.90, seuils 0.012 — hauteur relative estimée 0.341 à 4.6 m, actif True
+   [animé] m017_hipoly_81_bones_opacity actif=True visible=True boîte (-6998.2, 0.9, -6999.6) ± (2.7, 2.1, 2.7) Male_Adult_09_corps [Standard, file 2000] | maillage m017_hipoly_81_bones_opacity 4571 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   rendus visibles : 1 / 1
+Photo 03_garage_plateau_tvs_hlx150.png — caméra (-7000.5, 1.2, -7001.8)
+Photo 04_garage_plateau_honda_cb750_four.png — caméra (-7000.4, 1.2, -7001.8)
+Photo 05_garage_plateau_honda_classique.png — caméra (-7000.4, 1.2, -7001.8)
+Photo 06_garage_plateau_bajaj_re.png — caméra (-7000.8, 1.5, -7002.8)
+Photo 07_garage_chauffeur.png — caméra (-6999.0, 1.5, -7002.3)
+Partie libre démarrée avec le véhicule : tvs_hlx150 (10 h, soleil)
+
+=== depart : joueur à (86.0, 0.0, 29.7) ===
+Circulation : 80 véhicules — foule : 28 — avatars : 123 (dont 18 à moins de 80 m) — maillages animés actifs : 32 — stations : 45 — arrêts : 94
+Photo 08_depart_camera_poursuite.png — caméra (91.2, 2.3, 28.4)
+Photo 09_depart_chauffeur_cote.png — caméra (86.3, 1.1, 32.3)
+Photo 10_depart_chauffeur_face.png — caméra (82.5, 1.7, 30.5)
+— Véhicule du joueur et chauffeur : Joueur_tvs_hlx150 à (85.97, 0.03, 29.68) échelle (1.00, 1.00, 1.00)
+   sol sous l'objet : y=1.61 (Joueur_tvs_hlx150), écart -1.59 m
+   LODGroup Male_Adult_17 : taille 1.90, seuils 0.012 — hauteur relative estimée 0.502 à 3.2 m, actif True
+   Roue actif=True visible=True boîte (85.3, 0.3, 29.9) ± (0.3, 0.3, 0.1) MatLit [Standard, file 2000] | maillage RoueAV_Corps_metalxengine 140 sommets
+   Roue actif=True visible=True boîte (85.3, 0.3, 29.9) ± (0.3, 0.3, 0.1) MatLit [Standard, file 2000] | maillage RoueAV_Corps_metalxsilver 390 sommets
+   Roue actif=True visible=True boîte (85.3, 0.3, 29.9) ± (0.4, 0.4, 0.2) MatLit [Standard, file 2000] | maillage RoueAV_Corps_tire 678 sommets
+   Roue actif=True visible=True boîte (86.6, 0.3, 29.6) ± (0.4, 0.4, 0.2) MatLit [Standard, file 2000] | maillage RoueAR_Corps_metalxengine 770 sommets
+   Roue actif=True visible=True boîte (86.6, 0.3, 29.6) ± (0.4, 0.4, 0.2) MatLit [Standard, file 2000] | maillage RoueAR_Corps_metalxsilver 385 sommets
+   Roue actif=True visible=True boîte (86.6, 0.3, 29.5) ± (0.4, 0.4, 0.2) MatLit [Standard, file 2000] | maillage RoueAR_Corps_tire 608 sommets
+   Clignotant actif=True visible=True boîte (85.6, 0.8, 30.1) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Direction_ClignoD_flash 142 sommets
+   Clignotant actif=True visible=True boîte (85.5, 0.9, 29.7) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Direction_ClignoG_flash 142 sommets
+   Piece actif=True visible=True boîte (85.6, 1.0, 29.9) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Direction_Corps_gaugexkmxblack 132 sommets
+   Piece actif=True visible=True boîte (85.6, 1.0, 29.9) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Direction_Corps_gaugexkmxmetal 179 sommets
+   Piece actif=True visible=True boîte (85.6, 1.0, 29.9) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Direction_Corps_gaugexrpmxblack 132 sommets
+   Piece actif=True visible=True boîte (85.6, 1.0, 29.9) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Direction_Corps_gaugexrpmxsilver 180 sommets
+   Piece actif=True visible=True boîte (85.6, 0.9, 29.9) ± (0.1, 0.1, 0.3) MatLit [Standard, file 2000] | maillage Direction_Corps_leather 352 sommets
+   Piece actif=True visible=True boîte (85.6, 0.8, 29.9) ± (0.2, 0.2, 0.3) MatLit [Standard, file 2000] | maillage Direction_Corps_metalxblack 2252 sommets
+   Piece actif=True visible=True boîte (85.3, 0.3, 29.9) ± (0.1, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Direction_Corps_metalxengine 548 sommets
+   Piece actif=True visible=True boîte (85.4, 0.7, 29.9) ± (0.4, 0.5, 0.4) MatLit [Standard, file 2000] | maillage Direction_Corps_metalxsilver 3802 sommets
+   Piece actif=True visible=True boîte (85.7, 1.1, 29.9) ± (0.1, 0.1, 0.3) MatLit [Standard, file 2000] | maillage Direction_Corps_mirror 32 sommets
+   Phare actif=True visible=True boîte (85.6, 0.9, 29.9) ± (0.1, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Direction_Phare_frontxlight 214 sommets
+   Clignotant actif=True visible=True boîte (86.8, 0.6, 29.7) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Caisse_ClignoD_flash 142 sommets
+   Clignotant actif=True visible=True boîte (86.8, 0.7, 29.4) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Caisse_ClignoG_flash 142 sommets
+   Piece actif=True visible=True boîte (86.4, 0.8, 29.7) ± (0.4, 0.1, 0.2) MatLit [Standard, file 2000] | maillage Caisse_Corps_leather 197 sommets
+   Piece actif=True visible=True boîte (86.2, 0.6, 29.7) ± (0.7, 0.3, 0.3) MatLit [Standard, file 2000] | maillage Caisse_Corps_metalxblack 1765 sommets
+   Piece actif=True visible=True boîte (86.2, 0.5, 29.7) ± (0.7, 0.3, 0.3) MatLit [Standard, file 2000] | maillage Caisse_Corps_metalxengine 2961 sommets
+   Piece actif=True visible=True boîte (86.4, 0.6, 29.6) ± (0.6, 0.3, 0.3) MatLit [Standard, file 2000] | maillage Caisse_Corps_metalxsilver 4819 sommets
+   FeuArriere actif=True visible=True boîte (86.9, 0.6, 29.5) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Caisse_FeuAR_lightxback 22 sommets
+   Peinture actif=True visible=True boîte (85.9, 0.8, 29.8) ± (0.3, 0.1, 0.2) MatLit [Standard, file 2000] | maillage Caisse_Peinture_metalxred 141 sommets
+   PlaqueModele actif=True visible=True boîte (86.9, 0.6, 29.5) ± (0.0, 0.0, 0.1) MatLit [Standard, file 2000] | maillage Caisse_Plaque_platexblack 204 sommets
+   PlaqueModele actif=True visible=True boîte (86.9, 0.6, 29.5) ± (0.0, 0.0, 0.1) MatLit [Standard, file 2000] | maillage Caisse_Plaque_platexwhite 35 sommets
+   Casque actif=True visible=True boîte (86.1, 1.7, 29.9) ± (0.2, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   Visiere actif=True visible=True boîte (86.0, 1.6, 29.9) ± (0.1, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   [animé] m022_hipoly_81_bones actif=True visible=True boîte (86.1, 0.9, 29.8) ± (3.0, 2.9, 2.6) Male_Adult_17_corps [Standard, file 2000] | maillage m022_hipoly_81_bones 4355 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   Plaque actif=True visible=True boîte (87.0, 0.6, 29.5) ± (0.0, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Cube 24 sommets
+   Face actif=True visible=True boîte (87.0, 0.6, 29.5) ± (0.1, 0.1, 0.2) Texte3D [BalulaMoto/Texte3D, file 3000]
+   rendus visibles : 33 / 33
+Tricycle de la circulation ajouté pour la photo à (84, 0, 97) — modèle du tricycle : True, roues : 3, longueur 2.8 m (photos après installation des passagers)
+Photo 11_depart_circulation_VoitureSUV.png — caméra (90.6, 2.6, 29.1)
+— Circulation VoitureSUV (3 m du joueur) : PNJ_VoitureSUV à (83.62, 0.06, 32.18) échelle (1.00, 1.00, 1.00)
+   sol sous l'objet : y=1.66 (PNJ_VoitureSUV), écart -1.60 m
+   Roue actif=True visible=True boîte (84.4, 0.4, 30.8) ± (0.1, 0.4, 0.4) Roue [Standard, file 2000] | maillage Roue 401 sommets
+   Roue actif=True visible=True boîte (82.8, 0.4, 30.9) ± (0.1, 0.4, 0.4) Roue [Standard, file 2000] | maillage Roue 1042 sommets
+   Roue actif=True visible=True boîte (84.4, 0.4, 33.5) ± (0.1, 0.4, 0.4) Roue [Standard, file 2000] | maillage Roue 401 sommets
+   Roue actif=True visible=True boîte (82.9, 0.4, 33.5) ± (0.1, 0.4, 0.4) Roue [Standard, file 2000] | maillage Roue 1042 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (83.6, 1.0, 32.2) ± (1.0, 0.7, 2.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 415 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (83.6, 1.0, 32.2) ± (1.1, 0.7, 2.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 1536 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (83.6, 0.7, 32.2) ± (0.2, 0.1, 2.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (83.6, 1.4, 31.7) ± (0.9, 0.3, 1.8) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 309 sommets
+   Carrosserie_Phare actif=True visible=True boîte (83.7, 0.8, 34.4) ± (0.8, 0.0, 0.0) Phare [BalulaMoto/Lumiere, file 2000] | maillage Carrosserie_Phare 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (83.6, 0.9, 29.9) ± (0.8, 0.1, 0.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (83.6, 0.8, 32.2) ± (0.9, 0.0, 2.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 96 sommets
+   Faisceau actif=False visible=False boîte (83.7, 0.1, 41.4) ± (3.6, 0.0, 8.5) Faisceau [BalulaMoto/Halo, file 3000] | maillage Faisceau 4 sommets
+   LueurArriere actif=False visible=False boîte (83.6, 0.1, 28.8) ± (2.2, 0.0, 2.1) Faisceau [BalulaMoto/Halo, file 3000] | maillage LueurArriere 4 sommets
+   rendus visibles : 11 / 13
+Photo 12_depart_circulation_TaxiJaune.png — caméra (73.8, 2.6, 46.8)
+— Circulation TaxiJaune (15 m du joueur) : PNJ_TaxiJaune à (80.76, 0.06, 43.72) échelle (1.00, 1.00, 1.00)
+   sol sous l'objet : y=1.46 (PNJ_TaxiJaune), écart -1.40 m
+   LODGroup Male_Adult_18 : taille 1.50, seuils 0.035 — hauteur relative estimée 0.168 à 7.4 m, actif True
+   Roue actif=True visible=True boîte (81.5, 0.4, 42.4) ± (0.1, 0.4, 0.4) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=True visible=True boîte (80.0, 0.4, 42.4) ± (0.1, 0.4, 0.4) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=True visible=True boîte (81.5, 0.4, 44.9) ± (0.1, 0.4, 0.4) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=True visible=True boîte (80.1, 0.4, 44.9) ± (0.1, 0.4, 0.4) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Face actif=True visible=True boîte (81.6, 0.7, 43.6) ± (0.0, 0.1, 0.3) Texte3D [BalulaMoto/Texte3D, file 3000]
+   Face actif=True visible=True boîte (79.9, 0.7, 43.6) ± (0.0, 0.1, 0.3) Texte3D [BalulaMoto/Texte3D, file 3000]
+   [animé] m023_hipoly_81_bones actif=False visible=False boîte (81.2, 0.6, 43.6) ± (2.1, 2.6, 2.6) Male_Adult_18_corps [Standard, file 2000] | maillage m023_hipoly_81_bones 4038 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   m023_hipoly_81_bones_fige actif=True visible=True boîte (81.2, 0.8, 43.4) ± (0.3, 0.8, 0.5) Male_Adult_18_corps [Standard, file 2000] | maillage m023_hipoly_81_bones_fige 4038 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (80.8, 0.7, 43.7) ± (1.0, 0.4, 2.2) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 1450 sommets
+   Carrosserie_MatGlass actif=True visible=True boîte (80.8, 1.2, 44.1) ± (0.8, 0.3, 1.1) MatGlass [Standard, file 3000] | maillage Carrosserie_MatGlass 748 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (80.8, 0.8, 43.4) ± (0.7, 0.2, 1.8) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (80.8, 0.5, 43.7) ± (0.8, 0.1, 2.2) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_Phare actif=True visible=True boîte (80.7, 0.7, 41.7) ± (0.7, 0.1, 0.0) Phare [BalulaMoto/Lumiere, file 2000] | maillage Carrosserie_Phare 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (80.8, 0.7, 45.7) ± (0.8, 0.1, 0.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (80.8, 0.7, 43.8) ± (0.8, 0.2, 2.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 96 sommets
+   Faisceau actif=False visible=False boîte (80.6, 0.2, 34.6) ± (3.6, 0.0, 8.5) Faisceau [BalulaMoto/Halo, file 3000] | maillage Faisceau 4 sommets
+   LueurArriere actif=False visible=False boîte (80.8, 0.2, 47.0) ± (2.2, 0.0, 2.1) Faisceau [BalulaMoto/Halo, file 3000] | maillage LueurArriere 4 sommets
+   rendus visibles : 14 / 17
+Photo 13_depart_circulation_TricycleTaxi.png — caméra (91.4, 2.6, 94.0)
+— Circulation TricycleTaxi (67 m du joueur) : PNJ_TricycleTaxi à (84.40, 0.06, 96.94) échelle (1.00, 1.00, 1.00)
+   sol sous l'objet : y=0.04 (Routes_0_0_Terre), écart 0.02 m
+   LODGroup Male_Adult_12 : taille 4.00, seuils 0.035 — hauteur relative estimée 0.475 à 7.0 m, actif True
+   LODGroup Medical_Female_01 : taille 4.00, seuils 0.035 — hauteur relative estimée 0.448 à 7.4 m, actif True
+   LODGroup Female_Adult_15 : taille 4.00, seuils 0.035 — hauteur relative estimée 0.448 à 7.4 m, actif True
+   Caisse_Bache actif=True visible=True boîte (84.4, 1.3, 96.7) ± (0.7, 0.4, 1.1) MatLit [Standard, file 2000] | maillage Caisse_Bache 1626 sommets
+   Caisse_Cadran actif=True visible=True boîte (84.4, 1.2, 97.6) ± (0.1, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Caisse_Cadran 137 sommets
+   Caisse_Carrosserie actif=True visible=True boîte (84.4, 1.0, 96.9) ± (0.7, 0.6, 1.3) MatLit [Standard, file 2000] | maillage Caisse_Carrosserie 2416 sommets
+   Caisse_Chrome actif=True visible=True boîte (84.4, 1.1, 98.0) ± (0.8, 0.4, 0.3) MatLit [Standard, file 2000] | maillage Caisse_Chrome 260 sommets
+   Caisse_Grille actif=True visible=True boîte (84.4, 0.8, 97.0) ± (0.3, 0.2, 1.3) MatLit [Standard, file 2000] | maillage Caisse_Grille 160 sommets
+   Caisse_Orange actif=True visible=True boîte (84.4, 1.2, 97.6) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Caisse_Orange 22 sommets
+   Caisse_Plaque actif=True visible=True boîte (84.4, 0.9, 98.2) ± (0.1, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Caisse_Plaque 24 sommets
+   Caisse_Plastique_Noir actif=True visible=True boîte (84.4, 0.9, 96.9) ± (0.8, 0.6, 1.4) MatLit [Standard, file 2000] | maillage Caisse_Plastique_Noir 1662 sommets
+   Caisse_Siege actif=True visible=True boîte (84.4, 0.8, 96.5) ± (0.6, 0.3, 0.7) MatLit [Standard, file 2000] | maillage Caisse_Siege 608 sommets
+   Caisse_Tapis actif=True visible=True boîte (84.4, 0.4, 97.0) ± (0.6, 0.0, 0.6) MatLit [Standard, file 2000] | maillage Caisse_Tapis 56 sommets
+   Caisse_Vitre actif=True visible=True boîte (84.4, 1.3, 96.8) ± (0.7, 0.3, 1.1) MatGlass [Standard, file 3000] | maillage Caisse_Vitre 262 sommets
+   Cligno_ARD actif=True visible=True boîte (84.9, 0.6, 95.6) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Cligno_ARD 56 sommets
+   Cligno_ARG actif=True visible=True boîte (83.9, 0.6, 95.6) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Cligno_ARG 56 sommets
+   Cligno_AVD actif=True visible=True boîte (84.8, 1.0, 98.2) ± (0.1, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Cligno_AVD 56 sommets
+   Cligno_AVG actif=True visible=True boîte (84.0, 1.0, 98.2) ± (0.1, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Cligno_AVG 56 sommets
+   Balai actif=True visible=True boîte (84.4, 1.3, 97.8) ± (0.2, 0.2, 0.1) MatLit [Standard, file 2000] | maillage Essuie_Glace 92 sommets
+   Feu_ARD actif=True visible=True boîte (84.9, 0.8, 95.6) ± (0.0, 0.1, 0.0) MatLit [Standard, file 2000] | maillage Feu_ARD 44 sommets
+   Feu_ARG actif=True visible=True boîte (83.9, 0.8, 95.6) ± (0.0, 0.1, 0.0) MatLit [Standard, file 2000] | maillage Feu_ARG 44 sommets
+   Fourche_Carrosserie actif=True visible=True boîte (84.4, 0.5, 98.1) ± (0.1, 0.1, 0.3) MatLit [Standard, file 2000] | maillage Fourche_Carrosserie 242 sommets
+   Fourche_Chrome actif=True visible=True boîte (84.5, 0.4, 98.0) ± (0.0, 0.2, 0.1) MatLit [Standard, file 2000] | maillage Fourche_Chrome 136 sommets
+   Fourche_Plastique_Noir actif=True visible=True boîte (84.4, 0.5, 98.0) ± (0.1, 0.2, 0.1) MatLit [Standard, file 2000] | maillage Fourche_Plastique_Noir 84 sommets
+   Phare actif=True visible=True boîte (84.7, 0.7, 98.3) ± (0.1, 0.1, 0.0) MatLit [Standard, file 2000] | maillage Phare_D 112 sommets
+   Phare actif=True visible=True boîte (84.1, 0.7, 98.3) ± (0.1, 0.1, 0.0) MatLit [Standard, file 2000] | maillage Phare_G 112 sommets
+   Plaque_AR actif=True visible=True boîte (84.4, 0.5, 95.6) ± (0.1, 0.1, 0.0) MatLit [Standard, file 2000] | maillage Plaque_AR 24 sommets
+   Roue_ARD actif=True visible=True boîte (85.0, 0.3, 96.0) ± (0.1, 0.2, 0.2) Roue [Standard, file 2000] | maillage Roue 660 sommets
+   Jante actif=True visible=True boîte (85.0, 0.3, 96.0) ± (0.0, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Roue_ARD_Jante 408 sommets
+   Pneu actif=True visible=True boîte (85.0, 0.3, 96.0) ± (0.1, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Roue_ARD_Pneu 252 sommets
+   Roue_ARG actif=True visible=True boîte (83.8, 0.3, 96.0) ± (0.1, 0.2, 0.2) Roue [Standard, file 2000] | maillage Roue 660 sommets
+   Jante actif=True visible=True boîte (83.8, 0.3, 96.0) ± (0.0, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Roue_ARG_Jante 408 sommets
+   Pneu actif=True visible=True boîte (83.8, 0.3, 96.0) ± (0.1, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Roue_ARG_Pneu 252 sommets
+   Roue_AV actif=True visible=True boîte (84.4, 0.3, 98.0) ± (0.1, 0.2, 0.2) Roue [Standard, file 2000] | maillage Roue 660 sommets
+   Jante actif=True visible=True boîte (84.4, 0.3, 98.0) ± (0.0, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Roue_AV_Jante 408 sommets
+   Pneu actif=True visible=True boîte (84.4, 0.3, 98.0) ± (0.1, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Roue_AV_Pneu 252 sommets
+   Guidon actif=True visible=True boîte (84.4, 1.1, 97.4) ± (0.3, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Cylinder 88 sommets
+   Potence actif=True visible=True boîte (84.4, 1.0, 97.5) ± (0.0, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Cylinder 88 sommets
+   PoigneeG actif=True visible=True boîte (84.1, 1.1, 97.4) ± (0.1, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Cylinder 88 sommets
+   PoigneeD actif=True visible=True boîte (84.7, 1.1, 97.4) ± (0.1, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Cylinder 88 sommets
+   Levier actif=True visible=True boîte (84.7, 1.1, 97.4) ± (0.1, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Cylinder 88 sommets
+   [animé] m007_hipoly_81_bones actif=True visible=True boîte (84.4, 1.6, 96.9) ± (2.0, 2.0, 2.0) Male_Adult_12_corps [Standard, file 2000] | maillage m007_hipoly_81_bones 4069 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   [animé] f152_hipoly_81_bones_opacity actif=True visible=True boîte (84.0, 1.6, 96.1) ± (2.0, 2.0, 2.0) Medical_Female_01_corps [Standard, file 2000] | maillage f152_hipoly_81_bones_opacity 5280 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   rendus visibles : 62 / 64
+Photo 14_depart_circulation_BusTransco.png — caméra (74.3, 2.6, 111.9)
+— Circulation BusTransco (79 m du joueur) : PNJ_BusTransco à (81.30, 0.06, 108.97) échelle (1.00, 1.00, 1.00)
+   sol sous l'objet : y=3.47 (PNJ_BusTransco), écart -3.41 m
+   Roue actif=True visible=True boîte (80.0, 0.6, 112.6) ± (0.2, 0.5, 0.5) Roue [Standard, file 2000] | maillage Roue 628 sommets
+   Roue actif=True visible=True boîte (82.6, 0.6, 112.7) ± (0.2, 0.5, 0.5) Roue [Standard, file 2000] | maillage Roue 628 sommets
+   Roue actif=True visible=True boîte (80.0, 0.6, 105.4) ± (0.2, 0.5, 0.5) Roue [Standard, file 2000] | maillage Roue 628 sommets
+   Roue actif=True visible=True boîte (82.6, 0.6, 105.5) ± (0.2, 0.5, 0.5) Roue [Standard, file 2000] | maillage Roue 628 sommets
+   Carrosserie_MatGlass actif=True visible=True boîte (81.3, 2.3, 108.6) ± (1.4, 1.1, 5.2) MatGlass [Standard, file 3000] | maillage Carrosserie_MatGlass 696 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (81.3, 2.0, 108.9) ± (1.5, 1.5, 5.7) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 1884 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (81.3, 1.1, 103.3) ± (1.1, 0.4, 0.1) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 72 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (81.3, 1.9, 108.9) ± (1.3, 1.6, 5.6) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 168 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (81.3, 1.0, 109.0) ± (1.4, 0.1, 5.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (81.3, 0.9, 109.0) ± (1.4, 0.0, 5.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (81.3, 0.8, 109.0) ± (1.4, 0.0, 5.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_Phare actif=True visible=True boîte (81.3, 1.3, 103.3) ± (1.1, 0.1, 0.1) Phare [BalulaMoto/Lumiere, file 2000] | maillage Carrosserie_Phare 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (81.3, 1.2, 114.6) ± (1.0, 0.3, 0.1) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 96 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (81.3, 1.1, 109.0) ± (1.1, 0.2, 5.7) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 96 sommets
+   Faisceau actif=False visible=False boîte (81.4, 0.1, 96.2) ± (3.5, 0.0, 8.5) Faisceau [BalulaMoto/Halo, file 3000] | maillage Faisceau 4 sommets
+   LueurArriere actif=False visible=False boîte (81.3, 0.1, 115.8) ± (2.2, 0.0, 2.1) Faisceau [BalulaMoto/Halo, file 3000] | maillage LueurArriere 4 sommets
+   rendus visibles : 14 / 16
+Photo 15_depart_circulation_MinibusBlanc.png — caméra (217.4, 2.6, 117.8)
+— Circulation MinibusBlanc (164 m du joueur) : PNJ_MinibusBlanc à (224.99, 0.06, 117.31) échelle (1.00, 1.00, 1.00)
+   sol sous l'objet : y=2.66 (PNJ_MinibusBlanc), écart -2.60 m
+   LODGroup Male_Adult_12 : taille 1.50, seuils 0.035 — hauteur relative estimée 0.156 à 8.0 m, actif True
+   LODGroup Female_Adult_15 : taille 1.42, seuils 0.035 — hauteur relative estimée 0.153 à 7.7 m, actif True
+   LODGroup Female_Party_02 : taille 1.48, seuils 0.035 — hauteur relative estimée 0.187 à 6.6 m, actif True
+   Roue actif=False visible=False boîte (226.7, 0.5, 115.3) ± (0.3, 0.6, 0.6) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=False visible=False boîte (225.0, 0.5, 114.7) ± (0.3, 0.6, 0.6) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=False visible=False boîte (225.2, 0.5, 119.4) ± (0.3, 0.6, 0.6) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=False visible=False boîte (223.5, 0.5, 118.8) ± (0.3, 0.6, 0.6) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Face actif=False visible=False boîte (226.2, 2.4, 114.0) ± (1.3, 0.1, 0.5) Texte3D [BalulaMoto/Texte3D, file 3000]
+   [animé] m007_hipoly_81_bones actif=False visible=False boîte (226.3, 1.1, 115.1) ± (2.8, 2.7, 3.1) Male_Adult_12_corps [Standard, file 2000] | maillage m007_hipoly_81_bones 4069 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   m007_hipoly_81_bones_fige actif=True visible=True boîte (226.4, 1.2, 114.9) ± (0.4, 0.7, 0.5) Male_Adult_12_corps [Standard, file 2000] | maillage m007_hipoly_81_bones_fige 4069 sommets
+   [animé] f018_hipoly_81_bones_opacity actif=False visible=False boîte (226.0, 1.1, 116.0) ± (2.6, 2.9, 3.2) Female_Adult_15_corps [Standard, file 2000] | maillage f018_hipoly_81_bones_opacity 6538 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   f018_hipoly_81_bones_opacity_fige actif=True visible=True boîte (226.1, 1.2, 115.8) ± (0.4, 0.7, 0.5) Female_Adult_15_corps [Standard, file 2000] | maillage f018_hipoly_81_bones_opacity_fige 6538 sommets
+   Foulard actif=True visible=True boîte (224.8, 1.8, 116.5) ± (0.1, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   Noeud actif=True visible=True boîte (224.8, 1.9, 116.5) ± (0.1, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   [animé] f022_hipoly_81_bones_opacity actif=False visible=False boîte (224.8, 1.1, 116.4) ± (2.6, 2.9, 3.2) Female_Party_02_corps [Standard, file 2000] | maillage f022_hipoly_81_bones_opacity 7089 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   f022_hipoly_81_bones_opacity_fige actif=True visible=True boîte (224.8, 1.2, 116.3) ± (0.4, 0.7, 0.5) Female_Party_02_corps [Standard, file 2000] | maillage f022_hipoly_81_bones_opacity_fige 7089 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (225.0, 0.9, 117.3) ± (2.1, 0.4, 3.6) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 2242 sommets
+   Carrosserie_MatGlass actif=True visible=True boîte (224.9, 1.6, 117.4) ± (2.0, 1.0, 3.4) MatGlass [Standard, file 3000] | maillage Carrosserie_MatGlass 2275 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (225.0, 1.3, 117.3) ± (2.3, 0.8, 3.7) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 144 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (225.0, 0.8, 117.3) ± (2.0, 0.0, 3.2) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (225.0, 0.9, 117.3) ± (2.0, 0.0, 3.2) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (225.0, 1.0, 117.3) ± (2.0, 0.0, 3.2) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (225.0, 1.1, 117.3) ± (2.0, 0.0, 3.2) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (225.0, 1.2, 117.3) ± (2.0, 0.0, 3.2) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_Phare actif=True visible=True boîte (226.1, 0.8, 114.2) ± (0.8, 0.1, 0.3) Phare [BalulaMoto/Lumiere, file 2000] | maillage Carrosserie_Phare 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (223.8, 0.8, 120.5) ± (0.9, 0.1, 0.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (225.0, 0.8, 117.4) ± (2.0, 0.2, 3.5) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 96 sommets
+   Faisceau actif=False visible=False boîte (228.5, 0.1, 107.4) ± (6.1, 0.0, 9.2) Faisceau [BalulaMoto/Halo, file 3000] | maillage Faisceau 4 sommets
+   LueurArriere actif=False visible=False boîte (223.4, 0.1, 121.6) ± (2.8, 0.0, 2.7) Faisceau [BalulaMoto/Halo, file 3000] | maillage LueurArriere 4 sommets
+   rendus visibles : 16 / 26
+Photo 16_depart_circulation_CamionCiterne.png — caméra (204.4, 2.6, 155.1)
+— Circulation CamionCiterne (178 m du joueur) : PNJ_CamionCiterne à (204.93, 0.06, 162.68) échelle (1.00, 1.00, 1.00)
+   sol sous l'objet : y=3.06 (PNJ_CamionCiterne), écart -3.00 m
+   LODGroup Business_Male_05 : taille 1.49, seuils 0.035 — hauteur relative estimée 0.136 à 9.1 m, actif True
+   Roue actif=False visible=False boîte (209.0, 0.6, 165.2) ± (0.7, 0.7, 0.4) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=False visible=False boîte (209.7, 0.6, 163.3) ± (0.7, 0.7, 0.4) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=False visible=False boîte (201.3, 0.6, 162.5) ± (0.7, 0.7, 0.4) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=False visible=False boîte (202.0, 0.6, 160.5) ± (0.7, 0.7, 0.4) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=False visible=False boîte (202.5, 0.6, 162.9) ± (0.7, 0.7, 0.4) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=False visible=False boîte (203.2, 0.6, 161.0) ± (0.7, 0.7, 0.4) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Face actif=False visible=False boîte (203.4, 2.7, 163.4) ± (1.3, 0.2, 0.5) Texte3D [BalulaMoto/Texte3D, file 3000]
+   Face actif=False visible=False boîte (204.2, 2.7, 161.1) ± (1.3, 0.2, 0.5) Texte3D [BalulaMoto/Texte3D, file 3000]
+   Face actif=False visible=False boîte (199.6, 1.6, 161.2) ± (0.1, 0.2, 0.2) Texte3D [BalulaMoto/Texte3D, file 3000]
+   [animé] m016_hipoly_81_bones actif=False visible=False boîte (209.3, 1.3, 164.8) ± (3.1, 2.7, 2.8) Business_Male_05_corps [Standard, file 2000] | maillage m016_hipoly_81_bones 4460 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   m016_hipoly_81_bones_fige actif=True visible=True boîte (209.5, 1.5, 164.9) ± (0.5, 0.7, 0.4) Business_Male_05_corps [Standard, file 2000] | maillage m016_hipoly_81_bones_fige 4460 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (209.0, 1.1, 164.1) ± (1.5, 0.5, 1.5) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 898 sommets
+   Carrosserie_MatGlass actif=True visible=True boîte (209.0, 2.3, 164.1) ± (1.4, 0.7, 1.4) MatGlass [Standard, file 3000] | maillage Carrosserie_MatGlass 765 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (205.0, 2.0, 162.7) ± (5.6, 1.4, 3.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 168 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (203.8, 2.4, 162.3) ± (4.3, 1.0, 2.5) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 1118 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (203.8, 2.2, 162.3) ± (3.7, 0.1, 2.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (203.4, 2.3, 162.1) ± (4.0, 1.3, 2.4) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 384 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (199.6, 1.6, 161.2) ± (0.1, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 24 sommets
+   Carrosserie_Phare actif=True visible=True boîte (210.0, 1.0, 164.5) ± (0.4, 0.1, 1.0) Phare [BalulaMoto/Lumiere, file 2000] | maillage Carrosserie_Phare 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (199.8, 1.0, 160.9) ± (0.4, 0.1, 1.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (204.9, 1.0, 162.7) ± (5.5, 0.2, 2.9) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 96 sommets
+   Faisceau actif=False visible=False boîte (216.7, 0.1, 166.9) ± (9.2, 0.0, 6.1) Faisceau [BalulaMoto/Halo, file 3000] | maillage Faisceau 4 sommets
+   LueurArriere actif=False visible=False boîte (198.7, 0.1, 160.5) ± (2.7, 0.0, 2.8) Faisceau [BalulaMoto/Halo, file 3000] | maillage LueurArriere 4 sommets
+   rendus visibles : 11 / 23
+Photo 17_depart_circulation_MotoTaxi.png — caméra (194.2, 2.6, -121.6)
+— Circulation MotoTaxi (191 m du joueur) : PNJ_MotoTaxi_HondaClassique à (201.75, 0.06, -122.41) échelle (1.00, 1.00, 1.00)
+   sol sous l'objet : y=1.66 (PNJ_MotoTaxi_HondaClassique), écart -1.60 m
+   LODGroup Male_Adult_10 : taille 1.54, seuils 0.012 — hauteur relative estimée 0.183 à 7.0 m, actif True
+   LODGroup Sports_Male_03 : taille 1.56, seuils 0.012 — hauteur relative estimée 0.185 à 7.0 m, actif True
+   Roue actif=False visible=False boîte (201.9, 0.4, -123.0) ± (0.2, 0.4, 0.4) Roue [Standard, file 2000] | maillage Roue 1576 sommets
+   Roue actif=False visible=False boîte (201.6, 0.4, -121.8) ± (0.2, 0.4, 0.4) Roue [Standard, file 2000] | maillage Roue 2417 sommets
+   [animé] m024_hipoly_81_bones_opacity actif=False visible=False boîte (201.7, 0.9, -122.2) ± (2.7, 2.6, 2.9) Male_Adult_10_tete [Standard, file 2000] | maillage m024_hipoly_81_bones_opacity 4115 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   m024_hipoly_81_bones_opacity_fige actif=True visible=True boîte (201.7, 0.9, -122.4) ± (0.4, 0.8, 0.5) Male_Adult_10_tete [Standard, file 2000] | maillage m024_hipoly_81_bones_opacity_fige 4115 sommets
+   [animé] m300_hipoly_81_bones_opacity actif=False visible=False boîte (201.6, 0.9, -121.9) ± (2.7, 2.6, 3.0) Sports_Male_03_corps [Standard, file 2000] | maillage m300_hipoly_81_bones_opacity 6472 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   m300_hipoly_81_bones_opacity_fige actif=True visible=True boîte (201.6, 1.0, -122.0) ± (0.4, 0.8, 0.4) Sports_Male_03_corps [Standard, file 2000] | maillage m300_hipoly_81_bones_opacity_fige 6472 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.7, 0.5, -122.4) ± (0.4, 0.3, 0.9) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 1386 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.6, 0.3, -122.0) ± (0.2, 0.1, 0.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 251 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.6, 0.4, -121.8) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 4 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.7, 0.7, -122.4) ± (0.5, 0.4, 0.5) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 294 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.7, 0.5, -122.4) ± (0.3, 0.1, 0.7) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 302 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.7, 0.6, -122.2) ± (0.5, 0.4, 0.8) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 1014 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.7, 0.4, -122.4) ± (0.1, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 88 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.7, 0.6, -122.3) ± (0.4, 0.3, 0.7) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 432 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.7, 0.4, -122.4) ± (0.2, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 3031 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.8, 0.6, -122.5) ± (0.3, 0.3, 0.4) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 96 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.7, 0.7, -122.3) ± (0.4, 0.5, 0.6) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 604 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.7, 0.4, -122.0) ± (0.1, 0.1, 0.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 68 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.6, 0.4, -122.0) ± (0.3, 0.1, 0.4) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 459 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.7, 0.7, -122.2) ± (0.4, 0.3, 0.7) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 1901 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.9, 0.8, -122.9) ± (0.1, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 61 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.9, 1.0, -122.8) ± (0.3, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 108 sommets
+   Carrosserie_Phare actif=True visible=True boîte (201.9, 0.8, -122.9) ± (0.1, 0.1, 0.0) Phare [BalulaMoto/Lumiere, file 2000] | maillage Carrosserie_Phare 69 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.5, 0.7, -121.6) ± (0.2, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 131 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (201.9, 0.8, -122.9) ± (0.2, 0.0, 0.1) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 79 sommets
+   Faisceau actif=False visible=False boîte (203.5, 0.2, -128.2) ± (4.3, 0.0, 6.9) Faisceau [BalulaMoto/Halo, file 3000] | maillage Faisceau 4 sommets
+   LueurArriere actif=False visible=False boîte (201.1, 0.2, -120.4) ± (2.2, 0.0, 2.5) Faisceau [BalulaMoto/Halo, file 3000] | maillage LueurArriere 4 sommets
+   rendus visibles : 21 / 27
+Photo 18_depart_circulation_MinibusJaune.png — caméra (171.6, 2.6, -144.5)
+— Circulation MinibusJaune (200 m du joueur) : PNJ_MinibusJaune à (170.64, 0.06, -152.02) échelle (1.00, 1.00, 1.00)
+   sol sous l'objet : y=2.51 (PNJ_MinibusJaune), écart -2.45 m
+   LODGroup Business_Male_05 : taille 1.48, seuils 0.035 — hauteur relative estimée 0.161 à 7.7 m, actif True
+   LODGroup Business_Female_01 : taille 1.42, seuils 0.035 — hauteur relative estimée 0.157 à 7.6 m, actif True
+   LODGroup Business_Male_05 : taille 1.49, seuils 0.035 — hauteur relative estimée 0.191 à 6.5 m, actif True
+   Roue actif=False visible=False boîte (169.1, 0.4, -153.4) ± (0.5, 0.5, 0.2) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=False visible=False boîte (168.6, 0.4, -151.7) ± (0.5, 0.5, 0.2) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=False visible=False boîte (172.3, 0.4, -152.4) ± (0.5, 0.5, 0.2) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Roue actif=False visible=False boîte (171.8, 0.4, -150.8) ± (0.5, 0.5, 0.2) Roue [Standard, file 2000] | maillage Roue 176 sommets
+   Face actif=False visible=False boîte (173.2, 1.1, -151.3) ± (0.1, 0.2, 0.3) Texte3D [BalulaMoto/Texte3D, file 3000]
+   [animé] m016_hipoly_81_bones actif=False visible=False boîte (169.3, 1.0, -152.9) ± (3.0, 2.7, 2.7) Business_Male_05_corps [Standard, file 2000] | maillage m016_hipoly_81_bones 4460 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   m016_hipoly_81_bones_fige actif=True visible=True boîte (169.1, 1.2, -152.9) ± (0.5, 0.7, 0.4) Business_Male_05_corps [Standard, file 2000] | maillage m016_hipoly_81_bones_fige 4460 sommets
+   [animé] f014_hipoly_81_bones_opacity actif=False visible=False boîte (170.2, 1.0, -152.7) ± (3.1, 2.9, 2.4) Business_Female_01_corps [Standard, file 2000] | maillage f014_hipoly_81_bones_opacity 6135 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   f014_hipoly_81_bones_opacity_fige actif=True visible=True boîte (170.0, 1.1, -152.7) ± (0.5, 0.7, 0.4) Business_Female_01_corps [Standard, file 2000] | maillage f014_hipoly_81_bones_opacity_fige 6135 sommets
+   [animé] m016_hipoly_81_bones actif=False visible=False boîte (170.7, 1.0, -151.5) ± (3.0, 2.7, 2.7) Business_Male_05_corps [Standard, file 2000] | maillage m016_hipoly_81_bones 4460 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   m016_hipoly_81_bones_fige actif=True visible=True boîte (170.5, 1.2, -151.5) ± (0.5, 0.7, 0.4) Business_Male_05_corps [Standard, file 2000] | maillage m016_hipoly_81_bones_fige 4460 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (170.6, 1.0, -152.0) ± (2.9, 0.5, 1.8) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 1758 sommets
+   Carrosserie_MatGlass actif=True visible=True boîte (170.9, 1.9, -152.0) ± (2.5, 0.6, 1.5) MatGlass [Standard, file 3000] | maillage Carrosserie_MatGlass 1615 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (170.6, 0.9, -152.0) ± (2.8, 0.4, 1.7) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 96 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (170.9, 0.8, -151.9) ± (2.1, 0.0, 1.5) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (170.9, 0.9, -151.9) ± (2.1, 0.0, 1.5) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_Phare actif=True visible=True boîte (168.2, 0.9, -152.7) ± (0.3, 0.1, 0.8) Phare [BalulaMoto/Lumiere, file 2000] | maillage Carrosserie_Phare 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (173.1, 1.0, -151.3) ± (0.3, 0.1, 0.9) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (170.7, 0.9, -152.0) ± (2.7, 0.2, 1.6) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 96 sommets
+   Faisceau actif=False visible=False boîte (161.4, 0.1, -154.7) ± (9.1, 0.0, 5.6) Faisceau [BalulaMoto/Halo, file 3000] | maillage Faisceau 4 sommets
+   LueurArriere actif=False visible=False boîte (174.2, 0.1, -151.0) ± (2.6, 0.0, 2.7) Faisceau [BalulaMoto/Halo, file 3000] | maillage LueurArriere 4 sommets
+   rendus visibles : 11 / 21
+Piétons hors véhicules : 30
+Photo 19_depart_pieton1.png — caméra (76.6, 1.6, 30.3)
+— Piéton Business_Male_05 (10 m du joueur) : Business_Male_05 à (76.63, 0.00, 33.51) échelle (0.98, 0.98, 0.98)
+   sol sous l'objet : y=0.00 (Sol), écart 0.00 m
+   LODGroup Business_Male_05 : taille 1.90, seuils 0.012 — hauteur relative estimée 0.482 à 3.2 m, actif True
+   [animé] m016_hipoly_81_bones actif=True visible=True boîte (76.6, 0.9, 33.5) ± (2.1, 2.1, 2.0) Business_Male_05_corps [Standard, file 2000] | maillage m016_hipoly_81_bones 4460 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   rendus visibles : 1 / 1
+Photo 20_depart_pieton2.png — caméra (77.0, 1.6, 47.1)
+— Piéton Female_Adult_11 (22 m du joueur) : Female_Adult_11 à (77.02, 0.00, 50.26) échelle (0.99, 0.99, 0.99)
+   sol sous l'objet : y=0.00 (Sol), écart 0.00 m
+   LODGroup Female_Adult_11 : taille 1.90, seuils 0.012 — hauteur relative estimée 0.487 à 3.2 m, actif True
+   Foulard actif=True visible=True boîte (77.0, 1.7, 50.3) ± (0.1, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   Noeud actif=True visible=True boîte (77.0, 1.7, 50.3) ± (0.1, 0.0, 0.1) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   [animé] f011_hipoly_81_bones_opacity actif=True visible=True boîte (77.0, 0.9, 50.3) ± (2.2, 2.1, 2.0) Female_Adult_11_corps [Standard, file 2000] | maillage f011_hipoly_81_bones_opacity 6233 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   rendus visibles : 3 / 3
+Photo 21_depart_pieton3.png — caméra (137.1, 1.6, 18.0)
+— Piéton Police_Male_01 (55 m du joueur) : Policier à (140.20, 0.00, 18.88) échelle (1.03, 1.03, 1.03)
+   sol sous l'objet : y=0.00 (Sol), écart 0.00 m
+   LODGroup Policier : taille 4.00, seuils 0.012 — hauteur relative estimée 1.072 à 3.2 m, actif True
+   Fusil_Bois actif=True visible=True boîte (140.4, 1.2, 18.9) ± (0.1, 0.3, 0.3) MatLit [Standard, file 2000] | maillage Fusil_Bois 254 sommets
+   Fusil_Bretelle actif=True visible=True boîte (140.3, 1.1, 19.0) ± (0.1, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Fusil_Bretelle 92 sommets
+   Fusil_Metal_Noirci actif=True visible=True boîte (140.3, 1.3, 19.0) ± (0.1, 0.4, 0.4) MatLit [Standard, file 2000] | maillage Fusil_Metal_Noirci 490 sommets
+   [animé] m220_hipoly_81_bones actif=True visible=True boîte (140.2, 0.9, 18.9) ± (2.6, 2.2, 2.6) Police_Male_01_corps [Standard, file 2000] | maillage m220_hipoly_81_bones 5698 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   rendus visibles : 4 / 4
+Photo 22_depart_pieton4.png — caméra (77.9, 1.6, 86.3)
+— Piéton Construction_Male_03 (55 m du joueur) : Construction_Male_03 à (80.79, 0.04, 84.87) échelle (0.98, 0.98, 0.98)
+   sol sous l'objet : y=0.04 (Routes_0_0_Terre), écart 0.00 m
+   LODGroup Construction_Male_03 : taille 1.90, seuils 0.012 — hauteur relative estimée 0.484 à 3.2 m, actif True
+   [animé] m102_hipoly_81_bones actif=True visible=True boîte (80.8, 0.9, 84.9) ± (2.7, 2.1, 2.7) Construction_Male_03_corps [Standard, file 2000] | maillage m102_hipoly_81_bones 6433 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   rendus visibles : 1 / 1
+Photo 23_depart_pieton5.png — caméra (82.3, 1.6, 84.1)
+— Piéton Female_Adult_11 (56 m du joueur) : Female_Adult_11 à (79.45, 0.04, 85.55) échelle (1.00, 1.00, 1.00)
+   sol sous l'objet : y=0.00 (Sol), écart 0.04 m
+   LODGroup Female_Adult_11 : taille 1.90, seuils 0.012 — hauteur relative estimée 0.492 à 3.2 m, actif True
+   Foulard actif=True visible=True boîte (79.4, 1.7, 85.6) ± (0.2, 0.1, 0.2) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   Noeud actif=True visible=True boîte (79.5, 1.8, 85.5) ± (0.1, 0.0, 0.1) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   [animé] f011_hipoly_81_bones_opacity actif=True visible=True boîte (79.4, 1.0, 85.5) ± (2.8, 2.2, 2.8) Female_Adult_11_corps [Standard, file 2000] | maillage f011_hipoly_81_bones_opacity 6233 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   rendus visibles : 3 / 3
+Photo 24_depart_station_service.png — caméra (-226.7, 8.0, -253.2)
+Photo 25_depart_station_pompes.png — caméra (-237.7, 1.7, -224.2)
+Station-service « Engen » à 424 m
+Photo 26_depart_rue_hauteur_yeux.png — caméra (87.9, 1.7, 29.2)
+Photo 27_depart_rue_derriere.png — caméra (83.1, 1.7, 30.4)
+Photo 28_depart_vue_oblique.png — caméra (135.6, 28.7, 43.0)
+Photo 29_depart_vue_aerienne.png — caméra (153.9, 160.0, 13.0)
+Arrêts : 0 personnes aux arrêts proches (18 par côté) — poteaux électriques : 84 — carrefours avec plaques : 5
+Photo 30_depart_plaque_de_rue.png — caméra (187.2, 2.4, 25.0)
+Photo 31_depart_plaque_carrefour.png — caméra (182.3, 3.2, 30.0)
+Plaque « Mpela » à 102 m
+Véhicules arrêtés à un arrêt en ce moment : 0
+Photo 32_moto_centrale_trois_quarts.png — caméra (83.9, 0.8, 32.1)
+Photo 33_moto_centrale_profil.png — caméra (86.7, 0.4, 32.8)
+Photo 34_moto_centrale_arriere.png — caméra (88.4, 1.3, 27.7)
+Moto du joueur : Kin Classic 150 (modèle MotoCentrale)
+
+=== Boulevard Lumumba (3524 m, largeur 12.0 m, rang 8) : joueur posé au milieu ===
+   Ville : 25 maisons de modèle, 2 immeubles, 145 barrières, 71 étals, 0 véhicules garés (cases chargées : 28)
+   Boulevards (10 m libres devant les maisons) : 74 tronçons ; espace vert de Lumumba : 2294 morceaux, 9.19 km
+   Vendeurs aux étals : 0 ; piétons : 28
+
+=== lumumba : joueur à (472.9, 0.1, -1880.0) ===
+Circulation : 81 véhicules — foule : 28 — avatars : 201 (dont 65 à moins de 80 m) — maillages animés actifs : 64 — stations : 45 — arrêts : 94
+Photo 35_lumumba_camera_poursuite.png — caméra (470.4, 2.3, -1875.2)
+Photo 36_lumumba_rue_hauteur_yeux.png — caméra (472.0, 1.8, -1878.2)
+Photo 37_lumumba_rue_derriere.png — caméra (474.3, 1.8, -1882.7)
+Photo 38_lumumba_vue_oblique.png — caméra (430.1, 32.1, -1851.4)
+Photo 39_lumumba_vue_aerienne.png — caméra (440.9, 160.1, -1817.7)
+Photo 40_lumumba_etal.png — caméra (557.4, 1.7, -2016.6)
+Photo 41_lumumba_espace_vert.png — caméra (509.3, 3.2, -1988.6)
+Photo 42_lumumba_mobilier.png — caméra (474.4, 1.6, -2007.9)
+Photo 43_lumumba_barrieres.png — caméra (450.5, 2.4, -1804.2)
+   Circulation : TaxiJaune×11 VoitureSUV×8 BusTransco×13 VoitureCoupe×5 MinibusBlanc×1 TricycleTaxi×3 QuatreQuatre×2 Berline×2 MinibusJaune×18 CamionRemorque×2 MotoTaxi_MotoCentrale×1 MotoTaxi_HondaClassique×5 CamionCiterne×2 VoitureCitadine×2 MotoTaxi×4 Pickup×2
+   Policiers en ronde : 4 ; jour de pluie : False
+
+=== Espace vert de Lumumba : 2294 morceaux (9.19 km) ; largeur ici 47.1 m ; joueur sur le grand boulevard ===
+Photo 44_lumumba_espace_vert_depuis_le_boulevard.png — caméra (451.0, 2.2, -1835.5)
+Photo 45_lumumba_espace_vert_vu_d_en_haut.png — caméra (423.8, 14.0, -1842.9)
+Photo 46_lumumba_cloture_fer_noir.png — caméra (449.8, 1.5, -1844.0)
+Photo 47_lumumba_caniveau_du_boulevard.png — caméra (453.3, 1.6, -1841.0)
+Arbres : modèles fournis chargés ; personnages des lieux : 27
+
+=== Avenue des Huileries (2158 m, largeur 9.0 m, rang 6) : joueur posé au milieu ===
+   Ville : 79 maisons de modèle, 25 immeubles, 222 barrières, 217 étals, 0 véhicules garés (cases chargées : 26)
+   Boulevards (10 m libres devant les maisons) : 74 tronçons ; espace vert de Lumumba : 2294 morceaux, 9.19 km
+   Vendeurs aux étals : 10 ; piétons : 28
+
+=== huilerie : joueur à (-2880.2, 0.1, 1752.8) ===
+Circulation : 84 véhicules — foule : 28 — avatars : 184 (dont 30 à moins de 80 m) — maillages animés actifs : 51 — stations : 45 — arrêts : 94
+Photo 48_huilerie_camera_poursuite.png — caméra (-2878.6, 2.3, 1747.7)
+Photo 49_huilerie_rue_hauteur_yeux.png — caméra (-2879.6, 1.8, 1750.9)
+Photo 50_huilerie_rue_derriere.png — caméra (-2881.0, 1.8, 1755.7)
+Photo 51_huilerie_vue_oblique.png — caméra (-2843.2, 32.1, 1717.0)
+Photo 52_huilerie_vue_aerienne.png — caméra (-2859.9, 160.1, 1685.8)
+Photo 53_huilerie_etal.png — caméra (-3004.6, 1.7, 1823.4)
+Photo 54_huilerie_maison.png — caméra (-3029.7, 5.0, 1757.4)
+Photo 55_huilerie_mobilier.png — caméra (-2793.5, 1.6, 1663.9)
+Photo 56_huilerie_cottage.png — caméra (-2771.9, 5.0, 1668.0)
+Photo 57_huilerie_immeuble.png — caméra (-2797.6, 6.0, 1680.1)
+Photo 58_huilerie_barrieres.png — caméra (-2876.9, 2.4, 1704.5)
+   Circulation : TricycleTaxi×3 Pickup×4 BusTransco×5 MinibusJaune×19 MotoTaxi×9 VoitureCitadine×4 Berline×3 TaxiJaune×17 QuatreQuatre×3 VoitureCoupe×1 VoitureSUV×4 MotoTaxi_HondaClassique×5 CamionRemorque×1 MotoTaxi_MotoCentrale×3 MotoTaxi_HondaCB750×2 MinibusBlanc×1
+   Policiers en ronde : 4 ; jour de pluie : False
+Photo 59_boulevard_huilerie_caniveau_et_trottoir.png — caméra (-2877.3, 2.4, 1748.5)
+Photo 60_boulevard_huilerie_parcelles_alignees.png — caméra (-2876.1, 16.0, 1739.4)
+Photo 61_boulevard_huilerie_milieu.png — caméra (-2879.8, 3.0, 1744.6)
+
+=== Petite rue goudronnée « Avenue Kabalo » (largeur 6.0 m) ===
+Photo 62_rue_goudronnee_caniveau_et_trottoir.png — caméra (-2724.9, 2.4, 1726.7)
+Photo 63_rue_goudronnee_parcelles_alignees.png — caméra (-2734.0, 16.0, 1725.9)
+Photo 64_rue_goudronnee_milieu.png — caméra (-2728.6, 3.0, 1729.3)
+
+=== Lieu « Stade des Martyrs » (esplanade, 36 sommets) : joueur à 237 m du centre. Carte : 3 terrains de foot, 1 de basket, 12 postes de police, 8 entrées de cité, 2 écoles, 5 places de fête, 920 arbres d'import ===
+Photo 65_stade_depuis_la_rue.png — caméra (-2286.5, 2.7, 1038.6)
+Photo 66_stade_vue_d_en_haut.png — caméra (-2278.5, 55.1, 1061.2)
+Photo 67_stade_cloture.png — caméra (-2289.2, 1.8, 1031.1)
+Lieux animés : 29 sites, 12 personnages actifs ici.
+Photo 68_stade_foot.png — caméra (-2363.9, 9.0, 946.1)
+  foot à 134 m : 8 personnages.
+Photo 69_stade_police.png — caméra (-2289.4, 3.2, 1033.0)
+  police à 10 m : 1 personnages.
+
+=== Lieu « Tour de l'Échangeur » (esplanade, 72 sommets) : joueur à 58 m du centre. Carte : 3 terrains de foot, 1 de basket, 12 postes de police, 8 entrées de cité, 2 écoles, 5 places de fête, 920 arbres d'import ===
+Photo 70_echangeur_depuis_la_rue.png — caméra (1627.6, 2.7, -4032.3)
+Photo 71_echangeur_vue_d_en_haut.png — caméra (1646.7, 55.1, -4017.8)
+Photo 72_echangeur_cloture.png — caméra (1621.2, 1.8, -4037.2)
+Lieux animés : 29 sites, 30 personnages actifs ici.
+Photo 73_echangeur_fete.png — caméra (1617.8, 3.2, -4047.4)
+  fete à 22 m : 4 personnages.
+
+=== Lieu « Entrée de la cité Motel Fikin » (porte, 0 sommets) : joueur à 1 m du centre. Carte : 3 terrains de foot, 1 de basket, 12 postes de police, 8 entrées de cité, 2 écoles, 5 places de fête, 920 arbres d'import ===
+Photo 74_cite_fikin_depuis_la_rue.png — caméra (1270.8, 2.7, -3516.2)
+Photo 75_cite_fikin_vue_d_en_haut.png — caméra (1270.8, 55.1, -3540.2)
+Photo 76_cite_fikin_cloture.png — caméra (1270.8, 1.8, -3508.2)
+Lieux animés : 29 sites, 31 personnages actifs ici.
+Photo 77_cite_fikin_porte.png — caméra (1270.5, 3.2, -3518.9)
+  porte à 0 m : 2 personnages.
+
+=== Quartier : rue de terre « Avenue Motel FIKIN » (surface Terre) ===
+   Ville : 223 maisons de modèle, 82 immeubles, 370 barrières, 439 étals, 0 véhicules garés (cases chargées : 34)
+   Boulevards (10 m libres devant les maisons) : 74 tronçons ; espace vert de Lumumba : 2294 morceaux, 9.19 km
+   Vendeurs aux étals : 5 ; piétons : 28
+
+=== quartier : joueur à (1038.6, 0.1, -3413.7) ===
+Circulation : 81 véhicules — foule : 28 — avatars : 181 (dont 40 à moins de 80 m) — maillages animés actifs : 68 — stations : 45 — arrêts : 94
+Photo 78_quartier_camera_poursuite.png — caméra (1036.1, 2.3, -3408.9)
+Photo 79_quartier_rue_hauteur_yeux.png — caméra (1037.7, 1.8, -3411.9)
+Photo 80_quartier_rue_derriere.png — caméra (1039.9, 1.8, -3416.4)
+Photo 81_quartier_vue_oblique.png — caméra (995.8, 32.1, -3385.1)
+Photo 82_quartier_vue_aerienne.png — caméra (1006.6, 160.1, -3351.4)
+Photo 83_quartier_etal.png — caméra (1079.6, 1.7, -3298.5)
+Photo 84_quartier_maison.png — caméra (1071.6, 5.0, -3298.8)
+Photo 85_quartier_immeuble.png — caméra (913.8, 6.0, -3337.4)
+Photo 86_quartier_cottage.png — caméra (906.6, 5.0, -3361.7)
+Photo 87_quartier_MotoTaxi_HondaClassique.png — caméra (1029.7, 1.3, -3374.6)
+   Circulation : TricycleTaxi×4 MinibusJaune×15 TaxiJaune×21 VoitureSUV×3 MotoTaxi_HondaClassique×4 VoitureCoupe×3 MotoTaxi×7 Pickup×3 BusTransco×6 CamionRemorque×4 QuatreQuatre×2 Berline×2 MotoTaxi_HondaCB750×1 VoitureCitadine×4 MotoTaxi_MotoCentrale×2
+   Policiers en ronde : 3 ; jour de pluie : False
+   Poussière : surface Terre, 30 km/h, particules émises 679
+Photo 88_poussiere_derriere_la_moto.png — caméra (1037.2, 2.0, -3416.5)
+Photo 89_depart_tricycle_trois_quarts.png — caméra (87.6, 1.5, 101.6)
+Photo 90_depart_tricycle_face.png — caméra (84.4, 1.3, 101.7)
+Photo 91_depart_tricycle_cote.png — caméra (89.6, 1.0, 97.0)
+Photo 92_depart_tricycle_arriere.png — caméra (82.0, 1.4, 92.3)
+Photo 93_depart_tricycle_interieur.png — caméra (86.0, 1.8, 96.5)
+— Tricycle de la circulation : PNJ_TricycleTaxi à (84.40, 0.06, 96.94) échelle (1.00, 1.00, 1.00)
+   sol sous l'objet : y=1.77 (PNJ_TricycleTaxi), écart -1.71 m
+   LODGroup Male_Adult_12 : taille 1.26, seuils 0.035 — hauteur relative estimée 0.203 à 5.2 m, actif True
+   LODGroup Medical_Female_01 : taille 1.43, seuils 0.035 — hauteur relative estimée 0.213 à 5.6 m, actif True
+   LODGroup Female_Adult_15 : taille 1.42, seuils 0.035 — hauteur relative estimée 0.211 à 5.6 m, actif True
+   Roue_ARD actif=False visible=False boîte (85.0, 0.3, 96.0) ± (0.1, 0.2, 0.2) Roue [Standard, file 2000] | maillage Roue 660 sommets
+   Roue_ARG actif=False visible=False boîte (83.8, 0.3, 96.0) ± (0.1, 0.2, 0.2) Roue [Standard, file 2000] | maillage Roue 660 sommets
+   Roue_AV actif=False visible=False boîte (84.4, 0.3, 98.0) ± (0.1, 0.2, 0.2) Roue [Standard, file 2000] | maillage Roue 660 sommets
+   [animé] m007_hipoly_81_bones actif=False visible=False boîte (84.4, 0.7, 96.9) ± (2.1, 2.7, 2.6) Male_Adult_12_corps [Standard, file 2000] | maillage m007_hipoly_81_bones 4069 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   m007_hipoly_81_bones_fige actif=True visible=True boîte (84.4, 0.9, 97.1) ± (0.4, 0.6, 0.5) Male_Adult_12_corps [Standard, file 2000] | maillage m007_hipoly_81_bones_fige 4069 sommets
+   [animé] f152_hipoly_81_bones_opacity actif=False visible=False boîte (84.0, 0.7, 96.1) ± (2.3, 2.9, 2.9) Medical_Female_01_corps [Standard, file 2000] | maillage f152_hipoly_81_bones_opacity 5280 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   f152_hipoly_81_bones_opacity_fige actif=True visible=True boîte (84.0, 0.8, 96.3) ± (0.2, 0.7, 0.4) Medical_Female_01_corps [Standard, file 2000] | maillage f152_hipoly_81_bones_opacity_fige 5280 sommets
+   Foulard actif=True visible=True boîte (84.1, 1.4, 96.0) ± (0.2, 0.1, 0.2) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   Noeud actif=True visible=True boîte (84.0, 1.5, 96.0) ± (0.1, 0.0, 0.1) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   [animé] f018_hipoly_81_bones_opacity actif=False visible=False boîte (84.0, 0.7, 96.1) ± (2.3, 2.9, 2.9) Female_Adult_15_corps [Standard, file 2000] | maillage f018_hipoly_81_bones_opacity 6538 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   f018_hipoly_81_bones_opacity_fige actif=True visible=True boîte (84.0, 0.8, 96.3) ± (0.3, 0.7, 0.5) Female_Adult_15_corps [Standard, file 2000] | maillage f018_hipoly_81_bones_opacity_fige 6538 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 1.3, 96.7) ± (0.7, 0.4, 1.1) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 1626 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 1.2, 97.6) ± (0.1, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 137 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 1.0, 97.0) ± (0.7, 0.6, 1.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 2658 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 0.9, 98.0) ± (0.8, 0.6, 0.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 396 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 0.8, 97.0) ± (0.3, 0.2, 1.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 160 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 0.9, 96.9) ± (0.5, 0.3, 1.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 246 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 0.7, 96.9) ± (0.1, 0.3, 1.3) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 48 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 0.9, 96.9) ± (0.8, 0.6, 1.4) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 1838 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 0.8, 96.5) ± (0.6, 0.3, 0.7) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 608 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 0.4, 97.0) ± (0.6, 0.0, 0.6) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 56 sommets
+   Carrosserie_MatGlass actif=True visible=True boîte (84.4, 1.3, 96.8) ± (0.7, 0.3, 1.1) MatGlass [Standard, file 3000] | maillage Carrosserie_MatGlass 262 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 1.0, 97.5) ± (0.3, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 176 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 1.1, 97.4) ± (0.4, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 176 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.7, 1.1, 97.4) ± (0.1, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 88 sommets
+   Carrosserie_Phare actif=True visible=True boîte (84.4, 0.7, 98.3) ± (0.4, 0.1, 0.0) Phare [BalulaMoto/Lumiere, file 2000] | maillage Carrosserie_Phare 224 sommets
+   Carrosserie_MatLit actif=True visible=True boîte (84.4, 0.8, 95.6) ± (0.5, 0.1, 0.0) MatLit [Standard, file 2000] | maillage Carrosserie_MatLit 88 sommets
+   Faisceau actif=False visible=False boîte (84.4, 0.2, 105.3) ± (3.2, 0.0, 8.5) Faisceau [BalulaMoto/Halo, file 3000] | maillage Faisceau 4 sommets
+   LueurArriere actif=False visible=False boîte (84.4, 0.2, 94.5) ± (1.9, 0.0, 2.1) Faisceau [BalulaMoto/Halo, file 3000] | maillage LueurArriere 4 sommets
+   rendus visibles : 21 / 29
+
+=== Bajaj RE du joueur : modèle fourni True, roues 3, places 5 (5 passagers posés), chauffeur True, taille 3.16 × 1.71 × 2.69 m, sommet des têtes à 3.53 m (toit à 1,70 m, dessous à 1,52 m) ===
+Photo 94_bajaj_joueur_trois_quarts_avant.png — caméra (1050.2, 1.6, -3445.9)
+Photo 95_bajaj_joueur_cote.png — caméra (1055.0, 1.1, -3445.7)
+Photo 96_bajaj_joueur_arriere.png — caméra (1055.4, 1.5, -3436.9)
+Photo 97_bajaj_joueur_interieur.png — caméra (1051.2, 2.6, -3443.0)
+Photo 98_bajaj_joueur_face.png — caméra (1048.1, 1.2, -3443.6)
+Photo 99_bajaj_joueur_trois_quarts_arriere_gauche.png — caméra (1057.6, 1.9, -3442.1)
+Photo 100_bajaj_joueur_vue_du_chauffeur.png — caméra (1052.7, 1.4, -3441.2)
+— Bajaj RE du joueur : Photo_BajajRE à (1052.70, 0.06, -3441.23) échelle (1.00, 1.00, 1.00)
+   sol sous l'objet : y=0.04 (Routes_2_-9_Terre), écart 0.02 m
+   LODGroup Construction_Male_08 : taille 1.90, seuils 0.012 — hauteur relative estimée 0.339 à 4.7 m, actif True
+   LODGroup Medical_Female_01 : taille 1.90, seuils 0.012 — hauteur relative estimée 0.293 à 5.4 m, actif True
+   LODGroup Male_Adult_18 : taille 1.90, seuils 0.012 — hauteur relative estimée 0.332 à 4.8 m, actif True
+   LODGroup Female_Party_02 : taille 1.90, seuils 0.012 — hauteur relative estimée 0.309 à 5.1 m, actif True
+   LODGroup Medical_Female_01 : taille 1.90, seuils 0.012 — hauteur relative estimée 0.289 à 5.5 m, actif True
+   LODGroup Male_Adult_10 : taille 1.90, seuils 0.012 — hauteur relative estimée 0.314 à 5.0 m, actif True
+   Caisse_Bache actif=True visible=True boîte (1052.9, 1.3, -3441.1) ± (1.2, 0.4, 1.1) MatLit [Standard, file 2000] | maillage Caisse_Bache 1626 sommets
+   Caisse_Cadran actif=True visible=True boîte (1052.1, 1.2, -3441.5) ± (0.1, 0.0, 0.1) MatLit [Standard, file 2000] | maillage Caisse_Cadran 137 sommets
+   Caisse_Carrosserie actif=True visible=True boîte (1052.7, 1.0, -3441.2) ± (1.5, 0.6, 1.2) MatLit [Standard, file 2000] | maillage Caisse_Carrosserie 2416 sommets
+   Caisse_Chrome actif=True visible=True boîte (1051.7, 1.1, -3441.7) ± (0.6, 0.4, 0.8) MatLit [Standard, file 2000] | maillage Caisse_Chrome 260 sommets
+   Caisse_Grille actif=True visible=True boîte (1052.7, 0.8, -3441.2) ± (1.3, 0.2, 0.9) MatLit [Standard, file 2000] | maillage Caisse_Grille 160 sommets
+   Caisse_Orange actif=True visible=True boîte (1052.1, 1.2, -3441.5) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Caisse_Orange 22 sommets
+   Caisse_Plaque actif=True visible=True boîte (1051.5, 0.9, -3441.8) ± (0.1, 0.0, 0.1) MatLit [Standard, file 2000] | maillage Caisse_Plaque 24 sommets
+   Caisse_Plastique_Noir actif=True visible=True boîte (1052.7, 0.9, -3441.2) ± (1.6, 0.6, 1.3) MatLit [Standard, file 2000] | maillage Caisse_Plastique_Noir 1662 sommets
+   Caisse_Siege actif=True visible=True boîte (1053.1, 0.8, -3441.0) ± (0.9, 0.3, 0.8) MatLit [Standard, file 2000] | maillage Caisse_Siege 608 sommets
+   Caisse_Tapis actif=True visible=True boîte (1052.7, 0.4, -3441.3) ± (0.8, 0.0, 0.8) MatLit [Standard, file 2000] | maillage Caisse_Tapis 56 sommets
+   Caisse_Vitre actif=True visible=True boîte (1052.9, 1.3, -3441.1) ± (1.3, 0.3, 1.1) MatGlass [Standard, file 3000] | maillage Caisse_Vitre 262 sommets
+   Cligno_ARD actif=True visible=True boîte (1053.7, 0.6, -3440.2) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Cligno_ARD 56 sommets
+   Cligno_ARG actif=True visible=True boîte (1054.1, 0.6, -3441.1) ± (0.0, 0.0, 0.0) MatLit [Standard, file 2000] | maillage Cligno_ARG 56 sommets
+   Cligno_AVD actif=True visible=True boîte (1051.4, 1.0, -3441.4) ± (0.1, 0.0, 0.1) MatLit [Standard, file 2000] | maillage Cligno_AVD 56 sommets
+   Cligno_AVG actif=True visible=True boîte (1051.8, 1.0, -3442.1) ± (0.1, 0.0, 0.1) MatLit [Standard, file 2000] | maillage Cligno_AVG 56 sommets
+   Balai actif=True visible=True boîte (1052.0, 1.3, -3441.6) ± (0.1, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Essuie_Glace 92 sommets
+   Feu_ARD actif=True visible=True boîte (1053.7, 0.8, -3440.2) ± (0.0, 0.1, 0.0) MatLit [Standard, file 2000] | maillage Feu_ARD 44 sommets
+   Feu_ARG actif=True visible=True boîte (1054.1, 0.8, -3441.0) ± (0.0, 0.1, 0.0) MatLit [Standard, file 2000] | maillage Feu_ARG 44 sommets
+   Fourche_Carrosserie actif=True visible=True boîte (1051.7, 0.5, -3441.7) ± (0.3, 0.1, 0.2) MatLit [Standard, file 2000] | maillage Fourche_Carrosserie 242 sommets
+   Fourche_Chrome actif=True visible=True boîte (1051.7, 0.4, -3441.6) ± (0.1, 0.2, 0.1) MatLit [Standard, file 2000] | maillage Fourche_Chrome 136 sommets
+   Fourche_Plastique_Noir actif=True visible=True boîte (1051.7, 0.5, -3441.7) ± (0.1, 0.2, 0.1) MatLit [Standard, file 2000] | maillage Fourche_Plastique_Noir 84 sommets
+   Phare actif=True visible=True boîte (1051.3, 0.8, -3441.5) ± (0.0, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Phare_D 112 sommets
+   Phare actif=True visible=True boîte (1051.7, 0.8, -3442.1) ± (0.0, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Phare_G 112 sommets
+   Plaque_AR actif=True visible=True boîte (1053.9, 0.5, -3440.6) ± (0.1, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Plaque_AR 24 sommets
+   Jante actif=True visible=True boîte (1053.2, 0.3, -3440.3) ± (0.1, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Roue_ARD_Jante 408 sommets
+   Pneu actif=True visible=True boîte (1053.2, 0.3, -3440.3) ± (0.2, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Roue_ARD_Pneu 252 sommets
+   Jante actif=True visible=True boîte (1053.8, 0.3, -3441.3) ± (0.1, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Roue_ARG_Jante 408 sommets
+   Pneu actif=True visible=True boîte (1053.8, 0.3, -3441.3) ± (0.2, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Roue_ARG_Pneu 252 sommets
+   Jante actif=True visible=True boîte (1051.7, 0.3, -3441.7) ± (0.1, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Roue_AV_Jante 408 sommets
+   Pneu actif=True visible=True boîte (1051.7, 0.3, -3441.7) ± (0.2, 0.2, 0.2) MatLit [Standard, file 2000] | maillage Roue_AV_Pneu 252 sommets
+   [animé] m108_hipoly_81_bones actif=True visible=True boîte (1052.9, 0.7, -3441.5) ± (3.2, 2.7, 3.0) Construction_Male_08_corps [Standard, file 2000] | maillage m108_hipoly_81_bones 5394 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   Foulard actif=True visible=True boîte (1052.6, 1.4, -3440.9) ± (0.2, 0.1, 0.2) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   Noeud actif=True visible=True boîte (1052.6, 1.5, -3440.9) ± (0.1, 0.1, 0.1) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   [animé] f152_hipoly_81_bones_opacity actif=True visible=True boîte (1052.6, 0.7, -3440.9) ± (3.3, 2.9, 2.8) Medical_Female_01_corps [Standard, file 2000] | maillage f152_hipoly_81_bones_opacity 5280 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   [animé] m023_hipoly_81_bones actif=True visible=True boîte (1053.6, 0.7, -3441.2) ± (3.2, 2.7, 3.0) Male_Adult_18_corps [Standard, file 2000] | maillage m023_hipoly_81_bones 4038 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   Foulard actif=True visible=True boîte (1053.5, 1.4, -3440.8) ± (0.2, 0.1, 0.2) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   Noeud actif=True visible=True boîte (1053.5, 1.5, -3440.9) ± (0.1, 0.0, 0.1) MatLit [Standard, file 2000] | maillage Sphere 515 sommets
+   [animé] f022_hipoly_81_bones_opacity actif=True visible=True boîte (1053.5, 0.7, -3440.8) ± (3.3, 2.9, 2.8) Female_Party_02_corps [Standard, file 2000] | maillage f022_hipoly_81_bones_opacity 7089 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   [animé] f152_hipoly_81_bones_opacity actif=True visible=True boîte (1053.3, 0.7, -3440.5) ± (3.3, 2.9, 2.8) Medical_Female_01_corps [Standard, file 2000] | maillage f152_hipoly_81_bones_opacity 5280 sommets, os 80, racine Bip01 Pelvis, boîte (4.0, 4.0, 4.0), qualité Auto, horsEcran False
+   Guidon actif=True visible=True boîte (1052.3, 1.1, -3441.4) ± (0.2, 0.0, 0.3) MatLit [Standard, file 2000] | maillage Cylinder 88 sommets
+   rendus visibles : 47 / 47
+
+=== police : 600 postes dans la ville ; poste le plus proche, carrefour (988, 0, -3434), agent (984, 0, -3440) ; agents réalistes (avatar en tenue congolaise, fusil) True ===
+Agents en place autour du joueur : 3
+Photo 101_police_agent_face.png — caméra (984.7, 1.6, -3446.6)
+Photo 102_police_agent_trois_quarts.png — caméra (986.3, 1.4, -3447.4)
+Photo 103_police_agent_profil.png — caméra (987.1, 1.2, -3449.9)
+Photo 104_police_agent_dos_fusil.png — caméra (984.3, 1.6, -3451.7)
+Photo 105_police_agent_visage.png — caméra (984.3, 1.7, -3448.0)
+   agent réaliste True (Police_Male_01), fusil en bandoulière True
+Photo 106_police_carrefour.png — caméra (990.9, 8.9, -3452.5)
+   agent à 13.6 m du joueur, taille 4.13 m, pieds à y=-1.19
+Piéton bousculé (simulé) devant le véhicule, agent le plus proche à 7 m : arrêt demandé True (pieton_bouscule)
+   (fenêtre du jeu ouverte pendant l'attente de l'étape 69 : fermée pour continuer)
+Police, 2 s après le piéton bousculé : arrêt en attente False, panneau d'amende ouvert False, agent à 3.1 m, argent 25000000 FC
+Police, agent arrivé au véhicule : arrêt en attente False, panneau d'amende ouvert False, agent à 9.1 m, argent 25000000 FC
+Photo 107_police_controle.png — caméra (994.4, 1.8, -3434.2)
+Photo 108_police_controle_haut.png — caméra (994.0, 4.5, -3437.5)
+Amende : panneau non ouvert, rien à payer
+Police, après l'amende : arrêt en attente False, panneau d'amende ouvert False, agent à 9.2 m, argent 25000000 FC
+
+=== Monument_StadeMartyrs à (-2368, 0, 810) ; joueur placé à 209 m ===
+Modèle : 14 parties, boîte (208, 44, 224) m, centre (-2368, 22, 810), rotation 81°
+Photo 109_stademartyrs_vue_ensemble.png — caméra (-2200.3, 81.9, 641.9)
+Photo 110_stademartyrs_depuis_la_rue.png — caméra (-2518.2, 2.4, 961.6)
+Photo 111_stademartyrs_cloture.png — caméra (-2241.9, 1.7, 854.1)
+Photo 112_stademartyrs_cloture_de_pres.png — caméra (-2247.4, 1.6, 845.8)
+
+=== Monument_TourEchangeur à (1576, 0, -4071) ; joueur placé à 60 m ===
+Modèle : 6 parties, boîte (34, 80, 27) m, centre (1576, 40, -4071), rotation 0°
+Photo 113_tourechangeur_vue_ensemble.png — caméra (1601.4, 112.0, -4096.5)
+Photo 114_tourechangeur_depuis_la_rue.png — caméra (1629.9, 2.5, -4033.4)
+Photo 115_tourechangeur_cloture.png — caméra (1612.9, 1.7, -4058.5)
+Photo 116_tourechangeur_cloture_de_pres.png — caméra (1607.3, 1.6, -4066.9)
+
+=== embouteillage : aucune rue goudronnée libre trouvée (embouteillages depuis le début : 20) ===
+Déplacement vers « RAIL » (6514 m) à (2124, 0, -2925), distance 3586 m
+
+=== avenue : joueur à (2123.6, 0.1, -2924.2) ===
+Circulation : 81 véhicules — foule : 28 — avatars : 170 (dont 31 à moins de 80 m) — maillages animés actifs : 50 — stations : 45 — arrêts : 94
+Photo 117_avenue_camera_poursuite.png — caméra (2122.8, 2.3, -2918.9)
+Photo 118_avenue_rue_hauteur_yeux.png — caméra (2123.3, 1.8, -2922.2)
+Photo 119_avenue_rue_derriere.png — caméra (2124.0, 1.8, -2927.2)
+Photo 120_avenue_vue_oblique.png — caméra (2092.7, 32.1, -2883.0)
+Photo 121_avenue_vue_aerienne.png — caméra (2114.1, 160.1, -2854.9)
+Arrêts : 0 personnes aux arrêts proches (18 par côté) — poteaux électriques : 975 — carrefours avec plaques : 127
+Photo 122_avenue_plaque_de_rue.png — caméra (2155.0, 2.4, -3105.5)
+Photo 123_avenue_plaque_carrefour.png — caméra (2151.5, 3.2, -3099.4)
+Plaque « 15ème Rue » à 187 m
+Véhicules arrêtés à un arrêt en ce moment : 0
+
+=== arret « 14ème Rue » à (1988, 0, -2492) (453 m) ===
+Arrêts : 30 personnes aux arrêts proches (18 par côté) — poteaux électriques : 1049 — carrefours avec plaques : 127
+Photo 124_arret_arret_foule.png — caméra (1986.8, 5.5, -2477.7)
+Photo 125_arret_arret_de_pres.png — caméra (1979.2, 1.6, -2482.4)
+Arrêt photographié à 16 m du joueur (30 personnes d'arrêt en tout)
+Photo 126_arret_plaque_de_rue.png — caméra (2043.6, 2.4, -2615.1)
+Photo 127_arret_plaque_carrefour.png — caméra (2038.6, 3.2, -2610.1)
+Plaque « 14ème Rue » à 161 m
+Véhicules arrêtés à un arrêt en ce moment : 1
+Photo 128_arret_taxi_a_l_arret.png — caméra (1983.7, 3.6, -2490.0)
+Arrêts : 33 personnes aux arrêts proches (18 par côté) — poteaux électriques : 1049 — carrefours avec plaques : 127
+Photo 129_arret2_arret_foule.png — caméra (1986.8, 5.5, -2477.7)
+Photo 130_arret2_arret_de_pres.png — caméra (1979.2, 1.6, -2482.4)
+Arrêt photographié à 17 m du joueur (33 personnes d'arrêt en tout)
+Photo 131_arret2_plaque_de_rue.png — caméra (2043.6, 2.4, -2615.1)
+Photo 132_arret2_plaque_carrefour.png — caméra (2038.6, 3.2, -2610.1)
+Plaque « 14ème Rue » à 162 m
+Véhicules arrêtés à un arrêt en ce moment : 1
+Photo 133_arret2_taxi_a_l_arret.png — caméra (1983.7, 3.6, -2490.0)
+
+Passage à 20 h 30 (nuit).
+Niveau de nuit : 1.00 — phares du joueur : True
+
+=== nuit : joueur à (1977.0, 0.1, -2469.1) ===
+Circulation : 81 véhicules — foule : 27 — avatars : 219 (dont 92 à moins de 80 m) — maillages animés actifs : 48 — stations : 45 — arrêts : 94
+Photo 134_nuit_camera_poursuite.png — caméra (1975.0, 2.3, -2464.1)
+Photo 135_nuit_rue_hauteur_yeux.png — caméra (1976.3, 1.8, -2467.2)
+Photo 136_nuit_rue_derriere.png — caméra (1978.2, 1.8, -2471.8)
+Photo 137_nuit_vue_oblique.png — caméra (1937.0, 32.1, -2436.7)
+Photo 138_nuit_vue_aerienne.png — caméra (1950.8, 160.1, -2404.2)
+
+=== Essai du tricycle : tricycle_jaune_kin ===
+   à l'arrêt : type Tricycle, vitesse 0.1 km/h, roulis 0.0°, tangage 0.0°, hauteur 0.05 m, renversé False, accidenté False — roulis maximal mesuré 0.0°
+   1,2 s après le démarrage (plein gaz) : type Tricycle, vitesse 14.9 km/h, roulis 0.0°, tangage 0.5°, hauteur 0.05 m, renversé False, accidenté False — roulis maximal mesuré 0.0°
+   3,7 s (plein gaz) : type Tricycle, vitesse 32.9 km/h, roulis 0.0°, tangage 0.2°, hauteur 0.05 m, renversé False, accidenté False — roulis maximal mesuré 0.0°
+Photo 139_tricycle_demarrage.png — caméra (86.0, 1.6, 49.4)
+   virage à droite (1,5 s) : type Tricycle, vitesse 32.6 km/h, roulis 1.0°, tangage 0.1°, hauteur 0.01 m, renversé False, accidenté False — roulis maximal mesuré 1.0°
+   après freinage : type Tricycle, vitesse 0.0 km/h, roulis 0.0°, tangage 0.0°, hauteur 0.01 m, renversé False, accidenté False — roulis maximal mesuré 1.0°
+Photo 140_tricycle_apres_essai.png — caméra (90.8, 1.8, 55.6)
