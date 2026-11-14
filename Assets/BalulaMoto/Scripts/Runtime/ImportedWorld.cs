@@ -31,6 +31,10 @@ namespace BalulaMoto.Runtime
         public List<WorkZone> works = new List<WorkZone>();
         /// <summary>Rivières, ruisseaux et canaux (tracés OpenStreetMap) : carte du jeu.</summary>
         public List<ImportedRoad> waterways = new List<ImportedRoad>();
+        /// <summary>Emprise des cours d'eau en tranchée (eau + berges) : morceaux d'axe (ax, az, bx, bz) et demi-largeur
+        /// au sommet des berges. Ni parcelle, ni poteau, ni maison dedans.</summary>
+        public List<Vector4> waterSegs = new List<Vector4>();
+        public List<float> waterHw = new List<float>();
         /// <summary>Terrains réservés (monuments clôturés) : x, z = centre, y = rayon. Ni parcelle ni poteau dedans.</summary>
         public List<Vector3> clearZones = new List<Vector3>();
         [TextArea(3, 12)] public string report;

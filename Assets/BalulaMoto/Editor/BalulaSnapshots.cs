@@ -23,7 +23,8 @@ namespace BalulaMoto.EditorTools
         private const string KeyActive = "BalulaSnap.Active";
         private const string KeyDir = "BalulaSnap.Dir";
         private const string KeyStart = "BalulaSnap.Start";
-        private const double TimeoutSeconds = 1800.0;
+        private const double TimeoutSeconds = 2400.0;
+        private static double waitStartReal, lastDiag;
         private const int W = 1280, H = 720;
 
         private static readonly List<Func<bool>> steps = new List<Func<bool>>();
@@ -109,6 +110,22 @@ namespace BalulaMoto.EditorTools
                 if (waitFrames > 0 || Time.time < waitUntil)
                 {
                     if (waitFrames > 0) waitFrames--;
+                    // Attente anormalement longue (jeu figé ou très lent) : diagnostic chaque minute, abandon après 4 minutes
+                    if (now - lastDiag > 60.0)
+                    {
+                        lastDiag = now;
+                        string diag = "   [attente étape " + stepIndex + "] " + (now - waitStartReal).ToString("0") + " s réelles — Time.time " + Time.time.ToString("0.0") + " / " + waitUntil.ToString("0.0") +
+                                      ", timeScale " + Time.timeScale + ", images " + frames + ", dernière image " + Time.unscaledDeltaTime.ToString("0.00") + " s, véhicules " +
+                                      (game.Traffic != null ? game.Traffic.Vehicles.Count : -1) + ", agents " + (PolicePatrol.Instance != null ? PolicePatrol.Instance.ActiveOfficers : -1);
+                        Debug.Log("[BALULA] " + diag);
+                        if (now - waitStartReal > 90.0) report.AppendLine(diag);
+                    }
+                    if (now - waitStartReal > 240.0)
+                    {
+                        report.AppendLine("   ATTENTE ABANDONNÉE à l'étape " + stepIndex + " après 4 minutes réelles (Time.time " + Time.time.ToString("0.0") + ", timeScale " + Time.timeScale + ")");
+                        waitFrames = 0;
+                        waitUntil = 0f;
+                    }
                     return;
                 }
                 if (stepIndex >= steps.Count)
@@ -132,6 +149,8 @@ namespace BalulaMoto.EditorTools
             {
                 waitUntil = Time.time + gameSeconds;
                 waitFrames = minFrames;
+                waitStartReal = EditorApplication.timeSinceStartup;
+                lastDiag = waitStartReal;
                 return true;
             });
         }
@@ -172,7 +191,7 @@ namespace BalulaMoto.EditorTools
             // Rivière et pont les plus proches du centre
             steps.Add(() => { TeleportToWater(game); return true; });
             Wait(10f, 30);
-            steps.Add(() => { ShootStreet(game, "riviere"); return true; });
+            steps.Add(() => { ShootStreet(game, "riviere"); ShootRiver(game); return true; });
             // Chantier le plus proche (route en travaux)
             steps.Add(() => { TeleportToWorks(game); return true; });
             Wait(10f, 30);
@@ -478,6 +497,37 @@ namespace BalulaMoto.EditorTools
             if (walked < 1f) pos = pts[bestIdx] - look * 18f;
             game.Director.SpawnPlayer(new Vector3(pos.x, 0.3f, pos.z), Quaternion.LookRotation(look, Vector3.up));
             report.AppendLine("=== riviere « " + name + " » : " + map.waterways.Count + " cours d'eau dans la carte ; rue la plus proche à " + Mathf.Sqrt(bd).ToString("0") + " m ; joueur sur la rue, 18 m avant ===");
+        }
+
+        /// <summary>Rivière en tranchée la plus proche du joueur : vue le long de l'eau, vue depuis la berge vers le pont.</summary>
+        private static void ShootRiver(BalulaGame game)
+        {
+            ImportedWorld map = Compat.FindFirst<ImportedWorld>();
+            RaycastVehicle player = game.Director != null ? game.Director.Player : null;
+            if (map == null || player == null || map.waterSegs == null || map.waterSegs.Count == 0) { report.AppendLine("   rivière : aucune tranchée dans la carte"); return; }
+            if (map.report != null)
+                foreach (string line in map.report.Split('\n'))
+                    if (line.StartsWith("Rivières") || line.StartsWith("Eau :")) report.AppendLine("   " + line);
+            Vector3 pp = player.transform.position;
+            int best = -1;
+            float bd = float.MaxValue;
+            for (int i = 0; i < map.waterSegs.Count; i++)
+            {
+                Vector4 w = map.waterSegs[i];
+                if (map.waterHw[i] < 4f) continue;
+                float d = (new Vector2((w.x + w.z) * 0.5f, (w.y + w.w) * 0.5f) - new Vector2(pp.x, pp.z)).sqrMagnitude;
+                if (d < bd) { bd = d; best = i; }
+            }
+            if (best < 0) return;
+            Vector4 s = map.waterSegs[best];
+            Vector3 c = new Vector3((s.x + s.z) * 0.5f, 0f, (s.y + s.w) * 0.5f);
+            Vector3 dir = new Vector3(s.z - s.x, 0f, s.w - s.y).normalized, nrm = new Vector3(-dir.z, 0f, dir.x);
+            float hw = map.waterHw[best];
+            report.AppendLine("   tranchée la plus proche : centre (" + c.x.ToString("0") + ", " + c.z.ToString("0") + "), demi-largeur " + hw.ToString("0.0") + " m, à " + Mathf.Sqrt(bd).ToString("0") + " m du joueur");
+            Shoot("riviere_le_long_de_l_eau", c - dir * 34f + Vector3.up * 5f, c + dir * 10f - Vector3.up * 1f);
+            Shoot("riviere_depuis_la_berge", c - dir * 22f + nrm * (hw + 3f) + Vector3.up * 1.7f, c + dir * 6f - Vector3.up * 1f);
+            Shoot("riviere_berge_de_pres", c + dir * 9f + nrm * (hw + 1.5f) + Vector3.up * 1.6f, c - nrm * hw - Vector3.up * 1.2f);
+            Shoot("riviere_tranchee_de_haut", c + Vector3.up * 45f + dir * 0.5f, c);
         }
 
         private static void TeleportToStop(BalulaGame game)

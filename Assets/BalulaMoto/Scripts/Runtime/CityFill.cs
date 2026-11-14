@@ -14,6 +14,16 @@ namespace BalulaMoto.Runtime
 
         private struct Seg { public int Road; public int Index; }
         private struct Sg { public Vector2 A, B; public float Hw; }
+        private readonly Dictionary<long, List<Sg>> waterGrid = new Dictionary<long, List<Sg>>();
+        private List<Sg> curWater;
+
+        /// <summary>Vrai si le point est sur un cours d'eau ou ses berges (case en cours de construction).</summary>
+        private bool InWater(Vector2 p, float margin)
+        {
+            if (curWater == null) return false;
+            foreach (Sg s in curWater) if (PointSeg(p, s.A, s.B) < s.Hw + margin) return true;
+            return false;
+        }
         private struct Obb { public Vector2 C, X, Z; public float Hx, Hz; }
         private struct Keep { public Vector2 C; public float R; }
 
@@ -44,7 +54,7 @@ namespace BalulaMoto.Runtime
         private readonly List<Keep> keep = new List<Keep>();
         private bool keepReady, warm;
         private float loadRadius = 230f;
-        private Material atlasMat;
+        private Material atlasMat, wallMat, wireMat;
         private readonly List<Material> adMats = new List<Material>();
         private Material postMat;
         private float scanTimer;
@@ -98,6 +108,26 @@ namespace BalulaMoto.Runtime
             map = importedMap;
             loadRadius = GameSettings.Quality == 0 ? 160f : (GameSettings.Quality == 1 ? 230f : 300f);
             atlasMat = BuildAtlasMaterial();
+            // Murs de clôture bruts (textures dessinées par scripts/generer_textures_murs.py, d'après les photos de Kinshasa)
+            Texture2D wallTex = Resources.Load<Texture2D>("BalulaMoto/Textures/murs_parcelles");
+            if (wallTex != null)
+            {
+                wallMat = new Material(Mats.Lit(Color.white, 0.06f)) { name = "MursParcelles" };
+                wallMat.color = Color.white;
+                wallMat.mainTexture = wallTex;
+                if (wallMat.HasProperty("_BaseMap")) wallMat.SetTexture("_BaseMap", wallTex);
+                if (wallMat.HasProperty("_BaseColor")) wallMat.SetColor("_BaseColor", Color.white);
+                wallMat.enableInstancing = false;
+            }
+            Texture2D wireTex = Resources.Load<Texture2D>("BalulaMoto/Textures/barbele");
+            Shader wireShader = Resources.Load<Shader>("BalulaMoto/Shaders/Barbele");
+            if (wireShader == null) wireShader = Shader.Find("BalulaMoto/Barbele");
+            if (wireTex != null && wireShader != null && wireShader.isSupported)
+            {
+                wireMat = new Material(wireShader) { name = "Barbele" };
+                wireMat.mainTexture = wireTex;
+                wireMat.enableInstancing = false;
+            }
             postMat = Mats.Lit(new Color(0.4f, 0.4f, 0.42f), 0.5f);
             for (int i = 0; i < 24; i++)
             {
@@ -147,6 +177,22 @@ namespace BalulaMoto.Runtime
                 }
             }
             BuildSigns();
+            // Emprise des cours d'eau (eau + berges) : ni parcelle, ni poteau, ni panneau dedans
+            if (map.waterSegs != null && map.waterHw != null)
+                for (int i = 0; i < map.waterSegs.Count && i < map.waterHw.Count; i++)
+                {
+                    Vector4 w = map.waterSegs[i];
+                    float hw = map.waterHw[i] + 16f;
+                    int x0 = Mathf.FloorToInt((Mathf.Min(w.x, w.z) - hw) / CellSize), x1 = Mathf.FloorToInt((Mathf.Max(w.x, w.z) + hw) / CellSize);
+                    int z0 = Mathf.FloorToInt((Mathf.Min(w.y, w.w) - hw) / CellSize), z1 = Mathf.FloorToInt((Mathf.Max(w.y, w.w) + hw) / CellSize);
+                    for (int gz = z0; gz <= z1; gz++)
+                        for (int gx = x0; gx <= x1; gx++)
+                        {
+                            List<Sg> l;
+                            if (!waterGrid.TryGetValue(Key(gx, gz), out l)) { l = new List<Sg>(); waterGrid[Key(gx, gz)] = l; }
+                            l.Add(new Sg { A = new Vector2(w.x, w.y), B = new Vector2(w.z, w.w), Hw = map.waterHw[i] });
+                        }
+                }
             foreach (Vector3 b in map.buildingSpots)
             {
                 long key = Key(new Vector2(b.x, b.z));
@@ -255,7 +301,7 @@ namespace BalulaMoto.Runtime
                     Vector2 nrm = new Vector2(-dir.y, dir.x) * side;
                     Vector2 q = p2 + nrm * off;
                     if (!bounds.Contains(q)) continue;
-                    if (OnRoad(q, near, 0.7f)) continue;
+                    if (OnRoad(q, near, 0.7f) || InWater(q, 0.2f)) continue;
                     bool blocked = false;
                     foreach (Keep k in keep) if ((k.C - q).sqrMagnitude < k.R * k.R) { blocked = true; break; }
                     if (blocked) continue;
@@ -319,7 +365,7 @@ namespace BalulaMoto.Runtime
                     float da = sg.x * (sp.HwB + 1.3f) / Mathf.Abs(det), db = sg.y * (sp.HwA + 1.3f) / Mathf.Abs(det);
                     q = sp.P + sp.DirA * da + sp.DirB * db;
                     if ((q - sp.P).sqrMagnitude > 28f * 28f) continue;
-                    if (OnRoad(q, near, 0.5f)) continue;
+                    if (OnRoad(q, near, 0.5f) || InWater(q, 0.3f)) continue;
                     ok = true;
                     break;
                 }
@@ -584,6 +630,13 @@ namespace BalulaMoto.Runtime
             }
             foreach (Vector3 b in blds)
                 if (RectCircle(o, new Vector2(b.x, b.z), b.y + 0.6f)) return false;
+            // Aucune parcelle sur une rivière ni sur ses berges : les maisons restent le long du tracé, en retrait
+            if (curWater != null)
+                foreach (Sg s in curWater)
+                {
+                    if (PointSeg(o.C, s.A, s.B) > s.Hw + 2f + diag) continue;
+                    if (RectSeg(o, s.A, s.B) < s.Hw + 2f) return false;
+                }
             foreach (Keep k in keep)
             {
                 float dx = k.C.x - o.C.x, dz = k.C.y - o.C.y, lim = k.R + diag;
@@ -614,6 +667,29 @@ namespace BalulaMoto.Runtime
             public readonly List<Vector3> N = new List<Vector3>();
             public readonly List<Vector2> UV = new List<Vector2>();
             public readonly List<int> T = new List<int>();
+            /// <summary>Murs de clôture texturés (parpaings, ciment, chaux, inscriptions) : 2e matériau.</summary>
+            public readonly List<int> TWall = new List<int>();
+            /// <summary>Fil de fer barbelé au-dessus des murs : 3e matériau (découpe, visible des deux côtés).</summary>
+            public readonly List<int> TWire = new List<int>();
+
+            /// <summary>Quadrilatère texturé a-b-c-d (UV donnés), tourné vers la normale attendue, dans un sous-maillage.</summary>
+            public void TexQuad(List<int> tris, Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector2 ua, Vector2 ub, Vector2 uc, Vector2 ud, Vector3 normal)
+            {
+                int i = V.Count;
+                V.Add(a); V.Add(b); V.Add(c); V.Add(d);
+                N.Add(normal); N.Add(normal); N.Add(normal); N.Add(normal);
+                UV.Add(ua); UV.Add(ub); UV.Add(uc); UV.Add(ud);
+                if (Vector3.Dot(Vector3.Cross(b - a, c - a), normal) >= 0f)
+                {
+                    tris.Add(i); tris.Add(i + 1); tris.Add(i + 2);
+                    tris.Add(i); tris.Add(i + 2); tris.Add(i + 3);
+                }
+                else
+                {
+                    tris.Add(i); tris.Add(i + 2); tris.Add(i + 1);
+                    tris.Add(i); tris.Add(i + 3); tris.Add(i + 2);
+                }
+            }
 
             public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, int color)
             {
@@ -750,6 +826,11 @@ namespace BalulaMoto.Runtime
                         near.Add(new Sg { A = rd.pts[s.Index], B = rd.pts[s.Index + 1], Hw = rd.width * 0.5f });
                     }
                 }
+            curWater = null;
+            {
+                List<Sg> wl;
+                if (waterGrid.TryGetValue(cellKey, out wl)) curWater = wl;
+            }
             List<Vector3> blds = new List<Vector3>();
             for (int dz = -1; dz <= 1; dz++)
                 for (int dx = -1; dx <= 1; dx++)
@@ -903,15 +984,93 @@ namespace BalulaMoto.Runtime
                 mesh.SetVertices(md.V);
                 mesh.SetNormals(md.N);
                 mesh.SetUVs(0, md.UV);
+                bool walls = wallMat != null && md.TWall.Count > 0, wire = wireMat != null && md.TWire.Count > 0;
+                mesh.subMeshCount = 1 + (walls ? 1 : 0) + (wire ? 1 : 0);
                 mesh.SetTriangles(md.T, 0);
+                int sub = 1;
+                if (walls) mesh.SetTriangles(md.TWall, sub++);
+                if (wire) mesh.SetTriangles(md.TWire, sub);
                 mesh.RecalculateBounds();
                 mesh.UploadMeshData(true);
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
                 MeshRenderer mr = go.AddComponent<MeshRenderer>();
-                mr.sharedMaterial = atlasMat;
+                List<Material> cellMats = new List<Material> { atlasMat };
+                if (walls) cellMats.Add(wallMat);
+                if (wire) cellMats.Add(wireMat);
+                mr.sharedMaterials = cellMats.ToArray();
                 cell.Mesh = mesh;
             }
             return cell;
+        }
+
+        // ------------------------------------------------------------------
+        // Murs de clôture bruts : bandes de la texture murs_parcelles (4 m de mur x 2,2 m de haut chacune)
+        //   0 parpaings bruts, 1 ciment gris sale, 2 parpaings sombres, 3 chaux sale (répétées en longueur)
+        //   4-7 les mêmes avec une inscription peinte (« Cette parcelle n'est pas à vendre »), sans répétition
+        // ------------------------------------------------------------------
+        private const float WallTile = 4f, WallTexH = 2.2f, WallBands = 8f;
+
+        private static Vector2 WallUV(int band, float u, float h, float height)
+        {
+            float inset = 3f / 2048f;
+            float v0 = 1f - (band + 1) / WallBands + inset, v1 = 1f - band / WallBands - inset;
+            return new Vector2(u, Mathf.Lerp(v0, v1, Mathf.Clamp01(h / Mathf.Max(height, 0.01f))));
+        }
+
+        /// <summary>Face verticale d'un mur, de a à b au sol, hauteur h ; la texture se lit de gauche à droite pour qui
+        /// regarde la face (normale n) ; u0 = départ dans la bande.</summary>
+        private void WallFace(MeshData md, Vector3 a, Vector3 b, float h, Vector3 n, int band, float u0, float uScale)
+        {
+            Vector3 viewRight = Vector3.Cross(Vector3.up, -n);
+            // Gauche du spectateur d'abord
+            if (Vector3.Dot(b - a, viewRight) < 0f) { Vector3 t = a; a = b; b = t; }
+            float len = Vector3.Distance(a, b);
+            float u1 = u0 + len * uScale;
+            Vector3 up = Vector3.up * h;
+            md.TexQuad(md.TWall, a, a + up, b + up, b, WallUV(band, u0, 0f, h), WallUV(band, u0, h, h), WallUV(band, u1, h, h), WallUV(band, u1, 0f, h), n);
+        }
+
+        /// <summary>Mur de clôture texturé posé au sol : centre bas c, le long de « along », face extérieure tournée vers
+        /// « outward ». Inscription peinte côté extérieur si graffiti ≥ 0 ; barbelé au-dessus si wire.</summary>
+        private void FenceWall(MeshData md, Vector3 c, Vector3 along, Vector3 outward, float halfLen, float H, float T, int variant, int graffiti, bool wire, float phase)
+        {
+            if (wallMat == null)
+            {
+                // Texture absente : ancien mur de couleur unie
+                Vector3 fwd = Vector3.Cross(along, Vector3.up);
+                md.Box(c + Vector3.up * (H * 0.5f), along, Vector3.up, fwd, new Vector3(halfLen, H * 0.5f, T * 0.5f), WallFirst + variant, Cap);
+                return;
+            }
+            Vector3 o = outward * (T * 0.5f), a = c - along * halfLen, b = c + along * halfLen;
+            float k = 1f / WallTile;
+            // Face extérieure : inscription au milieu (4 m) si le mur est assez long, mur ordinaire de part et d'autre
+            if (graffiti >= 0 && halfLen * 2f >= 3.2f)
+            {
+                float panel = Mathf.Min(halfLen * 2f, WallTile);
+                Vector3 pa = c - along * (panel * 0.5f), pb = c + along * (panel * 0.5f);
+                WallFace(md, pa + o, pb + o, H, outward, graffiti, 0f, 1f / panel);
+                if (halfLen * 2f > panel + 0.05f)
+                {
+                    WallFace(md, a + o, pa + o, H, outward, variant, phase, k);
+                    WallFace(md, pb + o, b + o, H, outward, variant, phase + 0.37f, k);
+                }
+            }
+            else WallFace(md, a + o, b + o, H, outward, variant, phase, k);
+            // Face intérieure (cour) et bouts du mur
+            WallFace(md, a - o, b - o, H, -outward, variant, phase + 0.5f, k);
+            WallFace(md, a + o, a - o, H, -along, variant, phase, k);
+            WallFace(md, b - o, b + o, H, along, variant, phase, k);
+            // Chaperon en ciment
+            Vector3 u = Vector3.up * H;
+            if (Vector3.Cross(-2f * o, (b - a) - o).y >= 0f) md.Quad(a + o + u, a - o + u, b - o + u, b + o + u, Cap);
+            else md.Quad(a + o + u, b + o + u, b - o + u, a - o + u, Cap);
+            if (wire && wireMat != null)
+            {
+                // Concertina de barbelé tendue sur le chaperon (0,5 m), visible des deux côtés
+                Vector3 w0 = Vector3.up * (H + 0.02f), w1 = Vector3.up * (H + 0.52f);
+                float u1 = halfLen * 2f / 2f;
+                md.TexQuad(md.TWire, a + w0, a + w1, b + w1, b + w0, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(u1, 1f), new Vector2(u1, 0f), outward);
+            }
         }
 
         // ------------------------------------------------------------------
@@ -921,20 +1080,26 @@ namespace BalulaMoto.Runtime
         {
             Vector3 c = new Vector3(c2.x, 0f, c2.y);
             Vector3 r = new Vector3(x2.x, 0f, x2.y), f = new Vector3(z2.x, 0f, z2.y), u = Vector3.up;
-            int wall = WallFirst + rnd.Next(WallCount);
             int gate = GateFirst + rnd.Next(GateCount);
             const float H = 2.2f, T = 0.2f;
             float hw = w * 0.5f, hd = d * 0.5f;
+            // Murs bruts comme à Kinshasa : une variante par parcelle, inscription peinte côté rue sur 40 % des parcelles,
+            // barbelé sur un tiers des clôtures
+            int variant = rnd.Next(4);
+            bool painted = rnd.Next(100) < 40;
+            bool wire = rnd.Next(100) < 33;
+            float phase = (float)rnd.NextDouble();
             // Portail : ouverture de 3 m dans le mur de façade (côté rue = -f)
             float gw = 3f, gx = Mathf.Clamp(((float)rnd.NextDouble() - 0.5f) * (w - 5f), -hw + 1.5f, hw - 1.5f - gw);
             float leftLen = gx + hw, rightLen = hw - (gx + gw);
             Vector3 front = c - f * hd;
-            if (leftLen > 0.1f) md.Box(front + r * (-hw + leftLen * 0.5f) + u * (H * 0.5f), r, u, f, new Vector3(leftLen * 0.5f, H * 0.5f, T * 0.5f), wall, Cap);
-            if (rightLen > 0.1f) md.Box(front + r * (hw - rightLen * 0.5f) + u * (H * 0.5f), r, u, f, new Vector3(rightLen * 0.5f, H * 0.5f, T * 0.5f), wall, Cap);
+            bool leftPainted = painted && leftLen >= rightLen;
+            if (leftLen > 0.1f) FenceWall(md, front + r * (-hw + leftLen * 0.5f), r, -f, leftLen * 0.5f, H, T, variant, leftPainted ? 4 + variant : -1, wire, phase);
+            if (rightLen > 0.1f) FenceWall(md, front + r * (hw - rightLen * 0.5f), r, -f, rightLen * 0.5f, H, T, variant, painted && !leftPainted ? 4 + variant : -1, wire, phase + 0.21f);
             md.Box(front + r * (gx + gw * 0.5f) + u * 1.0f, r, u, f, new Vector3(gw * 0.5f, 1.0f, 0.04f), gate, gate);
-            md.Box(c + f * hd + u * (H * 0.5f), r, u, f, new Vector3(hw, H * 0.5f, T * 0.5f), wall, Cap);
-            md.Box(c - r * hw + u * (H * 0.5f), r, u, f, new Vector3(T * 0.5f, H * 0.5f, hd), wall, Cap);
-            md.Box(c + r * hw + u * (H * 0.5f), r, u, f, new Vector3(T * 0.5f, H * 0.5f, hd), wall, Cap);
+            FenceWall(md, c + f * hd, r, f, hw, H, T, variant, -1, wire, phase + 0.43f);
+            FenceWall(md, c - r * hw, f, -r, hd, H, T, variant, -1, wire, phase + 0.61f);
+            FenceWall(md, c + r * hw, f, r, hd, H, T, variant, -1, wire, phase + 0.83f);
 
             // Ampoule au portail (côté rue)
             if (curLum != null)
@@ -1069,11 +1234,13 @@ namespace BalulaMoto.Runtime
             float yard = d - bd;
             if (yard > 1f)
             {
-                int wall = WallFirst + rnd.Next(WallCount);
+                int variant = rnd.Next(4);
+                bool wire = rnd.Next(100) < 45;
+                float phase = (float)rnd.NextDouble();
                 Vector3 yc = c + f * (hd - yard * 0.5f);
-                md.Box(c + f * hd + u * (H * 0.5f), r, u, f, new Vector3(hw, H * 0.5f, T * 0.5f), wall, Cap);
-                md.Box(yc - r * hw + u * (H * 0.5f), r, u, f, new Vector3(T * 0.5f, H * 0.5f, yard * 0.5f), wall, Cap);
-                md.Box(yc + r * hw + u * (H * 0.5f), r, u, f, new Vector3(T * 0.5f, H * 0.5f, yard * 0.5f), wall, Cap);
+                FenceWall(md, c + f * hd, r, f, hw, H, T, variant, -1, wire, phase);
+                FenceWall(md, yc - r * hw, f, -r, yard * 0.5f, H, T, variant, -1, wire, phase + 0.3f);
+                FenceWall(md, yc + r * hw, f, r, yard * 0.5f, H, T, variant, -1, wire, phase + 0.6f);
             }
             GameObject col = ParcelCollider(parent, c, f);
             AddBox(col, new Vector3(0f, bh * 0.5f, -hd + bd * 0.5f), new Vector3(bw, bh, bd));

@@ -151,7 +151,7 @@ namespace BalulaMoto.Runtime
                 }
                 mesh = new Mesh { name = "Roue" };
                 mesh.CombineMeshes(list.ToArray(), true, true);
-                mesh.SetUVs(0, uv);
+                if (uv.Count == mesh.vertexCount) mesh.SetUVs(0, uv);
                 mesh.RecalculateBounds();
                 wheelMeshes[key] = mesh;
             }

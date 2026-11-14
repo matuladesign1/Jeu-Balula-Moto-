@@ -171,7 +171,8 @@ namespace BalulaMoto.Runtime
             float len = d.magnitude;
             if (len < 0.05f) return desired;
             Vector3 dir = d / len;
-            int mask = ~(1 << RaycastVehicle.PlayerLayer);
+            // Couche 2 (« Ignore Raycast ») : barrières invisibles le long des rivières, la caméra ne s'y cogne pas
+            int mask = ~(1 << RaycastVehicle.PlayerLayer) & ~(1 << 2);
             int n = Physics.SphereCastNonAlloc(pivot, 0.3f, dir, hitBuffer, len, mask, QueryTriggerInteraction.Ignore);
             float best = len;
             for (int i = 0; i < n; i++)

@@ -240,7 +240,7 @@ namespace BalulaMoto.EditorTools
     // =====================================================================
     // Fenêtre d'import
     // =====================================================================
-    public class OsmImporterWindow : EditorWindow
+    public partial class OsmImporterWindow : EditorWindow
     {
         private string osmPath = "";
         private string worldName = "Kinshasa";
@@ -365,6 +365,8 @@ namespace BalulaMoto.EditorTools
             public float Corner;           // rayon des angles (Hx = Hz = Corner : terrain rond)
             public float ModelHx, ModelHz; // demi-emprise du modèle (les arbres restent autour)
             public float Yaw, Sink;
+            /// <summary>Bande dégagée autour du terrain : ni maison OSM ni parcelle (demande du créateur).</summary>
+            public float Clear = 1.5f;
             public string Note, Where;
 
             public Vector2 Z { get { return new Vector2(-X.y, X.x); } }
@@ -541,6 +543,7 @@ namespace BalulaMoto.EditorTools
                     }
                     if (bestSize <= 0f) e.Note = "aucun contour de stade dans OpenStreetMap : orientation est-ouest par défaut, à vérifier";
                     e.Hx = e.ModelHx + 15f; e.Hz = e.ModelHz + 15f; e.Corner = 45f;
+                    e.Clear = 45f; // esplanade du stade : aucune maison au bord
                 }
                 else
                 {
@@ -550,6 +553,7 @@ namespace BalulaMoto.EditorTools
                     float clear = RoadClearance(carriage, carriageHw, p);
                     float r = Mathf.Clamp(clear - 2.5f, 26f, 46f);
                     e.Hx = e.Hz = e.Corner = r;
+                    e.Clear = 60f; // espace de l'Échangeur : aucune maison au bord
                     e.Note = "terrain rond de " + r.ToString("0") + " m de rayon (chaussée la plus proche à " + clear.ToString("0") + " m du centre) ; orientation du modèle non vérifiée";
                 }
                 // Unity fait tourner l'axe X local vers (cos, -sin) : angle qui aligne le grand axe du modèle sur e.X
@@ -562,8 +566,8 @@ namespace BalulaMoto.EditorTools
         {
             foreach (Enclosure e in enclosures)
             {
-                if (e.Signed(center) < 1.5f) return true;
-                foreach (Vector2 q in pts) if (e.Signed(q) < 1.5f) return true;
+                if (e.Signed(center) < e.Clear) return true;
+                foreach (Vector2 q in pts) if (e.Signed(q) < e.Clear) return true;
             }
             return false;
         }
@@ -694,7 +698,8 @@ namespace BalulaMoto.EditorTools
             float spawnHeading = 0f, bestSpawn = float.MaxValue;
             // Ponts (bridge=* dans OpenStreetMap), cours d'eau, monuments, lumières des bâtiments
             List<Vector4> bridgeSegs = new List<Vector4>();
-            List<float> bridgeHw = new List<float>();
+            List<float> bridgeHw = new List<float>(), bridgeY = new List<float>();
+            LoadRiverAssets();
             int bridgeWays = 0, waterWays = 0, skippedLand = 0, litWindows = 0;
             float bridgeLen = 0f, waterLen = 0f;
             Dictionary<string, MeshBatch> decor = new Dictionary<string, MeshBatch>();
@@ -732,7 +737,7 @@ namespace BalulaMoto.EditorTools
                     float len = dir.magnitude;
                     if (len < 0.05f) continue;
                     dir /= len;
-                    if (isBridge) { bridgeSegs.Add(new Vector4(a.x, a.y, b.x, b.y)); bridgeHw.Add(width * 0.5f); }
+                    if (isBridge) { bridgeSegs.Add(new Vector4(a.x, a.y, b.x, b.y)); bridgeHw.Add(width * 0.5f); bridgeY.Add(y); }
                     Vector2 left = new Vector2(-dir.y, dir.x) * (width * 0.5f);
                     Vector2 a2 = i > 0 ? a - dir * Mathf.Min(width * 0.5f, len * 0.5f) : a;
                     Vector2 b2 = i < pts.Count - 2 ? b + dir * Mathf.Min(width * 0.5f, len * 0.5f) : b;
@@ -891,6 +896,9 @@ namespace BalulaMoto.EditorTools
                 }
             }
 
+            // ---------------- Cours d'eau en tranchée : tracés, berges, ponts aux croisements ----------------
+            PlanChannels(d, roadAxes);
+
             // ---------------- Monuments : emplacement, terrain clôturé ----------------
             PlanMonuments(d, db, carriage, carriageHw, report);
             foreach (Enclosure e in enclosures) BuildEnclosure(e, decor, areas, fenceBoxes, carriage, carriageHw, report);
@@ -910,20 +918,19 @@ namespace BalulaMoto.EditorTools
                 int steps = Mathf.Max(1, Mathf.CeilToInt(len / 2f));
                 foreach (float side in new[] { 1f, -1f })
                 {
-                    Vector2 off = nrm * side * (bridgeHw[bi] + 0.5f);
+                    // Trottoir et parapet des deux côtés (même dessin que les ponts construits sur les cours d'eau)
+                    Vector2 o = nrm * side;
                     for (int k = 0; k < steps; k++)
                     {
-                        Vector2 p0 = Vector2.Lerp(a, b, k / (float)steps) + off, p1 = Vector2.Lerp(a, b, (k + 1) / (float)steps) + off;
-                        Vector2 bmid = (p0 + p1) * 0.5f;
-                        if (!InRange(bmid) || RoadClearance(carriage, carriageHw, bmid) < 0.35f) continue;
-                        Vector2Int pc = Cell(bmid);
-                        MeshBatch pb = Batch(edges, pc.x + "_" + pc.y + "_pont");
-                        Bar(pb, p0, p1, nrm, 0.28f, 0f, 0.85f);
-                        Bar(pb, p0, p1, nrm, 0.08f, 1.02f, 1.1f);
-                        if (k % 2 == 0) Post(pb, p0, 0.05f, 0.85f, 1.05f);
+                        Vector2 p0 = Vector2.Lerp(a, b, k / (float)steps), p1 = Vector2.Lerp(a, b, (k + 1) / (float)steps);
+                        Vector2 bmid = (p0 + p1) * 0.5f + o * (bridgeHw[bi] + BridgeWalk + BridgeParapet * 0.5f);
+                        if (!InRange(bmid) || InDeck(bmid, 0.3f)) continue;
+                        if (RoadClearance(carriage, carriageHw, (p0 + p1) * 0.5f + o * (bridgeHw[bi] + 0.9f)) < 0.2f) continue;
+                        BridgeSide(edges, p0, p1, o, bridgeHw[bi], bridgeY[bi], true, RoadClearance(carriage, carriageHw, bmid) >= 0.35f, k % 2 == 0, k, k + 1);
                     }
                 }
             }
+            BuildRiverBridges(edges, carriage, carriageHw);
             // Carrefours : points partagés par plusieurs rues (les bordures s'arrêtent avant)
             Dictionary<long, int> nodeUse = new Dictionary<long, int>();
             foreach (ImportedRoad axis in roadAxes)
@@ -979,6 +986,7 @@ namespace BalulaMoto.EditorTools
                     if (InStationLot(lotList, pts, center)) { skippedStations++; continue; }
                     if (enclosures.Count > 0 && InEnclosure(pts, center)) { skippedLand++; continue; }
                     if (OnCarriageway(carriage, carriageHw, pts, center)) { skippedRoads++; continue; }
+                    if (trenchMode && RiverHit(pts, center)) { riverRemoved++; continue; }
                     if (Triangulator.Area(pts) < 0f) pts.Reverse();
                     float h = Height(w, rnd);
                     Vector2Int c = Cell(center);
@@ -1075,6 +1083,7 @@ namespace BalulaMoto.EditorTools
                     dir /= len;
                     anyIn = true;
                     waterLen += len;
+                    if (trenchMode) continue; // tranchée construite à part (OsmRivers.cs) ; ici l'ancien ruban plat
                     Vector2 left = new Vector2(-dir.y, dir.x) * (ww * 0.5f);
                     Vector2 a2 = a - dir * Mathf.Min(ww * 0.5f, len * 0.5f), b2 = b + dir * Mathf.Min(ww * 0.5f, len * 0.5f);
                     int pieces = Mathf.Max(1, Mathf.CeilToInt(Vector2.Distance(a2, b2) / 20f));
@@ -1229,7 +1238,7 @@ namespace BalulaMoto.EditorTools
             int idx = 0;
             // Terre marron foncé, en dalles de 1 km découpées en carrés de 50 m : une seule face géante était
             // calculée « dans le brouillard » sur téléphone (brouillard aux sommets) et paraissait bleu-gris clair.
-            Material soil = Mat(mats, "Sol", shader, new Color(0.24f, 0.165f, 0.11f), matAsset, ref firstMat);
+            Material soil = Mat(mats, "Sol", trenchMode ? solShader : shader, new Color(0.24f, 0.165f, 0.11f), matAsset, ref firstMat);
             float gx0 = mid.x - (size.x + 400f) * 0.5f, gx1 = mid.x + (size.x + 400f) * 0.5f;
             float gz0 = mid.y - (size.y + 400f) * 0.5f, gz1 = mid.y + (size.y + 400f) * 0.5f;
             int tiles = 0;
@@ -1239,7 +1248,8 @@ namespace BalulaMoto.EditorTools
                     float ex = Mathf.Min(tx + 1000f, gx1), ez = Mathf.Min(tz + 1000f, gz1);
                     MeshBatch gb = new MeshBatch();
                     gb.Grid(tx, tz, ex, ez, Mathf.Max(1, Mathf.CeilToInt((ex - tx) / 50f)), Mathf.Max(1, Mathf.CeilToInt((ez - tz) / 50f)), -0.02f);
-                    Emit(root, "SolVisuel_" + tiles++, gb, soil, meshAsset, ref firstMesh, false, ref idx);
+                    // Le sol ne porte pas d'ombre (rien dessous, sauf les tranchées des rivières qu'il assombrirait)
+                    Emit(root, "SolVisuel_" + tiles++, gb, soil, meshAsset, ref firstMesh, false, ref idx).GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
                 }
             foreach (KeyValuePair<string, MeshBatch> kv in roads)
             {
@@ -1259,7 +1269,7 @@ namespace BalulaMoto.EditorTools
                     if (em.mainTexture != stripes) { em.mainTexture = stripes; EditorUtility.SetDirty(em); }
                 }
                 else if (kind == "fond") em = Mat(mats, "CaniveauFond", shader, new Color(0.16f, 0.16f, 0.15f), matAsset, ref firstMat);
-                else if (kind == "pont") em = Mat(mats, "Pont", shader, new Color(0.72f, 0.72f, 0.69f), matAsset, ref firstMat);
+                else if (kind == "pont" || kind == "pontb") em = Mat(mats, "Pont", shader, new Color(0.72f, 0.72f, 0.69f), matAsset, ref firstMat);
                 else if (kind == "accot") em = Mat(mats, "Accotement", shader, new Color(0.47f, 0.35f, 0.24f), matAsset, ref firstMat);
                 else em = Mat(mats, "Bordure", shader, new Color(0.62f, 0.62f, 0.6f), matAsset, ref firstMat);
                 GameObject eg = Emit(root, "Bords_" + kv.Key, kv.Value, em, meshAsset, ref firstMesh, kind == "fond" || kind == "pont", ref idx);
@@ -1271,6 +1281,8 @@ namespace BalulaMoto.EditorTools
                 Color c = roof ? new Color(0.55f, 0.32f, 0.2f) : WallColors[int.Parse(kv.Key.Substring(kv.Key.LastIndexOf("mur") + 3))];
                 Emit(root, "Batiments_" + kv.Key, kv.Value, Mat(mats, roof ? "Toit" : "Mur" + kv.Key.Substring(kv.Key.LastIndexOf("mur") + 3), shader, c, matAsset, ref firstMat), meshAsset, ref firstMesh, !roof, ref idx);
             }
+            // Rivières en tranchée (avant les surfaces : les bandes d'herbe des berges s'ajoutent à la verdure)
+            EmitRivers(root, areas, mats, shader, matAsset, meshAsset, ref firstMesh, ref firstMat, ref idx);
             foreach (KeyValuePair<string, MeshBatch> kv in areas)
             {
                 bool water = kv.Key.EndsWith("eau");
@@ -1279,9 +1291,11 @@ namespace BalulaMoto.EditorTools
                     Emit(root, "Berges_" + kv.Key, kv.Value, Mat(mats, "Berge", shader, new Color(0.19f, 0.15f, 0.1f), matAsset, ref firstMat), meshAsset, ref firstMesh, false, ref idx);
                     continue;
                 }
-                // Eau des rivières de Kinshasa : sombre, gris-vert trouble (même famille que le fleuve, en plus foncé).
-                // Plus claire et plus lisse, elle renvoyait le soleil et ressemblait à une allée crème vue d'en haut.
-                GameObject ag = Emit(root, (water ? "Eau_" : "Verdure_") + kv.Key, kv.Value, Mat(mats, water ? "Eau" : "Verdure", shader, water ? new Color(0.14f, 0.18f, 0.16f) : new Color(0.3f, 0.48f, 0.2f), matAsset, ref firstMat), meshAsset, ref firstMesh, water, ref idx);
+                // Étendues d'eau plates (lacs, larges rivières dessinées en surface) et verdure : jamais dessinées par-dessus
+                // la tranchée d'une rivière (shader BalulaMoto/SolTrou). Eau turquoise sombre, de la famille de la photo.
+                Shader flat = trenchMode ? solShader : shader;
+                GameObject ag = Emit(root, (water ? "Eau_" : "Verdure_") + kv.Key, kv.Value, Mat(mats, water ? "Eau" : "Verdure", flat, water ? (trenchMode ? new Color(0.12f, 0.3f, 0.3f) : new Color(0.14f, 0.18f, 0.16f)) : new Color(0.3f, 0.48f, 0.2f), matAsset, ref firstMat), meshAsset, ref firstMesh, water, ref idx);
+                ag.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
                 // L'eau ralentit comme la boue (on ne roule pas dans une rivière comme sur une route)
                 if (water) ag.AddComponent<SurfaceZone>().Kind = SurfaceKind.Boue;
             }
@@ -1314,7 +1328,7 @@ namespace BalulaMoto.EditorTools
             List<Vector3> clearZones = new List<Vector3>();
             foreach (Enclosure e in enclosures)
             {
-                float rr = Mathf.Min(e.Hx, e.Hz) + 4f;
+                float rr = Mathf.Min(e.Hx, e.Hz) + Mathf.Max(4f, e.Clear);
                 for (float t = -(e.Hx - Mathf.Min(e.Hx, e.Hz)); t <= e.Hx - Mathf.Min(e.Hx, e.Hz) + 0.01f; t += Mathf.Max(10f, rr * 0.5f))
                 {
                     Vector2 zc = e.C + e.X * t;
@@ -1400,6 +1414,9 @@ namespace BalulaMoto.EditorTools
             iw.works = works;
             iw.clearZones = clearZones;
             iw.waterways = waterAxes;
+            iw.waterSegs = riverSegs;
+            iw.waterHw = riverSegHw;
+            report.Append(RiverReport());
             report.Append("Eau : ").Append(waterWays).Append(" cours d'eau tracés (").Append((waterLen / 1000f).ToString("0.0")).Append(" km). Ponts : ").Append(bridgeWays)
                   .Append(" tronçons marqués « pont » (").Append((bridgeLen / 1000f).ToString("0.00")).Append(" km) avec parapets. Fenêtres éclairées la nuit : ").Append(litWindows)
                   .Append(". Bâtiments OSM écartés des terrains des monuments : ").Append(skippedLand).Append(".\n");
@@ -1552,7 +1569,7 @@ namespace BalulaMoto.EditorTools
                 float trimB = junctions.Contains(PointKey(b)) ? Mathf.Min(len * 0.45f, 7f) : 0f;
                 float usable = len - trimA - trimB;
                 if (usable < 0.5f) { dist += len; continue; }
-                int pieces = Mathf.Max(1, Mathf.CeilToInt(usable / 30f));
+                int pieces = Mathf.Max(1, Mathf.CeilToInt(usable / (trenchMode && NearWater(a, b) ? 5f : 30f)));
                 for (int k = 0; k < pieces; k++)
                 {
                     float t0 = trimA + usable * k / pieces, t1 = trimA + usable * (k + 1) / pieces;
@@ -1565,6 +1582,8 @@ namespace BalulaMoto.EditorTools
                         Vector2 o = nrm * side;
                         // Pas de caniveau devant une station-service (entrée et sortie des véhicules)
                         Vector2 probe = (p0 + p1) * 0.5f + o * (hw + 1.2f);
+                        // Sur un cours d'eau : le tablier du pont remplace caniveau et accotement
+                        if (trenchMode && (InCorridor(probe, 0.3f) || InDeck(probe, 0.3f))) continue;
                         bool atStation = false;
                         foreach (Vector4 l in lots)
                             if (FuelStations.InLot(new Vector2(l.x, l.y), new Vector2(l.z, l.w), FuelStations.LotSize(true), probe, 3f)) { atStation = true; break; }
