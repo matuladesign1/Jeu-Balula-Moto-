@@ -22,6 +22,30 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
 - **Carte** : mini-carte et carte plein écran avec légende.
 - **Sauvegardes automatiques** (carrière et libre séparées).
 
+### Nouveautés de la version 4.5.0
+
+- **Arbres** : tous les arbres du jeu (cours des parcelles, espaces verts, esplanades, ronds-points) sont les modèles
+  fournis par MATULA DESIGN — « Low-Poly Tree » (laser blaster) et « Low-poly foliege » (EugeneKiver), Blend Swap,
+  licence CC0 — allégés pour le téléphone, avec un vrai feuillage découpé.
+- **Boulevard Lumumba** : tout l'espace entre le grand boulevard et chacun des deux petits boulevards (Petit Boulevard
+  Résidentiel et Industriel d'OpenStreetMap), depuis leur début, est un espace vert sans maison : pelouse, arbres,
+  clôture de barreaux de fer noirs ; des gens s'y promènent et y font la fête.
+- **Milieu des boulevards** Lumumba, Sendwé, Huilerie et 24 Novembre : seulement les barrières rouge et blanc (chaussée
+  continue entre les deux voies : plus de bordure, de caniveau ni de sable au milieu ; poteaux et mobilier reportés
+  sur l'autre côté).
+- **Ronds-points** (junction=roundabout d'OpenStreetMap) : plus aucune maison dedans ; îlot de pelouse bordé et arbres.
+- **Rues goudronnées** : parcelles sur une même ligne de façade et collées les unes aux autres ; devant elles, bordure,
+  caniveau creusé plus bas que le sol et trottoir de dalles ; grands caniveaux (1 m de large) le long des boulevards.
+- **Esplanades de l'Échangeur de Limete et du Stade des Martyrs** : contour déduit des rues qui les entourent (rues non
+  déplacées), longue clôture de barreaux noirs, pavés, pelouses dessinées. Au stade : terrains de football sans clôture
+  (ceux d'OpenStreetMap ; les petits terrains municipaux et le terrain de basket sont placés par le jeu, **emplacement
+  à vérifier** — aucune image satellite n'est utilisée), policiers aux entrées (dedans et dehors), joueurs sur les
+  terrains. À l'Échangeur : foule qui fête et se promène.
+- **Cité Motel Fikin** : repérée par les rues « Motel Fikin » d'OpenStreetMap (Limete) ; ses **limites exactes restent
+  à vérifier**. Clôture de béton blanc et barreaux noirs, écoles génériques (aucune école de la cité n'est dans OSM),
+  entrées avec barrière et policiers : la barrière se lève à l'approche, on peut y déposer les clients.
+- Plus d'amende de collision quand un autre véhicule heurte la moto du joueur à l'arrêt.
+
 ### Nouveautés de la version 4.4.0
 
 - **Maisons et immeubles fournis par MATULA DESIGN** dans la ville : la maison « cottage » le long des rues goudronnées

@@ -424,6 +424,8 @@ namespace BalulaMoto.Runtime
 
         private static void Palm(Transform root, Vector3 pos)
         {
+            // Arbres fournis par MATULA DESIGN à la place des anciens arbres dessinés
+            if (TreeModels.Ready && TreeModels.Place(decor, pos, 6f + (float)rnd.NextDouble() * 2.5f, rnd) != null) return;
             float h = 6f + (float)rnd.NextDouble() * 4f;
             Prims.Box(decor, "Stipe", pos + new Vector3(0f, h * 0.5f, 0f), new Vector3(0.35f, h, 0.35f), new Color(0.45f, 0.36f, 0.25f), true);
             for (int i = 0; i < 6; i++)
@@ -432,6 +434,7 @@ namespace BalulaMoto.Runtime
 
         private static void Tree(Transform root, Vector3 pos)
         {
+            if (TreeModels.Ready && TreeModels.Place(decor, pos, 5f + (float)rnd.NextDouble() * 2.5f, rnd) != null) return;
             float h = 3f + (float)rnd.NextDouble() * 2f;
             Prims.Box(decor, "Tronc", pos + new Vector3(0f, h * 0.5f, 0f), new Vector3(0.45f, h, 0.45f), new Color(0.38f, 0.28f, 0.2f), true);
             Prims.Ball(decor, "Feuillage", pos + new Vector3(0f, h + 1.5f, 0f), new Vector3(5f, 3.8f, 5f), new Color(0.18f, 0.42f, 0.14f));

@@ -41,7 +41,48 @@ namespace BalulaMoto.Runtime
         /// morceau (I0, I1, O1, O0) ; info = largeurs aux deux stations et voie du petit boulevard.</summary>
         public List<Vector2> greenStripPts = new List<Vector2>();
         public List<Vector3> greenStripInfo = new List<Vector3>();
+        /// <summary>Arbres posés à l'import (esplanades, ronds-points) : x, z = pied, y = hauteur (m). Les modèles
+        /// fournis par MATULA DESIGN y sont posés en jeu (CityFill), avec un tronc solide.</summary>
+        public List<Vector3> treeSpots = new List<Vector3>();
+        /// <summary>Lieux aménagés à l'import : esplanades clôturées, terrains de sport, cité clôturée et ses entrées
+        /// contrôlées, écoles (voir ImportedArea).</summary>
+        public List<ImportedArea> areas = new List<ImportedArea>();
         [TextArea(3, 12)] public string report;
+    }
+
+    /// <summary>Lieu aménagé : « esplanade », « cite » (contour pts), « foot », « basket », « ecole » (rectangle orienté
+    /// c, x, hx, hz), « porte » (entrée contrôlée : c, x = direction de la rue, hx = demi-largeur du passage),
+    /// « police » (agent en faction : c, x = regard), « fete » (place où la foule fait la fête : c, hx = rayon).</summary>
+    [System.Serializable]
+    public class ImportedArea
+    {
+        public string kind;
+        public string name;
+        public Vector2 c;
+        public Vector2 x = new Vector2(1f, 0f);
+        public float hx, hz;
+        /// <summary>Vrai si l'emplacement vient d'OpenStreetMap ; faux s'il a été choisi par le jeu (à vérifier).</summary>
+        public bool osm;
+        public List<Vector2> pts = new List<Vector2>();
+
+        public Vector2 Z { get { return new Vector2(-x.y, x.x); } }
+
+        /// <summary>Vrai si le point est dans le contour (pts) ou, sans contour, dans le rectangle orienté.</summary>
+        public bool Contains(Vector2 p)
+        {
+            if (pts != null && pts.Count >= 3)
+            {
+                bool inside = false;
+                for (int i = 0, j = pts.Count - 1; i < pts.Count; j = i++)
+                {
+                    Vector2 a = pts[i], b = pts[j];
+                    if ((a.y > p.y) != (b.y > p.y) && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x) inside = !inside;
+                }
+                return inside;
+            }
+            Vector2 d = p - c;
+            return Mathf.Abs(Vector2.Dot(d, x)) <= hx && Mathf.Abs(Vector2.Dot(d, Z)) <= hz;
+        }
     }
 
     /// <summary>Portion de route en travaux : centre, direction de la rue, longueur et largeur de chaussée.</summary>

@@ -289,6 +289,16 @@ namespace BalulaMoto.Runtime
             }
         }
 
+        /// <summary>Vrai si ce côté de la rue est le milieu d'un boulevard cité (seconde chaussée de ce côté).</summary>
+        private bool MedianSide(int road, Vector2 p, Vector2 sideNrm)
+        {
+            ImportedRoad rd = map.roads[road];
+            if (!BoulevardRules.IsCitedBoulevard(rd)) return false;
+            int twin;
+            Vector2 pt;
+            return Twin(road, rd.name ?? "", p, sideNrm, out twin, out pt) && Vector2.Dot(pt - p, sideNrm) > 0f;
+        }
+
         /// <summary>Autre voie du même boulevard, parallèle, entre 5 et 30 m (chaussées séparées).</summary>
         private bool Twin(int road, string name, Vector2 p, Vector2 nrm, out int twin, out Vector2 pt)
         {
@@ -364,6 +374,7 @@ namespace BalulaMoto.Runtime
                     Vector2 p, dir;
                     At(ri, cum, sd, out p, out dir);
                     Vector2 nrm = new Vector2(-dir.y, dir.x) * side;
+                    if (MedianSide(ri, p, nrm)) continue;
                     Vector2 q = p + nrm * off;
                     if (!bounds.Contains(q)) continue;
                     int k = rr.Next(100);

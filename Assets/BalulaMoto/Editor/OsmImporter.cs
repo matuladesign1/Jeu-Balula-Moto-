@@ -368,12 +368,16 @@ namespace BalulaMoto.EditorTools
             /// <summary>Bande dégagée autour du terrain : ni maison OSM ni parcelle (demande du créateur).</summary>
             public float Clear = 1.5f;
             public string Note, Where;
+            /// <summary>Esplanade : contour déduit des rues (null : terrain arrondi autour du modèle) ; M = centre du modèle.</summary>
+            public List<Vector2> Poly;
+            public Vector2 M;
 
             public Vector2 Z { get { return new Vector2(-X.y, X.x); } }
 
             /// <summary>Distance signée au bord du terrain (négative à l'intérieur).</summary>
             public float Signed(Vector2 p)
             {
+                if (Poly != null) return SignedPoly(Poly, p);
                 Vector2 d = p - C;
                 float lx = Mathf.Abs(Vector2.Dot(d, X)) - (Hx - Corner), lz = Mathf.Abs(Vector2.Dot(d, Z)) - (Hz - Corner);
                 float outside = new Vector2(Mathf.Max(lx, 0f), Mathf.Max(lz, 0f)).magnitude;
@@ -383,6 +387,7 @@ namespace BalulaMoto.EditorTools
             /// <summary>Contour du terrain (points tous les « step » mètres environ, sens direct).</summary>
             public List<Vector2> Outline(float step)
             {
+                if (Poly != null) return Resample(Poly, step);
                 List<Vector2> pts = new List<Vector2>();
                 float sx = Hx - Corner, sz = Hz - Corner;
                 Vector2[] corners = { new Vector2(sx, sz), new Vector2(-sx, sz), new Vector2(-sx, -sz), new Vector2(sx, -sz) };
@@ -647,7 +652,8 @@ namespace BalulaMoto.EditorTools
                 float ex = lx / (e.ModelHx + 3.5f), ez = lz / (e.ModelHz + 3.5f);
                 if (ex * ex + ez * ez < 1f) continue;
                 if (RoadClearance(carriage, carriageHw, q) < 2.5f) continue;
-                Tree(trunk, leaves, q, 3.2f + (float)rnd.NextDouble() * 2.4f, 2.3f + (float)rnd.NextDouble() * 1.5f);
+                // Arbre fourni par MATULA DESIGN, posé en jeu
+                treeSpots.Add(new Vector3(q.x, 5.2f + (float)rnd.NextDouble() * 2.6f, q.y));
                 trees++;
             }
             report.Append("Monument « ").Append(e.Name).Append(" » : modèle ").Append(e.Model).Append(" posé à (").Append(e.C.x.ToString("0")).Append(", ").Append(e.C.y.ToString("0"))
@@ -789,7 +795,7 @@ namespace BalulaMoto.EditorTools
                                 foreach (float side in new[] { 1f, -1f })
                                 {
                                     ImportedPath wp = new ImportedPath { name = "Trottoir" };
-                                    AddLane(wp.points, run, side * (width * 0.5f + 1.3f));
+                                    AddLane(wp.points, run, side * (width * 0.5f + BoulevardRules.WalkOffset(roadName, rank, (int)surface)));
                                     for (int k = 0; k < wp.points.Count; k++) wp.points[k] = new Vector3(wp.points[k].x, 0f, wp.points[k].z);
                                     if (wp.points.Count >= 2) { walks.Add(wp); walkPoints += wp.points.Count; }
                                 }
@@ -899,12 +905,39 @@ namespace BalulaMoto.EditorTools
             // ---------------- Cours d'eau en tranchée : tracés, berges, ponts aux croisements ----------------
             PlanChannels(d, roadAxes);
 
-            // ---------------- Monuments : emplacement, terrain clôturé ----------------
+            // ---------------- Monuments : emplacement, esplanade clôturée ; ronds-points ; cité Motel Fikin ----------------
+            PrepareLieux(d, roadAxes);
             PlanMonuments(d, db, carriage, carriageHw, report);
-            foreach (Enclosure e in enclosures) BuildEnclosure(e, decor, areas, fenceBoxes, carriage, carriageHw, report);
+            PlanEsplanades(roadAxes, carriage, carriageHw);
+            foreach (Enclosure e in enclosures)
+            {
+                if (e.Poly != null) BuildEsplanade(d, e, decor, areas, fenceBoxes, report);
+                else BuildEnclosure(e, decor, areas, fenceBoxes, carriage, carriageHw, report);
+            }
+            PlanRoundabouts(d);
+            List<Vector3> extraClear = new List<Vector3>();
+            BuildRoundabouts(decor, areas, extraClear);
+            BuildCite(roadAxes, places, decor, fenceBoxes, report);
 
-            // ---------------- Bords des rues goudronnées : caniveaux, bordures (rouge et blanc sur les boulevards), accotements ----------------
+            // ---------------- Boulevards (calculés avant les bords des rues et les bâtiments) ----------------
+            // Boulevards : 10 m libres devant les bâtiments ; boulevard Lumumba : aucune construction entre le grand et
+            // les petits boulevards (espace vert construit par la ville au lancement du jeu)
+            GreenAreas greenAreas = new GreenAreas();
+            foreach (OsmWay w in d.Ways) GreenPolygon(d, w, w.Tags, greenAreas);
+            foreach (OsmRelation rel in d.Relations)
+            {
+                if (!IsArea(rel.Tags)) continue;
+                foreach (OsmMember m in rel.Members)
+                {
+                    OsmWay w;
+                    if (m.Type == "way" && m.Role == "outer" && d.WayById.TryGetValue(m.Ref, out w)) GreenPolygon(d, w, rel.Tags, greenAreas);
+                }
+            }
+            BoulevardIndex bdIndex = new BoulevardIndex(roadAxes, greenAreas);
+
+            // ---------------- Bords des rues goudronnées : bordures (rouge et blanc sur les boulevards), caniveaux creusés, trottoirs ----------------
             Dictionary<string, MeshBatch> edges = new Dictionary<string, MeshBatch>();
+            TwinFinder twinFinder = new TwinFinder(roadAxes);
             // Ponts : parapets de béton et garde-corps des deux côtés, sauf là où une autre chaussée croise
             for (int bi = 0; bi < bridgeSegs.Count; bi++)
             {
@@ -949,7 +982,7 @@ namespace BalulaMoto.EditorTools
             HashSet<long> junctions = new HashSet<long>();
             foreach (KeyValuePair<long, int> kv in nodeUse) if (kv.Value >= 2) junctions.Add(kv.Key);
             float edgeLength = 0f;
-            foreach (ImportedRoad axis in roadAxes) edgeLength += RoadEdges(axis, edges, junctions, lotList);
+            foreach (ImportedRoad axis in roadAxes) edgeLength += RoadEdges(axis, edges, junctions, lotList, bdIndex, twinFinder);
             int edgeVerts = 0;
             foreach (MeshBatch eb in edges.Values) edgeVerts += eb.V.Count;
 
@@ -957,21 +990,7 @@ namespace BalulaMoto.EditorTools
             List<WorkZone> works = ChooseWorks(roadAxes, roads);
 
             // ---------------- Bâtiments ----------------
-            int skippedStations = 0, skippedRoads = 0, skippedBoulevards = 0, skippedGreen = 0;
-            // Boulevards : 10 m libres devant les bâtiments ; boulevard Lumumba : aucune construction entre le grand et
-            // le petit boulevard (espace vert construit par la ville au lancement du jeu)
-            GreenAreas greenAreas = new GreenAreas();
-            foreach (OsmWay w in d.Ways) GreenPolygon(d, w, w.Tags, greenAreas);
-            foreach (OsmRelation rel in d.Relations)
-            {
-                if (!IsArea(rel.Tags)) continue;
-                foreach (OsmMember m in rel.Members)
-                {
-                    OsmWay w;
-                    if (m.Type == "way" && m.Role == "outer" && d.WayById.TryGetValue(m.Ref, out w)) GreenPolygon(d, w, rel.Tags, greenAreas);
-                }
-            }
-            BoulevardIndex bdIndex = new BoulevardIndex(roadAxes, greenAreas);
+            int skippedStations = 0, skippedRoads = 0, skippedBoulevards = 0, skippedGreen = 0, skippedRound = 0, skippedPlaces = 0;
             if (buildings)
             {
                 System.Random rnd = new System.Random(243);
@@ -998,7 +1017,18 @@ namespace BalulaMoto.EditorTools
                     center /= pts.Count;
                     if (!InRange(center)) continue;
                     if (InStationLot(lotList, pts, center)) { skippedStations++; continue; }
-                    if (enclosures.Count > 0 && InEnclosure(pts, center)) { skippedLand++; continue; }
+                    if (enclosures.Count > 0 && InEnclosure(pts, center) && !KeepBuilding(w.Tags, center)) { skippedLand++; continue; }
+                    if (roundabouts.Count > 0 && InRoundabout(pts, center)) { skippedRound++; continue; }
+                    if (citePoly != null && (center - citePoly[0]).sqrMagnitude < 900f * 900f)
+                    {
+                        // Cité Motel Fikin : les maisons d'OSM restent, sauf sous la clôture et sur le terrain des écoles
+                        bool drop = false;
+                        foreach (Vector2 bp in pts) if (Mathf.Abs(SignedPoly(citePoly, bp)) < 1.5f) { drop = true; break; }
+                        if (!drop)
+                            foreach (ImportedArea la in lieux)
+                                if (la.kind == "ecole" && (la.c - center).sqrMagnitude < (la.hx + la.hz + 12f) * (la.hx + la.hz + 12f)) { drop = true; break; }
+                        if (drop) { skippedPlaces++; continue; }
+                    }
                     if (OnCarriageway(carriage, carriageHw, pts, center)) { skippedRoads++; continue; }
                     int bdConflict = bdIndex.Conflict(pts, center);
                     if (bdConflict == 1) { skippedBoulevards++; continue; }
@@ -1267,6 +1297,18 @@ namespace BalulaMoto.EditorTools
                     gb.Grid(tx, tz, ex, ez, Mathf.Max(1, Mathf.CeilToInt((ex - tx) / 50f)), Mathf.Max(1, Mathf.CeilToInt((ez - tz) / 50f)), -0.02f);
                     // Le sol ne porte pas d'ombre (rien dessous, sauf les tranchées des rivières qu'il assombrirait)
                     Emit(root, "SolVisuel_" + tiles++, gb, soil, meshAsset, ref firstMesh, false, ref idx).GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
+                    if (trenchMode)
+                    {
+                        // Terre sombre sous le sol, plus bas que l'eau des rivières : vue au bout des caniveaux creusés
+                        MeshBatch deep = new MeshBatch();
+                        deep.Grid(tx, tz, ex, ez, Mathf.Max(1, Mathf.CeilToInt((ex - tx) / 50f)), Mathf.Max(1, Mathf.CeilToInt((ez - tz) / 50f)), -1.75f);
+                        Material deepMat = Mat(mats, "SousSol", shader, new Color(0.09f, 0.065f, 0.045f), matAsset, ref firstMat);
+                        // Dessiné après le sol : presque entièrement caché, il ne coûte presque rien
+                        if (deepMat.renderQueue != 2010) { deepMat.renderQueue = 2010; EditorUtility.SetDirty(deepMat); }
+                        MeshRenderer dr = Emit(root, "SolProfond_" + tiles, deep, deepMat, meshAsset, ref firstMesh, false, ref idx).GetComponent<MeshRenderer>();
+                        dr.shadowCastingMode = ShadowCastingMode.Off;
+                        dr.receiveShadows = false;
+                    }
                 }
             foreach (KeyValuePair<string, MeshBatch> kv in roads)
             {
@@ -1276,21 +1318,50 @@ namespace BalulaMoto.EditorTools
                 g.AddComponent<SurfaceZone>().Kind = s;
             }
             Texture2D stripes = StripeTexture(folder);
+            Texture2D slabTex = SlabTexture(folder);
+            Material gutterMask = null;
+            if (trenchMode)
+            {
+                gutterMask = new Material(maskShader) { name = "CaniveauMasque" };
+                gutterMask.enableInstancing = false;
+                AssetDatabase.CreateAsset(gutterMask, matAsset + "/CaniveauMasque.mat");
+            }
             foreach (KeyValuePair<string, MeshBatch> kv in edges)
             {
                 string kind = kv.Key.Substring(kv.Key.LastIndexOf('_') + 1);
+                // Caniveaux creusés : masque, parois et fond d'une case dans un même objet (affichés ou cachés ensemble)
+                if (kind == "canal" || kind == "canalfond") continue;
+                if (kind == "fond")
+                {
+                    string cellKey = kv.Key.Substring(0, kv.Key.LastIndexOf('_'));
+                    MeshBatch walls, floors;
+                    edges.TryGetValue(cellKey + "_canal", out walls);
+                    edges.TryGetValue(cellKey + "_canalfond", out floors);
+                    EmitGutters(root, "Caniveaux_" + cellKey, kv.Value, walls, floors, gutterMask,
+                                Mat(mats, "CaniveauParoi", shader, new Color(0.37f, 0.36f, 0.34f), matAsset, ref firstMat),
+                                Mat(mats, "CaniveauFondCreux", shader, new Color(0.11f, 0.105f, 0.09f), matAsset, ref firstMat), meshAsset, ref firstMesh, ref idx);
+                    continue;
+                }
                 Material em;
                 if (kind == "rb")
                 {
                     em = Mat(mats, "BordureRougeBlanc", shader, Color.white, matAsset, ref firstMat);
                     if (em.mainTexture != stripes) { em.mainTexture = stripes; EditorUtility.SetDirty(em); }
                 }
-                else if (kind == "fond") em = Mat(mats, "CaniveauFond", shader, new Color(0.16f, 0.16f, 0.15f), matAsset, ref firstMat);
+                else if (kind == "fondplat") em = Mat(mats, "CaniveauFond", shader, new Color(0.16f, 0.16f, 0.15f), matAsset, ref firstMat);
                 else if (kind == "pont" || kind == "pontb") em = Mat(mats, "Pont", shader, new Color(0.72f, 0.72f, 0.69f), matAsset, ref firstMat);
                 else if (kind == "accot") em = Mat(mats, "Accotement", shader, new Color(0.47f, 0.35f, 0.24f), matAsset, ref firstMat);
+                else if (kind == "trottoir")
+                {
+                    em = Mat(mats, "Trottoir", shader, Color.white, matAsset, ref firstMat);
+                    if (em.mainTexture != slabTex) { em.mainTexture = slabTex; EditorUtility.SetDirty(em); }
+                }
+                else if (kind == "milieu") em = Mat(mats, "Route" + SurfaceKind.Goudron, shader, SurfaceColor(SurfaceKind.Goudron), matAsset, ref firstMat);
                 else em = Mat(mats, "Bordure", shader, new Color(0.62f, 0.62f, 0.6f), matAsset, ref firstMat);
-                GameObject eg = Emit(root, "Bords_" + kv.Key, kv.Value, em, meshAsset, ref firstMesh, kind == "fond" || kind == "pont", ref idx);
-                if (kind == "fond") eg.AddComponent<SurfaceZone>().Kind = SurfaceKind.Caniveau;
+                bool solid = kind == "fondplat" || kind == "pont" || kind == "milieu";
+                GameObject eg = Emit(root, "Bords_" + kv.Key, kv.Value, em, meshAsset, ref firstMesh, solid, ref idx);
+                if (kind == "fondplat") eg.AddComponent<SurfaceZone>().Kind = SurfaceKind.Caniveau;
+                if (kind == "milieu") eg.AddComponent<SurfaceZone>().Kind = SurfaceKind.Goudron;
             }
             foreach (KeyValuePair<string, MeshBatch> kv in houses)
             {
@@ -1300,12 +1371,23 @@ namespace BalulaMoto.EditorTools
             }
             // Rivières en tranchée (avant les surfaces : les bandes d'herbe des berges s'ajoutent à la verdure)
             EmitRivers(root, areas, mats, shader, matAsset, meshAsset, ref firstMesh, ref firstMat, ref idx);
+            Texture2D paveTex = null;
             foreach (KeyValuePair<string, MeshBatch> kv in areas)
             {
                 bool water = kv.Key.EndsWith("eau");
                 if (kv.Key.EndsWith("berge"))
                 {
                     Emit(root, "Berges_" + kv.Key, kv.Value, Mat(mats, "Berge", shader, new Color(0.19f, 0.15f, 0.1f), matAsset, ref firstMat), meshAsset, ref firstMesh, false, ref idx);
+                    continue;
+                }
+                if (kv.Key.EndsWith("pave"))
+                {
+                    // Pavés des esplanades (texture de pavés autobloquants dessinée à l'import)
+                    Material pm = Mat(mats, "Paves", trenchMode ? solShader : shader, Color.white, matAsset, ref firstMat);
+                    if (paveTex == null) paveTex = PaveTexture(folder);
+                    if (pm.mainTexture != paveTex) { pm.mainTexture = paveTex; EditorUtility.SetDirty(pm); }
+                    GameObject pg = Emit(root, "Paves_" + kv.Key, kv.Value, pm, meshAsset, ref firstMesh, false, ref idx);
+                    pg.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
                     continue;
                 }
                 // Étendues d'eau plates (lacs, larges rivières dessinées en surface) et verdure : jamais dessinées par-dessus
@@ -1322,11 +1404,25 @@ namespace BalulaMoto.EditorTools
             {
                 if (kv.Value.V.Count == 0) continue;
                 string kind = kv.Key.Substring(kv.Key.LastIndexOf('_') + 1);
-                Material dm = kind == "grille" ? Mat(mats, "GrilleFer", shader, new Color(0.08f, 0.09f, 0.1f), matAsset, ref firstMat)
-                            : (kind == "socle" ? Mat(mats, "Muret", shader, new Color(0.74f, 0.72f, 0.66f), matAsset, ref firstMat)
-                            : (kind == "tronc" ? Mat(mats, "Tronc", shader, new Color(0.33f, 0.23f, 0.14f), matAsset, ref firstMat)
-                            : Mat(mats, "Feuillage", shader, new Color(0.17f, 0.4f, 0.14f), matAsset, ref firstMat)));
-                Emit(root, "Monument_" + kv.Key, kv.Value, dm, meshAsset, ref firstMesh, false, ref idx);
+                Material dm;
+                switch (kind)
+                {
+                    case "grille": dm = Mat(mats, "GrilleFer", shader, new Color(0.08f, 0.09f, 0.1f), matAsset, ref firstMat); break;
+                    case "socle": dm = Mat(mats, "Muret", shader, new Color(0.74f, 0.72f, 0.66f), matAsset, ref firstMat); break;
+                    case "tronc": dm = Mat(mats, "Tronc", shader, new Color(0.33f, 0.23f, 0.14f), matAsset, ref firstMat); break;
+                    case "blanc": dm = Mat(mats, "BetonBlanc", shader, new Color(0.93f, 0.93f, 0.9f), matAsset, ref firstMat); break;
+                    case "bordure": dm = Mat(mats, "BordureBlanche", shader, new Color(0.86f, 0.86f, 0.83f), matAsset, ref firstMat); break;
+                    case "terre": dm = Mat(mats, "TerreBattue", shader, new Color(0.6f, 0.45f, 0.31f), matAsset, ref firstMat); break;
+                    case "turf": dm = Mat(mats, "GazonSynthetique", shader, new Color(0.2f, 0.5f, 0.21f), matAsset, ref firstMat); break;
+                    case "court": dm = Mat(mats, "BetonTerrain", shader, new Color(0.36f, 0.4f, 0.47f), matAsset, ref firstMat); break;
+                    case "ligne": case "planche": dm = Mat(mats, "LigneBlanche", shader, new Color(0.96f, 0.96f, 0.94f), matAsset, ref firstMat); break;
+                    case "panier": dm = Mat(mats, "PanierOrange", shader, new Color(0.95f, 0.45f, 0.1f), matAsset, ref firstMat); break;
+                    case "poteau": dm = Mat(mats, "PoteauGris", shader, new Color(0.3f, 0.31f, 0.33f), matAsset, ref firstMat); break;
+                    default: dm = Mat(mats, "Feuillage", shader, new Color(0.17f, 0.4f, 0.14f), matAsset, ref firstMat); break;
+                }
+                GameObject dg = Emit(root, "Monument_" + kv.Key, kv.Value, dm, meshAsset, ref firstMesh, false, ref idx);
+                // Terrains et lignes peintes : pas d'ombre portée (surfaces au ras du sol)
+                if (kind == "terre" || kind == "turf" || kind == "court" || kind == "ligne") dg.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
             }
             if (fenceBoxes.Count > 0)
             {
@@ -1343,14 +1439,17 @@ namespace BalulaMoto.EditorTools
             }
             // Modèles 3D des monuments (convertis par scripts/convertir_monuments.py)
             List<Vector3> clearZones = new List<Vector3>();
+            clearZones.AddRange(extraClear);
             foreach (Enclosure e in enclosures)
             {
                 float rr = Mathf.Min(e.Hx, e.Hz) + Mathf.Max(4f, e.Clear);
-                for (float t = -(e.Hx - Mathf.Min(e.Hx, e.Hz)); t <= e.Hx - Mathf.Min(e.Hx, e.Hz) + 0.01f; t += Mathf.Max(10f, rr * 0.5f))
-                {
-                    Vector2 zc = e.C + e.X * t;
-                    clearZones.Add(new Vector3(zc.x, rr, zc.y));
-                }
+                // Esplanade à contour : la ville générée la lit dans iw.areas (aucune parcelle dedans)
+                if (e.Poly == null)
+                    for (float t = -(e.Hx - Mathf.Min(e.Hx, e.Hz)); t <= e.Hx - Mathf.Min(e.Hx, e.Hz) + 0.01f; t += Mathf.Max(10f, rr * 0.5f))
+                    {
+                        Vector2 zc = e.C + e.X * t;
+                        clearZones.Add(new Vector3(zc.x, rr, zc.y));
+                    }
                 GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(BalulaSetup.Root + "/Modeles/Monuments/" + e.Model + ".obj");
                 if (model == null) { report.Append("Modèle absent : ").Append(e.Model).Append(".obj (monument non posé).\n"); continue; }
                 GameObject inst = (GameObject)PrefabUtility.InstantiatePrefab(model);
@@ -1431,6 +1530,8 @@ namespace BalulaMoto.EditorTools
             iw.works = works;
             iw.clearZones = clearZones;
             bdIndex.Store(iw.greenStripPts, iw.greenStripInfo);
+            iw.treeSpots = new List<Vector3>(treeSpots);
+            iw.areas = new List<ImportedArea>(lieux);
             iw.waterways = waterAxes;
             iw.waterSegs = riverSegs;
             iw.waterHw = riverSegHw;
@@ -1443,6 +1544,10 @@ namespace BalulaMoto.EditorTools
             report.Append("Stations-service : ").Append(stationLots.Count).Append(" construites (").Append(duplicateFuel.Count).Append(" doublons fusionnés) ; bâtiments OSM écartés : ")
                   .Append(skippedStations).Append(" sur les stations, ").Append(skippedRoads).Append(" posés sur une chaussée. Bords de rues (caniveaux, bordures) : ")
                   .Append((edgeLength / 1000f).ToString("0")).Append(" km (").Append(edgeVerts).Append(" sommets). Chantiers : ").Append(works.Count).Append(".\n");
+            report.Append(lieuxReport.ToString());
+            report.Append("Arbres posés à l'import (modèles fournis par MATULA DESIGN, en jeu) : ").Append(treeSpots.Count).Append(" ; bâtiments OSM retirés des ronds-points : ").Append(skippedRound)
+                  .Append(", de la cité Motel Fikin : ").Append(skippedPlaces).Append(". Milieux des boulevards cités sans bordure ni sable : ").Append(twinSides)
+                  .Append(" morceaux ; trottoirs de béton : ").Append((walkLength / 1000f).ToString("0")).Append(" km.\n");
             report.Append("Boulevards : ").Append(bdIndex.Boulevards.Count).Append(" tronçons ; bâtiments OSM écartés à moins de 10 m d'un boulevard : ").Append(skippedBoulevards)
                   .Append(" ; bande verte du boulevard Lumumba (entre grand et petit boulevard) : ").Append(bdIndex.Strips.Count).Append(" morceaux, ")
                   .Append((bdIndex.StripLength / 1000f).ToString("0.00")).Append(" km, ").Append(skippedGreen).Append(" bâtiments OSM retirés (espaces verts OSM : ")
@@ -1570,7 +1675,78 @@ namespace BalulaMoto.EditorTools
         /// côtés des rues goudronnées et des grandes avenues ; bordures peintes rouge et blanc sur les boulevards.</summary>
         private static long PointKey(Vector2 p) { return ((long)Mathf.RoundToInt(p.x * 10f) << 32) ^ (uint)Mathf.RoundToInt(p.y * 10f); }
 
-        private float RoadEdges(ImportedRoad axis, Dictionary<string, MeshBatch> edges, HashSet<long> junctions, List<Vector4> lots)
+        /// <summary>Seconde chaussée des boulevards cités (même nom, parallèle, de l'autre côté du milieu) : recherche par
+        /// grille de 50 m. Sert à ne rien poser au milieu du boulevard (ni bordure, ni caniveau, ni sable).</summary>
+        private class TwinFinder
+        {
+            private readonly Dictionary<long, List<Vector2Int>> grid = new Dictionary<long, List<Vector2Int>>();
+            private readonly List<ImportedRoad> roads;
+
+            public TwinFinder(List<ImportedRoad> axes)
+            {
+                roads = axes;
+                for (int r = 0; r < axes.Count; r++)
+                {
+                    ImportedRoad a = axes[r];
+                    if (!BoulevardRules.IsCitedBoulevard(a)) continue;
+                    for (int i = 0; i < a.pts.Count - 1; i++)
+                    {
+                        Vector2 p = a.pts[i], q = a.pts[i + 1];
+                        int x0 = Mathf.FloorToInt(Mathf.Min(p.x, q.x) / 50f), x1 = Mathf.FloorToInt(Mathf.Max(p.x, q.x) / 50f);
+                        int z0 = Mathf.FloorToInt(Mathf.Min(p.y, q.y) / 50f), z1 = Mathf.FloorToInt(Mathf.Max(p.y, q.y) / 50f);
+                        if ((x1 - x0 + 1) * (z1 - z0 + 1) > 100) continue;
+                        for (int gz = z0; gz <= z1; gz++)
+                            for (int gx = x0; gx <= x1; gx++)
+                            {
+                                long k = ((long)gx << 32) ^ (uint)gz;
+                                List<Vector2Int> l;
+                                if (!grid.TryGetValue(k, out l)) { l = new List<Vector2Int>(); grid[k] = l; }
+                                l.Add(new Vector2Int(r, i));
+                            }
+                    }
+                }
+            }
+
+            /// <summary>Distance (le long de la normale du côté donné) à l'axe de la seconde chaussée et sa demi-largeur.</summary>
+            public bool Find(ImportedRoad self, Vector2 p, Vector2 side, Vector2 dir, out float dist, out float hw)
+            {
+                dist = 0f;
+                hw = 0f;
+                float best = 32f;
+                int gx = Mathf.FloorToInt(p.x / 50f), gz = Mathf.FloorToInt(p.y / 50f);
+                for (int dz = -1; dz <= 1; dz++)
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        List<Vector2Int> l;
+                        if (!grid.TryGetValue(((long)(gx + dx) << 32) ^ (uint)(gz + dz), out l)) continue;
+                        foreach (Vector2Int si in l)
+                        {
+                            ImportedRoad o = roads[si.x];
+                            if (o == self || o.name != self.name) continue;
+                            Vector2 a = o.pts[si.y], b = o.pts[si.y + 1], ab = b - a;
+                            float l2 = ab.sqrMagnitude;
+                            if (l2 < 0.25f) continue;
+                            if (Mathf.Abs(Vector2.Dot(ab / Mathf.Sqrt(l2), dir)) < 0.9f) continue;
+                            float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / l2);
+                            Vector2 q = a + ab * t;
+                            float lateral = Vector2.Dot(q - p, side);
+                            if (lateral < 2f || lateral >= best) continue;
+                            if (Mathf.Abs(Vector2.Dot(q - p, dir)) > 6f) continue;
+                            best = lateral;
+                            dist = lateral;
+                            hw = o.width * 0.5f;
+                        }
+                    }
+                return dist > 0f;
+            }
+        }
+
+        /// <summary>Bords d'une rue goudronnée (demande de MATULA DESIGN) : bordure (rouge et blanc sur les boulevards),
+        /// caniveau creusé plus bas que le sol (grand caniveau le long des boulevards), rebord et trottoir de béton.
+        /// Le sol n'est pas dessiné au-dessus du caniveau (même masque que les rivières en tranchée). Au milieu des
+        /// boulevards cités, rien : la chaussée continue jusqu'à la seconde chaussée (les barrières y sont posées en jeu).
+        /// Le long de l'espace vert du boulevard Lumumba, pas de trottoir de ce côté (celui de l'espace vert le remplace).</summary>
+        private float RoadEdges(ImportedRoad axis, Dictionary<string, MeshBatch> edges, HashSet<long> junctions, List<Vector4> lots, BoulevardIndex strips, TwinFinder twins)
         {
             SurfaceKind s = (SurfaceKind)axis.surface;
             bool paved = s == SurfaceKind.Goudron || s == SurfaceKind.GoudronDegrade;
@@ -1578,8 +1754,15 @@ namespace BalulaMoto.EditorTools
             string nn = TextUtil.Normalize(axis.name ?? "");
             bool boulevard = axis.rank >= 8 || nn.Contains("boulevard") || nn.StartsWith("bd ");
             float hw = axis.width * 0.5f, yRoad = 0.03f + axis.rank * 0.004f;
-            const float curbW = 0.18f, channel = 0.5f, curbTop = 0.13f, bottom = 0.012f, shoulder = 1.3f;
+            float curbW = 0f, channel = 0f, depth = 0f, lip = 0f, walk = 0f;
+            bool sunk = trenchMode && BoulevardRules.GutterProfile(axis, out curbW, out channel, out depth, out lip, out walk);
+            const float oldCurbW = 0.18f, oldChannel = 0.5f, oldCurbTop = 0.13f, bottom = 0.012f, shoulder = 1.3f;
+            float curbTop = BoulevardRules.CurbTop, walkTop = BoulevardRules.WalkTop;
+            bool cited = twins != null && BoulevardRules.IsCitedBoulevard(axis);
             float dist = 0f, total = 0f;
+            // Suivi des tronçons de caniveau continus de chaque côté : murs de bout aux extrémités
+            bool[] open = new bool[2];
+            Vector2[] lastP1 = new Vector2[2], lastDir = new Vector2[2], lastO = new Vector2[2];
             for (int i = 0; i < axis.pts.Count - 1; i++)
             {
                 Vector2 a = axis.pts[i], b = axis.pts[i + 1];
@@ -1599,38 +1782,101 @@ namespace BalulaMoto.EditorTools
                     float u0 = (dist + t0) * 0.5f, u1 = (dist + t1) * 0.5f;
                     Vector2Int c = Cell((p0 + p1) * 0.5f);
                     string key = c.x + "_" + c.y + "_";
-                    foreach (float side in new[] { 1f, -1f })
+                    for (int si = 0; si < 2; si++)
                     {
+                        float side = si == 0 ? 1f : -1f;
                         Vector2 o = nrm * side;
+                        Vector2 midP = (p0 + p1) * 0.5f;
+                        bool drawn = false;
                         // Pas de caniveau devant une station-service (entrée et sortie des véhicules)
-                        Vector2 probe = (p0 + p1) * 0.5f + o * (hw + 1.2f);
-                        // Sur un cours d'eau : le tablier du pont remplace caniveau et accotement
-                        if (trenchMode && (InCorridor(probe, 0.3f) || InDeck(probe, 0.3f))) continue;
-                        bool atStation = false;
-                        foreach (Vector4 l in lots)
-                            if (FuelStations.InLot(new Vector2(l.x, l.y), new Vector2(l.z, l.w), FuelStations.LotSize(true), probe, 3f)) { atStation = true; break; }
-                        if (atStation) continue;
-                        Vector3 outward = new Vector3(o.x, 0f, o.y);
-                        MeshBatch curb = Batch(edges, key + (boulevard ? "rb" : "beton"));
-                        MeshBatch concrete = Batch(edges, key + "beton");
-                        MeshBatch floor = Batch(edges, key + "fond");
-                        MeshBatch earth = Batch(edges, key + "accot");
-                        // Bordure côté chaussée : face vers la route, dessus
-                        Side(curb, p0, p1, o, hw, yRoad - 0.01f, curbTop, -outward, u0, u1);
-                        Top(curb, p0, p1, o, hw, hw + curbW, curbTop, u0, u1);
-                        // Caniveau : paroi intérieure, fond sombre, paroi et dessus de la bordure extérieure
-                        Side(concrete, p0, p1, o, hw + curbW, bottom, curbTop, outward, u0, u1);
-                        Top(floor, p0, p1, o, hw + curbW, hw + curbW + channel, bottom, u0, u1);
-                        Side(concrete, p0, p1, o, hw + curbW + channel, bottom, curbTop, -outward, u0, u1);
-                        Top(concrete, p0, p1, o, hw + curbW + channel, hw + 2f * curbW + channel, curbTop, u0, u1);
-                        // Accotement de terre tassée (terrassé) au-delà du caniveau
-                        Top(earth, p0, p1, o, hw + 2f * curbW + channel, hw + 2f * curbW + channel + shoulder, 0.006f, u0, u1);
-                        total += t1 - t0;
+                        Vector2 probe = midP + o * (hw + 1.2f);
+                        bool skip = trenchMode && (InCorridor(probe, 0.3f) || InDeck(probe, 0.3f));
+                        if (!skip)
+                            foreach (Vector4 l in lots)
+                                if (FuelStations.InLot(new Vector2(l.x, l.y), new Vector2(l.z, l.w), FuelStations.LotSize(true), probe, 3f)) { skip = true; break; }
+                        // Milieu d'un boulevard cité : seconde chaussée de ce côté → chaussée continue, sans bordure ni sable
+                        float twinD, twinHw;
+                        if (!skip && cited && twins.Find(axis, midP, o, dir, out twinD, out twinHw))
+                        {
+                            float far = twinD - twinHw;
+                            if (far > hw + 0.05f)
+                                Top(Batch(edges, key + "milieu"), p0, p1, o, hw - 0.1f, far + 0.1f, yRoad - 0.004f, u0, u1);
+                            skip = true;
+                            twinSides++;
+                        }
+                        if (!skip)
+                        {
+                            Vector3 outward = new Vector3(o.x, 0f, o.y);
+                            MeshBatch curb = Batch(edges, key + (boulevard ? "rb" : "beton"));
+                            if (sunk)
+                            {
+                                MeshBatch wall = Batch(edges, key + "canal"), floor = Batch(edges, key + "canalfond");
+                                MeshBatch mask = Batch(edges, key + "fond"), slab = Batch(edges, key + "trottoir");
+                                float r0 = hw + curbW, r1 = r0 + channel, r2 = r1 + lip;
+                                // Bordure côté chaussée : face vers la route, dessus
+                                Side(curb, p0, p1, o, hw, yRoad - 0.01f, curbTop, -outward, u0, u1);
+                                Top(curb, p0, p1, o, hw, r0, curbTop, u0, u1);
+                                // Caniveau creusé : paroi sous la bordure, fond, paroi extérieure (vues de l'intérieur)
+                                Side(wall, p0, p1, o, r0, -depth, curbTop, outward, u0, u1);
+                                Top(floor, p0, p1, o, r0, r1, -depth, u0, u1);
+                                Side(wall, p0, p1, o, r1, -depth, walkTop, -outward, u0, u1);
+                                // Ouverture au niveau du sol : masque (le sol n'y est pas dessiné) + collision « caniveau »
+                                Top(mask, p0, p1, o, r0, r1, 0f, u0, u1);
+                                // Rebord et trottoir de béton (pas de trottoir le long de l'espace vert de Lumumba)
+                                bool green = strips != null && strips.InStrip(midP + o * (r2 + 1.0f));
+                                float r3 = green ? r2 : r2 + walk;
+                                Top(slab, p0, p1, o, r1, r3, walkTop, u0, u1);
+                                Side(slab, p0, p1, o, r3, -0.02f, walkTop, outward, u0, u1);
+                                if (!green) walkLength += t1 - t0;
+                                // Murs de bout : début d'un tronçon (et fin du précédent s'il ne se raccorde pas)
+                                bool joins = open[si] && (lastP1[si] - p0).sqrMagnitude < 0.36f;
+                                if (open[si] && !joins) GutterCap(wall, lastP1[si], lastDir[si], lastO[si], r0, r1, depth, false);
+                                if (!joins) GutterCap(wall, p0, dir, o, r0, r1, depth, true);
+                                lastP1[si] = p1; lastDir[si] = dir; lastO[si] = o;
+                                drawn = true;
+                            }
+                            else
+                            {
+                                // Ancien profil (rues de terre principales) : bordure, caniveau peu profond, accotement de terre
+                                MeshBatch concrete = Batch(edges, key + "beton");
+                                MeshBatch floorOld = Batch(edges, key + "fondplat");
+                                MeshBatch earth = Batch(edges, key + "accot");
+                                Side(curb, p0, p1, o, hw, yRoad - 0.01f, oldCurbTop, -outward, u0, u1);
+                                Top(curb, p0, p1, o, hw, hw + oldCurbW, oldCurbTop, u0, u1);
+                                Side(concrete, p0, p1, o, hw + oldCurbW, bottom, oldCurbTop, outward, u0, u1);
+                                Top(floorOld, p0, p1, o, hw + oldCurbW, hw + oldCurbW + oldChannel, bottom, u0, u1);
+                                Side(concrete, p0, p1, o, hw + oldCurbW + oldChannel, bottom, oldCurbTop, -outward, u0, u1);
+                                Top(concrete, p0, p1, o, hw + oldCurbW + oldChannel, hw + 2f * oldCurbW + oldChannel, oldCurbTop, u0, u1);
+                                Top(earth, p0, p1, o, hw + 2f * oldCurbW + oldChannel, hw + 2f * oldCurbW + oldChannel + shoulder, 0.006f, u0, u1);
+                            }
+                            total += t1 - t0;
+                        }
+                        if (sunk && open[si] && !drawn) GutterCap(Batch(edges, key + "canal"), lastP1[si], lastDir[si], lastO[si], hw + curbW, hw + curbW + channel, depth, false);
+                        if (sunk) open[si] = drawn;
                     }
                 }
                 dist += len;
             }
+            if (sunk)
+                for (int si = 0; si < 2; si++)
+                    if (open[si])
+                    {
+                        Vector2Int c = Cell(lastP1[si]);
+                        GutterCap(Batch(edges, c.x + "_" + c.y + "_canal"), lastP1[si], lastDir[si], lastO[si], hw + curbW, hw + curbW + channel, depth, false);
+                    }
             return total;
+        }
+
+        private int twinSides;
+        private float walkLength;
+
+        /// <summary>Mur de bout d'un caniveau creusé (entre r0 et r1 du côté o), au point p ; vu de l'intérieur du tronçon.</summary>
+        private static void GutterCap(MeshBatch m, Vector2 p, Vector2 dir, Vector2 o, float r0, float r1, float depth, bool start)
+        {
+            Vector2 a = p + o * r0, b = p + o * r1;
+            Vector3 facing = start ? new Vector3(dir.x, 0f, dir.y) : new Vector3(-dir.x, 0f, -dir.y);
+            Vector2 uv = Vector2.zero;
+            m.QuadFacing(V3(a, -depth), V3(b, -depth), V3(b, 0.02f), V3(a, 0.02f), uv, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f), facing);
         }
 
         private static void Top(MeshBatch m, Vector2 p0, Vector2 p1, Vector2 o, float r0, float r1, float y, float u0, float u1)
@@ -1656,6 +1902,117 @@ namespace BalulaMoto.EditorTools
             t.Apply();
             AssetDatabase.CreateAsset(t, folder + "/BordureRougeBlanc.asset");
             return t;
+        }
+
+        /// <summary>Pavés autobloquants des esplanades : rangées décalées de pavés gris et ocre, joints sombres (256 px pour
+        /// 10 m : un pavé fait environ 39 × 20 cm).</summary>
+        private static Texture2D PaveTexture(string folder)
+        {
+            const int N = 256, PW = 10, PH = 5;
+            Texture2D t = new Texture2D(N, N, TextureFormat.RGBA32, true);
+            System.Random rnd = new System.Random(311);
+            Color[] tones = { new Color(0.62f, 0.6f, 0.56f), new Color(0.58f, 0.55f, 0.5f), new Color(0.66f, 0.55f, 0.43f), new Color(0.55f, 0.5f, 0.46f) };
+            Color[] px = new Color[N * N];
+            int rows = N / PH;
+            for (int r = 0; r < rows; r++)
+            {
+                int shift = (r % 2) * (PW / 2);
+                for (int c = -1; c <= N / PW; c++)
+                {
+                    Color tone = tones[rnd.Next(tones.Length)] * (0.94f + (float)rnd.NextDouble() * 0.1f);
+                    tone.a = 1f;
+                    for (int y = r * PH; y < r * PH + PH; y++)
+                        for (int x = c * PW + shift; x < c * PW + shift + PW; x++)
+                        {
+                            int xx = ((x % N) + N) % N;
+                            bool joint = y == r * PH || x == c * PW + shift;
+                            px[y * N + xx] = joint ? new Color(0.33f, 0.31f, 0.29f) : tone;
+                        }
+                }
+            }
+            t.SetPixels(px);
+            t.filterMode = FilterMode.Bilinear;
+            t.wrapMode = TextureWrapMode.Repeat;
+            t.anisoLevel = 2;
+            t.Apply();
+            AssetDatabase.CreateAsset(t, folder + "/Paves.asset");
+            return t;
+        }
+
+        /// <summary>Dalles de béton du trottoir (texture 64×64 répétée tous les 1,3 m environ, joints plus sombres).</summary>
+        private static Texture2D SlabTexture(string folder)
+        {
+            const int N = 64;
+            Texture2D t = new Texture2D(N, N, TextureFormat.RGBA32, true);
+            System.Random rnd = new System.Random(77);
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    bool joint = x < 2 || y < 2 || x == N / 2 || x == N / 2 + 1;
+                    float n = (float)rnd.NextDouble() * 0.05f;
+                    float v = joint ? 0.42f : 0.66f + n - ((x / (N / 2) + y / (N / 2)) % 2) * 0.03f;
+                    t.SetPixel(x, y, new Color(v, v * 0.98f, v * 0.93f));
+                }
+            t.filterMode = FilterMode.Bilinear;
+            t.wrapMode = TextureWrapMode.Repeat;
+            t.Apply();
+            AssetDatabase.CreateAsset(t, folder + "/DallesTrottoir.asset");
+            return t;
+        }
+
+        /// <summary>Caniveaux creusés d'une case : un objet visible (masque du sol, parois, fond) et un objet de collision
+        /// au niveau du sol (surface « caniveau », sans rendu).</summary>
+        private static void EmitGutters(GameObject root, string name, MeshBatch mask, MeshBatch walls, MeshBatch floors, Material maskMat, Material wallMat, Material floorMat,
+                                        string meshAsset, ref bool firstMesh, ref int idx)
+        {
+            MeshBatch[] parts = { mask, walls, floors };
+            Material[] pm = { maskMat, wallMat, floorMat };
+            List<Vector3> v = new List<Vector3>();
+            List<Vector2> uv = new List<Vector2>();
+            List<List<int>> subs = new List<List<int>>();
+            List<Material> used = new List<Material>();
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (parts[i] == null || parts[i].T.Count == 0 || pm[i] == null) continue;
+                int off = v.Count;
+                v.AddRange(parts[i].V);
+                uv.AddRange(parts[i].UV);
+                List<int> t = new List<int>(parts[i].T.Count);
+                foreach (int ti in parts[i].T) t.Add(ti + off);
+                subs.Add(t);
+                used.Add(pm[i]);
+            }
+            if (subs.Count > 0)
+            {
+                Mesh mesh = new Mesh { name = name };
+                if (v.Count > 65000) mesh.indexFormat = IndexFormat.UInt32;
+                mesh.SetVertices(v);
+                mesh.SetUVs(0, uv);
+                mesh.subMeshCount = subs.Count;
+                for (int i = 0; i < subs.Count; i++) mesh.SetTriangles(subs[i], i);
+                mesh.RecalculateNormals();
+                mesh.RecalculateBounds();
+                if (firstMesh) { AssetDatabase.CreateAsset(mesh, meshAsset); firstMesh = false; }
+                else AssetDatabase.AddObjectToAsset(mesh, meshAsset);
+                GameObject g = new GameObject(name);
+                g.transform.SetParent(root.transform, false);
+                g.AddComponent<MeshFilter>().sharedMesh = mesh;
+                MeshRenderer mr = g.AddComponent<MeshRenderer>();
+                mr.sharedMaterials = used.ToArray();
+                mr.shadowCastingMode = ShadowCastingMode.Off;
+                GameObjectUtility.SetStaticEditorFlags(g, StaticEditorFlags.BatchingStatic);
+                idx++;
+            }
+            if (mask != null && mask.T.Count > 0)
+            {
+                Mesh cm = mask.Build(name + "_Sol");
+                if (firstMesh) { AssetDatabase.CreateAsset(cm, meshAsset); firstMesh = false; }
+                else AssetDatabase.AddObjectToAsset(cm, meshAsset);
+                GameObject cg = new GameObject(name + "_Collision");
+                cg.transform.SetParent(root.transform, false);
+                cg.AddComponent<MeshCollider>().sharedMesh = cm;
+                cg.AddComponent<SurfaceZone>().Kind = SurfaceKind.Caniveau;
+            }
         }
 
         /// <summary>Choisit des portions de rues goudronnées en travaux (régulièrement réparties) et y pose une

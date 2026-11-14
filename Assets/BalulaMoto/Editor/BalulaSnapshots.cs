@@ -213,7 +213,20 @@ namespace BalulaMoto.EditorTools
             steps.Add(() => { ShootGreenStrip(game); return true; });
             steps.Add(() => { TeleportToRoadNamed(game, "huilerie"); return true; });
             Wait(12f, 40);
-            steps.Add(() => { ShootModels(game, "huilerie"); return true; });
+            steps.Add(() => { ShootModels(game, "huilerie"); ShootEdges(game, "boulevard_huilerie"); return true; });
+            // Lieux aménagés (novembre 2026) : petite rue goudronnée, esplanades, cité Motel Fikin
+            steps.Add(() => { TeleportToPavedStreet(game); return true; });
+            Wait(12f, 40);
+            steps.Add(() => { ShootEdges(game, "rue_goudronnee"); return true; });
+            steps.Add(() => { TeleportToLieu(game, "esplanade", "stade"); return true; });
+            Wait(14f, 40);
+            steps.Add(() => { ShootLieu(game, "stade"); return true; });
+            steps.Add(() => { TeleportToLieu(game, "esplanade", "changeur"); return true; });
+            Wait(14f, 40);
+            steps.Add(() => { ShootLieu(game, "echangeur"); return true; });
+            steps.Add(() => { TeleportToLieu(game, "porte", ""); return true; });
+            Wait(14f, 40);
+            steps.Add(() => { ShootLieu(game, "cite_fikin"); return true; });
             steps.Add(() => { TeleportToDirtStreet(game); return true; });
             Wait(12f, 40);
             steps.Add(() => { ShootModels(game, "quartier"); DustRun(game, true); return true; });
@@ -853,6 +866,110 @@ namespace BalulaMoto.EditorTools
             report.AppendLine("=== " + best.name + " (" + bestLen.ToString("0") + " m, largeur " + best.width.ToString("0.0") + " m, rang " + best.rank + ") : joueur posé au milieu ===");
         }
 
+        /// <summary>Bords de la rue où se trouve le joueur : caniveau creusé, bordure, trottoir, parcelles alignées, milieu.</summary>
+        private static void ShootEdges(BalulaGame game, string tag)
+        {
+            if (game.Director == null || game.Director.Player == null) return;
+            Transform t = game.Director.Player.transform;
+            Vector3 c = t.position;
+            Shoot(tag + "_caniveau_et_trottoir", c + t.right * 1.5f - t.forward * 5f + Vector3.up * 2.4f, c + t.right * 7f + t.forward * 9f);
+            Shoot(tag + "_parcelles_alignees", c - t.forward * 14f + Vector3.up * 16f, c + t.forward * 26f);
+            Shoot(tag + "_milieu", c - t.right * 2f - t.forward * 8f + Vector3.up * 3f, c - t.right * 7f + t.forward * 12f);
+        }
+
+        /// <summary>Petite rue goudronnée (rang 3) assez longue, la plus proche du joueur.</summary>
+        private static void TeleportToPavedStreet(BalulaGame game)
+        {
+            report.AppendLine();
+            ImportedWorld map = Compat.FindFirst<ImportedWorld>();
+            if (map == null || game.Director == null || game.Director.Player == null) return;
+            Vector3 from = game.Director.Player.transform.position;
+            ImportedRoad best = null;
+            float bd = float.MaxValue;
+            foreach (ImportedRoad r in map.roads)
+            {
+                if (r.rank != 3 || r.surface != (int)SurfaceKind.Goudron || r.pts.Count < 3 || BoulevardRules.IsBoulevard(r)) continue;
+                float len = 0f;
+                for (int i = 0; i < r.pts.Count - 1; i++) len += Vector2.Distance(r.pts[i], r.pts[i + 1]);
+                if (len < 200f) continue;
+                float dd = (new Vector2(from.x, from.z) - r.pts[r.pts.Count / 2]).sqrMagnitude;
+                if (dd < bd) { bd = dd; best = r; }
+            }
+            if (best == null) { report.AppendLine("=== petite rue goudronnée : aucune ==="); return; }
+            int k = best.pts.Count / 2;
+            Vector2 d = (best.pts[k + 1] - best.pts[k - 1]).normalized;
+            Vector2 p = best.pts[k] + new Vector2(d.y, -d.x) * 1.2f;
+            game.Director.SpawnPlayer(new Vector3(p.x, 0.3f, p.y), Quaternion.LookRotation(new Vector3(d.x, 0f, d.y), Vector3.up));
+            report.AppendLine("=== Petite rue goudronnée « " + best.name + " » (largeur " + best.width.ToString("0.0") + " m) ===");
+        }
+
+        private static ImportedArea lieuArea;
+        private static Vector3 lieuCenter;
+
+        /// <summary>Le joueur est posé sur la rue la plus proche d'un lieu aménagé (esplanade, entrée de la cité).</summary>
+        private static void TeleportToLieu(BalulaGame game, string kind, string nameKey)
+        {
+            report.AppendLine();
+            lieuArea = null;
+            ImportedWorld map = Compat.FindFirst<ImportedWorld>();
+            if (map == null || map.areas == null || game.Director == null) { report.AppendLine("=== lieu " + kind + " : pas de carte ==="); return; }
+            foreach (ImportedArea a in map.areas)
+                if (a.kind == kind && (nameKey == "" || (a.name ?? "").ToLowerInvariant().Contains(nameKey))) { lieuArea = a; break; }
+            if (lieuArea == null) { report.AppendLine("=== lieu " + kind + " « " + nameKey + " » : introuvable (" + map.areas.Count + " lieux) ==="); return; }
+            Vector2 c = lieuArea.c;
+            lieuCenter = new Vector3(c.x, 0f, c.y);
+            // Point de rue le plus proche du lieu
+            float bd = float.MaxValue;
+            Vector2 bp = c, bdir = Vector2.right;
+            foreach (ImportedRoad r in map.roads)
+            {
+                if (r.rank < 2) continue;
+                for (int i = 0; i < r.pts.Count - 1; i++)
+                {
+                    Vector2 m = (r.pts[i] + r.pts[i + 1]) * 0.5f;
+                    float dd = (m - c).sqrMagnitude;
+                    if (kind == "esplanade" && lieuArea.Contains(m)) continue;
+                    if (dd < bd && (r.pts[i + 1] - r.pts[i]).sqrMagnitude > 1f) { bd = dd; bp = m; bdir = (r.pts[i + 1] - r.pts[i]).normalized; }
+                }
+            }
+            game.Director.SpawnPlayer(new Vector3(bp.x, 0.3f, bp.y), Quaternion.LookRotation(new Vector3(bdir.x, 0f, bdir.y), Vector3.up));
+            int foot = 0, basket = 0, police = 0, portes = 0, ecoles = 0, fetes = 0;
+            foreach (ImportedArea a in map.areas)
+            {
+                if (a.kind == "foot") foot++; else if (a.kind == "basket") basket++; else if (a.kind == "police") police++;
+                else if (a.kind == "porte") portes++; else if (a.kind == "ecole") ecoles++; else if (a.kind == "fete") fetes++;
+            }
+            report.AppendLine("=== Lieu « " + lieuArea.name + " » (" + kind + ", " + lieuArea.pts.Count + " sommets) : joueur à " + Mathf.Sqrt(bd).ToString("0") + " m du centre. Carte : " + foot + " terrains de foot, " +
+                              basket + " de basket, " + police + " postes de police, " + portes + " entrées de cité, " + ecoles + " écoles, " + fetes + " places de fête, " + map.treeSpots.Count + " arbres d'import ===");
+        }
+
+        private static void ShootLieu(BalulaGame game, string tag)
+        {
+            if (lieuArea == null || game.Director == null || game.Director.Player == null) return;
+            Vector3 pp = game.Director.Player.transform.position;
+            Vector3 to = (lieuCenter - pp); to.y = 0f;
+            float dist = to.magnitude;
+            Vector3 dir = dist > 1f ? to / dist : Vector3.forward;
+            Shoot(tag + "_depuis_la_rue", pp - dir * 6f + Vector3.up * 2.6f, pp + dir * 20f + Vector3.up * 1.2f);
+            Shoot(tag + "_vue_d_en_haut", pp - dir * 30f + Vector3.up * 55f, pp + dir * 45f);
+            Shoot(tag + "_cloture", pp + dir * 2f + Vector3.up * 1.7f, pp + dir * 14f + Vector3.right * 6f + Vector3.up * 1.2f);
+            LieuxAnimes la = LieuxAnimes.Instance;
+            if (la != null)
+            {
+                report.AppendLine("Lieux animés : " + la.Sites.Count + " sites, " + la.ActiveHumans + " personnages actifs ici.");
+                foreach (string k in new[] { "foot", "basket", "police", "fete", "porte" })
+                {
+                    LieuxAnimes.Site s = la.Nearest(k, pp);
+                    if (s == null || (s.C - pp).sqrMagnitude > 150f * 150f) continue;
+                    Vector3 v = (s.C - pp); v.y = 0f;
+                    Vector3 vd = v.sqrMagnitude > 1f ? v.normalized : dir;
+                    float back = k == "foot" ? Mathf.Max(18f, s.Hx * 0.9f) : 9f;
+                    Shoot(tag + "_" + k, s.C - vd * back + Vector3.up * (k == "foot" ? 9f : 3.2f), s.C + Vector3.up * 0.9f);
+                    report.AppendLine("  " + k + " à " + v.magnitude.ToString("0") + " m : " + (s.Agents != null ? s.Agents.Count : 0) + " personnages.");
+                }
+            }
+        }
+
         private static Vector3 greenInner, greenOuter, greenAlong;
         private static bool greenFound;
 
@@ -882,6 +999,8 @@ namespace BalulaMoto.EditorTools
             Shoot("lumumba_espace_vert_depuis_le_boulevard", greenInner - across * 4f - greenAlong * 10f + Vector3.up * 2.2f, mid + greenAlong * 6f + Vector3.up * 0.8f);
             Shoot("lumumba_espace_vert_vu_d_en_haut", mid - greenAlong * 16f + Vector3.up * 14f, mid + greenAlong * 6f);
             Shoot("lumumba_cloture_fer_noir", greenInner + across * 1.0f - greenAlong * 3f + Vector3.up * 1.5f, greenInner + across * 2.2f + greenAlong * 3f + Vector3.up * 0.8f);
+            Shoot("lumumba_caniveau_du_boulevard", greenInner - across * 3.5f - greenAlong * 4f + Vector3.up * 1.6f, greenInner + across * 0.5f + greenAlong * 5f);
+            report.AppendLine("Arbres : modèles fournis " + (TreeModels.Ready ? "chargés" : "ABSENTS") + " ; personnages des lieux : " + (LieuxAnimes.Instance != null ? LieuxAnimes.Instance.ActiveHumans : -1));
         }
 
         /// <summary>Rue de terre (non goudronnée) assez longue, proche du joueur.</summary>

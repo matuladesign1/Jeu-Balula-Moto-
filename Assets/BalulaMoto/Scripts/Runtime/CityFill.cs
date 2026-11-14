@@ -14,7 +14,7 @@ namespace BalulaMoto.Runtime
 
         private struct Seg { public int Road; public int Index; }
         /// <summary>Segment de rue proche : Clear = espace à laisser libre devant les maisons (10 m sur les boulevards).</summary>
-        private struct Sg { public Vector2 A, B; public float Hw, Clear; }
+        private struct Sg { public Vector2 A, B; public float Hw, Clear; public bool Gd; }
         private readonly Dictionary<long, List<Sg>> waterGrid = new Dictionary<long, List<Sg>>();
         private List<Sg> curWater;
 
@@ -183,6 +183,8 @@ namespace BalulaMoto.Runtime
             InitModels();
             PlanModels();
             PlanBoulevards();
+            // Esplanades, cité Motel Fikin, écoles et arbres posés à l'import (CityFillLieux.cs)
+            PlanLieux();
             // Emprise des cours d'eau (eau + berges) : ni parcelle, ni poteau, ni panneau dedans
             if (map.waterSegs != null && map.waterHw != null)
                 for (int i = 0; i < map.waterSegs.Count && i < map.waterHw.Count; i++)
@@ -305,6 +307,8 @@ namespace BalulaMoto.Runtime
                     Vector2 p2, dir;
                     At(ri, cum, sd, out p2, out dir);
                     Vector2 nrm = new Vector2(-dir.y, dir.x) * side;
+                    // Milieu d'un boulevard cité : rien d'autre que les barrières (le poteau passe de l'autre côté)
+                    if (MedianSide(ri, p2, nrm)) nrm = -nrm;
                     Vector2 q = p2 + nrm * off;
                     if (!bounds.Contains(q)) continue;
                     if (OnRoad(q, near, 0.7f) || InWater(q, 0.2f)) continue;
@@ -627,8 +631,10 @@ namespace BalulaMoto.Runtime
             return Mathf.Min(d, SegSeg(la, lb, c3, c0));
         }
 
-        private bool Fits(Obb o, List<Sg> roads, List<Vector3> blds, float roadMargin, int cx, int cz, bool building = false)
+        private bool Fits(Obb o, List<Sg> roads, List<Vector3> blds, float roadMargin, int cx, int cz, bool building = false, float gap = 0.15f)
         {
+            // Esplanades clôturées, clôture de la cité Motel Fikin, terrains des écoles
+            if (LieuBlocks(o)) return false;
             float diag = Mathf.Sqrt(o.Hx * o.Hx + o.Hz * o.Hz);
             foreach (Sg s in roads)
             {
@@ -663,7 +669,7 @@ namespace BalulaMoto.Runtime
                     {
                         float ddx = p.C.x - o.C.x, ddz = p.C.y - o.C.y, lim = diag + p.Hx + p.Hz;
                         if (ddx * ddx + ddz * ddz > lim * lim) continue;
-                        if (ObbOverlap(o, p, 0.15f)) return false;
+                        if (ObbOverlap(o, p, gap)) return false;
                     }
                 }
             return true;
@@ -834,7 +840,7 @@ namespace BalulaMoto.Runtime
                     {
                         if (!nearSeen.Add(((long)s.Road << 24) ^ s.Index)) continue;
                         ImportedRoad rd = map.roads[s.Road];
-                        near.Add(new Sg { A = rd.pts[s.Index], B = rd.pts[s.Index + 1], Hw = rd.width * 0.5f, Clear = IsBoulevardRoad(s.Road) ? BoulevardRules.Setback : 0f });
+                        near.Add(new Sg { A = rd.pts[s.Index], B = rd.pts[s.Index + 1], Hw = rd.width * 0.5f, Clear = IsBoulevardRoad(s.Road) ? BoulevardRules.Setback : 0f, Gd = Goudron(rd) });
                     }
                 }
             curWater = null;
@@ -880,7 +886,9 @@ namespace BalulaMoto.Runtime
                 }
             }
 
-            // 2) Parcelles en rangées le long de chaque rue, sur toute sa longueur (tirage stable par rue)
+            // 2) Écoles de la cité Motel Fikin (terrains réservés à l'import), puis parcelles en rangées le long de chaque rue,
+            //    sur toute sa longueur (tirage stable par rue). Sur le goudron : même ligne de façade, parcelles collées.
+            BuildSchools(cellKey, md, go, placed);
             foreach (int ri in roadsHere)
             {
                 ImportedRoad road = map.roads[ri];
@@ -893,10 +901,11 @@ namespace BalulaMoto.Runtime
                 for (int sideI = 0; sideI < 2; sideI++)
                 {
                     float side = sideI == 0 ? 1f : -1f;
+                    bool aligned = Goudron(road);
                     for (int row = 0; row < 3; row++)
                     {
                         System.Random rr = new System.Random(Hash(ri, sideI, row, 1));
-                        float along = 1.5f + (float)rr.NextDouble() * 4f;
+                        float along = aligned ? 0.5f + (float)rr.NextDouble() : 1.5f + (float)rr.NextDouble() * 4f;
                         // Boulevards : 10 m libres entre la chaussée et la première rangée de maisons
                         float back = half + (IsBoulevardRoad(ri) ? BoulevardRules.Setback + 0.4f : 3.0f) + row * 19.2f;
                         int k = 0;
@@ -917,13 +926,20 @@ namespace BalulaMoto.Runtime
                             }
                             int seed = Hash(ri, sideI * 8 + row, k++, 3);
                             float start = along;
-                            along += w + 0.3f + (float)rr.NextDouble() * 1.2f;
+                            // Goudron : parcelles collées les unes aux autres (pas d'espace entre deux clôtures)
+                            float spacing = (float)rr.NextDouble() * 1.2f;
+                            along += aligned ? w : w + 0.3f + spacing;
                             if (start + w > total + 2f) break;
                             Vector2 p, dir;
                             At(ri, cum, start + w * 0.5f, out p, out dir);
                             Vector2 inward = new Vector2(-dir.y, dir.x) * side;
                             // La case propriétaire est celle du centre « normal » : tirage identique d'une case à l'autre
                             if (!bounds.Contains(p + inward * (back + d * 0.5f))) continue;
+                            if (aligned)
+                            {
+                                AlignedLot(ri, road, cum, start, w, d, back, side, model, parking, seed, row, half, near, blds, cx, cz, cellKey, placed, md, go, cell);
+                                continue;
+                            }
                             for (int attempt = 0; attempt < 3; attempt++)
                             {
                                 // Modèles et parkings : dimensions fixes (pas de parcelle raccourcie)
@@ -978,6 +994,8 @@ namespace BalulaMoto.Runtime
                             if (dist < bestD) { bestD = dist; best = sg; }
                         }
                         if (bestD < 4f || bestD > 70f) continue;
+                        // Le long du goudron, seules les rangées alignées bordent la rue (pas de petite parcelle de travers)
+                        if (best.Gd && bestD < 28f) continue;
                         Vector2 dv = best.B - best.A;
                         if (dv.sqrMagnitude < 1e-4f) continue;
                         dv.Normalize();
@@ -1004,6 +1022,7 @@ namespace BalulaMoto.Runtime
             // 3) Barrières des boulevards, mobilier urbain, étals aux carrefours (modèles de MATULA DESIGN)
             Medians(cx, cz, bounds, go);
             GreenStrips(md, go.transform, cellKey);
+            ImportTrees(cellKey, go);
             RoadItems(bounds, roadsHere, near, blds, cx, cz, placed, go);
             CornerStalls(cellKey, near, blds, cx, cz, placed, md);
 
@@ -1199,14 +1218,18 @@ namespace BalulaMoto.Runtime
                 md.Tri(gL - f * (mdp * 0.5f), gL + f * (mdp * 0.5f), gL + u * rise, houseColor);
                 md.Tri(gR + f * (mdp * 0.5f), gR - f * (mdp * 0.5f), gR + u * rise, houseColor);
             }
-            // Arbre dans la cour (manguier stylisé)
+            // Arbre dans la cour : modèle fourni par MATULA DESIGN (fusionné avec ceux de la case)
             if (rnd.Next(10) < 4)
             {
                 Vector3 tp = c - f * (hd - 3.2f) + r * ((rnd.Next(2) == 0 ? -1f : 1f) * (hw - 2.5f));
-                float th = 2.6f + (float)rnd.NextDouble() * 1.6f;
-                md.Box(tp + u * (th * 0.5f), r, u, f, new Vector3(0.16f, th * 0.5f, 0.16f), Trunk, Trunk);
-                float cr = 1.8f + (float)rnd.NextDouble() * 1.2f;
-                md.Octa(tp + u * (th + cr * 0.5f), new Vector3(cr, cr * 0.75f, cr), rnd.Next(2) == 0 ? Leaves : Leaves2);
+                if (TreeModels.Ready) TreeModels.Add(batch, tp, 4.8f + (float)rnd.NextDouble() * 2.6f, rnd);
+                else
+                {
+                    float th = 2.6f + (float)rnd.NextDouble() * 1.6f;
+                    md.Box(tp + u * (th * 0.5f), r, u, f, new Vector3(0.16f, th * 0.5f, 0.16f), Trunk, Trunk);
+                    float cr = 1.8f + (float)rnd.NextDouble() * 1.2f;
+                    md.Octa(tp + u * (th + cr * 0.5f), new Vector3(cr, cr * 0.75f, cr), rnd.Next(2) == 0 ? Leaves : Leaves2);
+                }
             }
 
             // Collisions (murs et maison) : la moto ne traverse plus les parcelles

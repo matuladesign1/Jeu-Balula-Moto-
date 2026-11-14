@@ -51,8 +51,20 @@ namespace BalulaMoto.Runtime
                 if (s.Outer >= 0) medianRoads.Remove(s.Outer);
             greenByCell.Clear();
             float wb = BoulevardRules.WalkBand;
-            foreach (BoulevardRules.Strip s in boulevards.Strips)
+            foreach (BoulevardRules.Strip raw in boulevards.Strips)
             {
+                // La bande commence après la bordure et le caniveau de chaque chaussée (dessinés à l'import)
+                BoulevardRules.Strip s = raw;
+                float eIn = s.Road >= 0 && s.Road < map.roads.Count ? BoulevardRules.EdgeWidth(map.roads[s.Road]) : 0f;
+                float eOut = s.Outer >= 0 && s.Outer < map.roads.Count ? BoulevardRules.EdgeWidth(map.roads[s.Outer]) : 0f;
+                if (eIn + eOut > 0f)
+                {
+                    Vector2 m0 = (s.O0 - s.I0) / Mathf.Max(0.01f, s.W0), m1 = (s.O1 - s.I1) / Mathf.Max(0.01f, s.W1);
+                    s.I0 += m0 * eIn; s.I1 += m1 * eIn;
+                    s.O0 -= m0 * eOut; s.O1 -= m1 * eOut;
+                    s.W0 -= eIn + eOut; s.W1 -= eIn + eOut;
+                    if (s.W0 < 1f || s.W1 < 1f) continue;
+                }
                 Vector2 along = s.I1 - s.I0;
                 float len = along.magnitude;
                 if (len < 0.3f) continue;
@@ -71,6 +83,30 @@ namespace BalulaMoto.Runtime
                 if (!greenByCell.TryGetValue(k, out l)) { l = new List<GreenPiece>(); greenByCell[k] = l; }
                 l.Add(g);
             }
+        }
+
+        /// <summary>Pelouses clôturées des espaces verts du boulevard Lumumba près d'un point (foule qui y fête et s'y
+        /// promène) : centre, direction de la bande, demi-longueur et demi-largeur de la pelouse.</summary>
+        public int LawnsNear(Vector2 p, float radius, List<Vector4> centers, List<Vector2> dirs)
+        {
+            int n = 0;
+            if (greenByCell.Count == 0) return 0;
+            int cx = Mathf.FloorToInt(p.x / CellSize), cz = Mathf.FloorToInt(p.y / CellSize);
+            int reach = Mathf.CeilToInt(radius / CellSize);
+            for (int dz = -reach; dz <= reach; dz++)
+                for (int dx = -reach; dx <= reach; dx++)
+                {
+                    List<GreenPiece> l;
+                    if (!greenByCell.TryGetValue(Key(cx + dx, cz + dz), out l)) continue;
+                    foreach (GreenPiece g in l)
+                    {
+                        if (!g.HasLawn || g.Lawn.Hz < 1.2f || (g.Lawn.C - p).sqrMagnitude > radius * radius) continue;
+                        centers.Add(new Vector4(g.Lawn.C.x, g.Lawn.C.y, g.Lawn.Hx, g.Lawn.Hz));
+                        dirs.Add(g.Lawn.X);
+                        n++;
+                    }
+                }
+            return n;
         }
 
         private bool InGreen(Obb o, int cx, int cz)
@@ -144,7 +180,10 @@ namespace BalulaMoto.Runtime
 
         private void GreenTree(MeshData md, Vector2 p, System.Random rnd)
         {
-            Vector3 tp = G3(p, 0f);
+            Vector3 tp = G3(p, 0.07f);
+            // Arbres fournis par MATULA DESIGN (modèles fusionnés avec ceux de la case)
+            if (TreeModels.Ready) { TreeModels.Add(batch, tp, 5.2f + (float)rnd.NextDouble() * 2.6f, rnd); return; }
+            tp.y = 0f;
             float th = 2.4f + (float)rnd.NextDouble() * 1.6f;
             md.Box(tp + Vector3.up * (th * 0.5f), Vector3.right, Vector3.up, Vector3.forward, new Vector3(0.17f, th * 0.5f, 0.17f), Trunk, Trunk);
             float cr = 1.5f + (float)rnd.NextDouble() * 1.1f;
@@ -171,6 +210,9 @@ namespace BalulaMoto.Runtime
                 Vector2 a0 = s.I0 + n0 * wb, a1 = s.I1 + n1 * wb, b0 = s.O0 - n0 * wb, b1 = s.O1 - n1 * wb;
                 System.Random gr = new System.Random(Hash(Mathf.RoundToInt(s.I0.x * 2f), Mathf.RoundToInt(s.I0.y * 2f), 41, 3));
                 UpQuad(md, G3(a0, 0.07f), G3(a1, 0.07f), G3(b1, 0.07f), G3(b0, 0.07f), gr.Next(3) == 0 ? Lawn2 : Lawn);
+                // Trottoirs le long des deux chaussées, hors de la clôture (dalles de béton comme les autres trottoirs)
+                UpQuad(md, G3(s.I0, BoulevardRules.WalkTop), G3(s.I1, BoulevardRules.WalkTop), G3(a1, BoulevardRules.WalkTop), G3(a0, BoulevardRules.WalkTop), Concrete);
+                UpQuad(md, G3(b0, BoulevardRules.WalkTop), G3(b1, BoulevardRules.WalkTop), G3(s.O1, BoulevardRules.WalkTop), G3(s.O0, BoulevardRules.WalkTop), Concrete);
                 IronFence(md, a0, a1, barStep);
                 IronFence(md, b0, b1, barStep);
                 // Arbres : environ un tous les 9 m, sur deux rangées quand la pelouse est large

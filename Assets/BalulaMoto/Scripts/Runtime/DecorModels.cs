@@ -97,7 +97,13 @@ namespace BalulaMoto.Runtime
             if (tex == null) tex = Resources.Load<Texture2D>("BalulaMoto/" + folder + Safe(name));
             string ln = name.ToLowerInvariant();
             float smooth = ln.Contains("chrom") || ln.Contains("silver") || ln.Contains("vitre") || ln.Contains("glass") ? 0.75f : 0.12f;
-            m = new Material(Mats.Lit(c, smooth)) { name = "Decor_" + model + "_" + name };
+            // Feuilles des arbres : transparence découpée, visibles des deux côtés
+            Shader leafShader = ln.StartsWith("feuille") ? Resources.Load<Shader>("BalulaMoto/Shaders/Feuillage") : null;
+            if (leafShader == null && ln.StartsWith("feuille")) leafShader = Shader.Find("BalulaMoto/Feuillage");
+            if (leafShader != null && leafShader.isSupported)
+                m = new Material(leafShader) { name = "Decor_" + model + "_" + name };
+            else
+                m = new Material(Mats.Lit(c, smooth)) { name = "Decor_" + model + "_" + name };
             m.color = c;
             if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c);
             if (tex != null)

@@ -10,8 +10,26 @@ namespace BalulaMoto.EditorTools
     {
         private const string Folder = "Assets/BalulaMoto/Resources/BalulaMoto/Textures/";
 
+        private const string DecorFolder = "Assets/BalulaMoto/Resources/BalulaMoto/Decor/";
+
         private void OnPreprocessTexture()
         {
+            // Feuilles des arbres (cartes avec transparence découpée) : couverture conservée dans les mipmaps
+            if (assetPath.StartsWith(DecorFolder) && assetPath.Contains("_Feuilles"))
+            {
+                TextureImporter tl = assetImporter as TextureImporter;
+                if (tl == null) return;
+                tl.textureType = TextureImporterType.Default;
+                tl.alphaSource = TextureImporterAlphaSource.FromInput;
+                tl.alphaIsTransparency = true;
+                tl.mipmapEnabled = true;
+                tl.mipMapsPreserveCoverage = true;
+                tl.alphaTestReferenceValue = 0.42f;
+                tl.wrapModeU = TextureWrapMode.Clamp;
+                tl.wrapModeV = TextureWrapMode.Clamp;
+                tl.maxTextureSize = 512;
+                return;
+            }
             if (!assetPath.StartsWith(Folder)) return;
             TextureImporter ti = assetImporter as TextureImporter;
             if (ti == null) return;

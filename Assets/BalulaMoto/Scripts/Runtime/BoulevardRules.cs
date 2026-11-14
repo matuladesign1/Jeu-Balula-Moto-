@@ -20,7 +20,88 @@ namespace BalulaMoto.Runtime
         /// jusqu'à MaxGreenGap quand la bande est un espace vert d'OpenStreetMap ; seconde chaussée du boulevard
         /// (même nom, même rang) à moins de TwinGap : c'est le milieu du boulevard (barrières), pas l'espace vert.</summary>
         public const float MinGap = 3f, MaxGap = 30f, MaxGreenGap = 80f, TwinGap = 8f;
+        /// <summary>Distance la plus grande reconnue entre le grand boulevard Lumumba et un « petit boulevard »
+        /// (Petit Boulevard Résidentiel ou Industriel dans OpenStreetMap) : tout l'espace entre les deux est vert.</summary>
+        public const float MaxPetitGap = 92f;
         private const float Step = 4f;
+
+        // ------------------------------------------------------------------
+        // Bords des rues goudronnées (demande de MATULA DESIGN) : bordure, caniveau plus bas que le sol, trottoir ;
+        // caniveaux plus grands le long des boulevards. Même profil à l'import (dessin) et en jeu (parcelles, foule).
+        // ------------------------------------------------------------------
+        /// <summary>Hauteur du dessus des bordures et des trottoirs.</summary>
+        public const float CurbTop = 0.14f, WalkTop = 0.06f;
+
+        private static bool IsPaved(ImportedRoad r)
+        {
+            return r.surface == (int)SurfaceKind.Goudron || r.surface == (int)SurfaceKind.GoudronDegrade;
+        }
+
+        /// <summary>Profil du bord d'une rue goudronnée : largeur de la bordure, du caniveau et de son rebord extérieur,
+        /// profondeur du caniveau sous le sol, largeur du trottoir. Faux si la rue n'a pas ce bord (terre, ruelle).</summary>
+        public static bool GutterProfile(string name, int rank, int surface, out float curb, out float channel, out float depth, out float lip, out float walk)
+        {
+            curb = channel = depth = lip = walk = 0f;
+            bool paved = surface == (int)SurfaceKind.Goudron || surface == (int)SurfaceKind.GoudronDegrade;
+            if (!paved || rank < 3) return false;
+            string n = TextUtil.Normalize(name ?? "");
+            bool big = rank >= 8 || n.Contains("boulevard") || n.StartsWith("bd ");
+            if (big)
+            {
+                // Boulevards : grand caniveau ouvert (1 m de large, 0,85 m de profondeur), large trottoir
+                curb = 0.25f; channel = 1.0f; depth = 0.85f; lip = 0.2f; walk = 2.6f;
+            }
+            else
+            {
+                // Petites rues goudronnées : caniveau de 50 cm, trottoir jusqu'aux parcelles (posées à 3 m de la chaussée)
+                curb = 0.18f; channel = 0.5f; depth = 0.42f; lip = 0.15f; walk = 2.05f;
+            }
+            return true;
+        }
+
+        public static bool GutterProfile(ImportedRoad r, out float curb, out float channel, out float depth, out float lip, out float walk)
+        {
+            if (r == null) { curb = channel = depth = lip = walk = 0f; return false; }
+            return GutterProfile(r.name, r.rank, r.surface, out curb, out channel, out depth, out lip, out walk);
+        }
+
+        /// <summary>Largeur de la bordure, du caniveau et de son rebord (avant le trottoir), 0 sans caniveau.</summary>
+        public static float EdgeWidth(ImportedRoad r)
+        {
+            float curb, channel, depth, lip, walk;
+            return GutterProfile(r, out curb, out channel, out depth, out lip, out walk) ? curb + channel + lip : 0f;
+        }
+
+        /// <summary>Largeur totale du bord (bordure, caniveau, rebord et trottoir), 0 sans caniveau.</summary>
+        public static float SidewalkOuter(ImportedRoad r)
+        {
+            float curb, channel, depth, lip, walk;
+            return GutterProfile(r, out curb, out channel, out depth, out lip, out walk) ? curb + channel + lip + walk : 0f;
+        }
+
+        /// <summary>Distance au bord de la chaussée du milieu du trottoir (foule, étals) ; 1,3 m sans caniveau.</summary>
+        public static float WalkOffset(string name, int rank, int surface)
+        {
+            float curb, channel, depth, lip, walk;
+            if (!GutterProfile(name, rank, surface, out curb, out channel, out depth, out lip, out walk)) return 1.3f;
+            return curb + channel + lip + Mathf.Min(1.1f, walk * 0.45f);
+        }
+
+        /// <summary>Boulevards cités par le créateur (Lumumba, Sendwé, Huilerie, 24 Novembre) : au milieu, seulement les
+        /// barrières rouge et blanc (pas de bordure, ni caniveau, ni sable entre les deux chaussées).</summary>
+        public static bool IsCitedBoulevard(ImportedRoad r)
+        {
+            if (r == null || r.rank < 2) return false;
+            string n = TextUtil.Normalize(r.name ?? "");
+            bool big = r.rank >= 5 || n.Contains("boulevard") || n.StartsWith("bd ") || IsPaved(r);
+            return big && (n.Contains("lumumba") || n.Contains("sendwe") || n.Contains("huilerie") || n.Contains("24 novembre"));
+        }
+
+        /// <summary>Rue appelée « Petit Boulevard » (contre-allées du boulevard Lumumba dans OpenStreetMap).</summary>
+        public static bool IsPetitBoulevard(ImportedRoad r)
+        {
+            return r != null && TextUtil.Normalize(r.name ?? "").Contains("petit boulevard");
+        }
 
         /// <summary>Morceau de la bande entre le grand boulevard Lumumba (côté I) et le petit boulevard (côté O),
         /// entre deux stations successives (0 et 1), largeurs W0 et W1 au niveau de chaque station.</summary>
@@ -89,6 +170,9 @@ namespace BalulaMoto.Runtime
             {
                 ImportedRoad rd = roads[r];
                 if (rd == null || rd.pts == null || rd.pts.Count < 2 || rd.rank < 5 || !IsLumumba(rd)) continue;
+                // Grand boulevard seulement (pas une « Avenue Lumumba » d'un autre quartier)
+                string mn = TextUtil.Normalize(rd.name ?? "");
+                if (!mn.Contains("boulevard") && rd.rank < 7) continue;
                 mains.Add(r);
                 foreach (Vector2 p in rd.pts)
                 {
@@ -182,7 +266,7 @@ namespace BalulaMoto.Runtime
             gap = 0f;
             outer = -1;
             const float G = 50f;
-            float reach = (greens != null ? MaxGreenGap : MaxGap) + 8f;
+            float reach = Mathf.Max(MaxPetitGap, greens != null ? MaxGreenGap : MaxGap) + 8f;
             Vector2 e = o + n * reach;
             seen.Clear();
             float best = float.MaxValue;
@@ -232,6 +316,13 @@ namespace BalulaMoto.Runtime
             bool twinRank = lumumba && hit.rank >= main.rank - 1;
             // Seconde chaussée du grand boulevard tout près (milieu étroit) : ce sont les barrières du milieu
             if (twinRank && best < TwinGap) return false;
+            // Petit boulevard (Résidentiel ou Industriel) : tout l'espace jusqu'à lui devient vert, depuis son début
+            if (IsPetitBoulevard(hit) && best <= MaxPetitGap)
+            {
+                gap = best;
+                outer = bestRoad;
+                return true;
+            }
             // Bande déjà en espace vert dans OpenStreetMap (pelouse, parc, jardin...) : c'est elle
             if (greens != null && best <= MaxGreenGap && greens.Contains(o + n * (best * 0.5f)))
             {

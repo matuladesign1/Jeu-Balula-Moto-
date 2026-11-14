@@ -61,6 +61,8 @@ namespace BalulaMoto.Runtime
             if (imported != null) Roadworks.Create(worldRoot, imported);
             // Policiers à pied aux carrefours (modèle de MATULA DESIGN) : sifflet, arrêt et amende en cas d'infraction
             if (imported != null) PolicePatrol.Create(worldRoot, imported);
+            // Policiers des esplanades et de la cité Motel Fikin, joueurs des terrains, foule des espaces verts
+            if (imported != null) LieuxAnimes.Create(worldRoot, imported);
             // Poussière soulevée par les véhicules sur les avenues de terre et les trottoirs (temps sec)
             DustFx.Create(worldRoot);
             // Plan de la ville pour la mini-carte et la carte plein écran
