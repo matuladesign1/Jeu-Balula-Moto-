@@ -116,6 +116,13 @@ namespace BalulaMoto.EditorTools
                 if (waitFrames > 0 || Time.time < waitUntil)
                 {
                     if (waitFrames > 0) waitFrames--;
+                    // Partie figée par une fenêtre ouverte par le jeu (contrôle de police, client...) pendant une attente :
+                    // personne ne répond dans les photos, on la ferme après 20 s réelles
+                    if (game.Playing && Time.timeScale == 0f && game.UI.AnyModalOpen && now - waitStartReal > 20.0)
+                    {
+                        report.AppendLine("   (fenêtre du jeu ouverte pendant l'attente de l'étape " + stepIndex + " : fermée pour continuer)");
+                        game.UI.CloseAllModals();
+                    }
                     // Attente anormalement longue (jeu figé ou très lent) : diagnostic chaque minute, abandon après 4 minutes
                     if (now - lastDiag > 60.0)
                     {

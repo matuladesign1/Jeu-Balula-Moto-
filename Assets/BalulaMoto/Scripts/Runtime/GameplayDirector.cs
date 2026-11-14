@@ -151,6 +151,8 @@ namespace BalulaMoto.Runtime
             if (dt <= 0f) return;
             bool modal = UI != null && UI.AnyModalOpen;
             recentSpeedKmh = Mathf.Max(Player.SpeedKmh, recentSpeedKmh - 25f * dt);
+            // Vitesse retenue avant une série de chocs (un véhicule qui heurte la moto à l'arrêt la met en mouvement)
+            if (Time.time - lastImpactTime > 1.5f) speedBeforeImpact = recentSpeedKmh;
             Player.Controls = modal ? new DriveInput() : (TestInput.HasValue ? TestInput.Value : PlayerControls.Read(Player.Kind == VehicleKind.Moto));
             // Les phares s'allument tout seuls à la tombée de la nuit (le joueur peut toujours les éteindre)
             bool nightNow = Session.IsNight;
@@ -529,10 +531,11 @@ namespace BalulaMoto.Runtime
         // Événements physiques
         // ==================================================================
 
-        private float recentSpeedKmh;
+        private float recentSpeedKmh, speedBeforeImpact, lastImpactTime = -10f;
 
         private void OnImpact(float dv, Collider other)
         {
+            lastImpactTime = Time.time;
             float sev = VehicleWear.ApplyImpact(Session.ActiveVehicle, dv, Stats != null ? Stats.Resistance01 : 0.6f);
             RefreshStats();
             if (State == RideState.EnCourse && Metrics != null)
@@ -543,7 +546,7 @@ namespace BalulaMoto.Runtime
             }
             // Accrochage d'une autre voiture : infraction si un agent l'a vu
             // (seulement si le joueur roulait : pas d'amende quand un autre véhicule heurte la moto à l'arrêt)
-            if (other != null && other.GetComponentInParent<AIVehicle>() != null && dv > 2f && recentSpeedKmh > 12f) Infraction(PoliceSystem.Collision);
+            if (other != null && other.GetComponentInParent<AIVehicle>() != null && dv > 2f && speedBeforeImpact > 12f) Infraction(PoliceSystem.Collision);
             if (UI != null && sev > 0.15f) UI.Toast("Choc ! Carrosserie : " + Session.ActiveVehicle.carrosserie.ToString("0") + " %");
         }
 
