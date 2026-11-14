@@ -176,6 +176,8 @@ namespace BalulaMoto.EditorTools
             steps.Add(() => { StartGame(game); return true; });
             Wait(32f, 60);
             steps.Add(() => { ShootAround(game, "depart"); ShootStopAndSigns(game, "depart"); return true; });
+            Wait(1.5f, 12);
+            steps.Add(() => { ShootPhotoTricycle(); return true; });
             steps.Add(() => { BuildBajajShowcase(game); return true; });
             Wait(2f, 20);
             steps.Add(() => { ShootBajajShowcase(); return true; });
@@ -306,6 +308,7 @@ namespace BalulaMoto.EditorTools
         // Police
         // ------------------------------------------------------------------
         private static long moneyBeforeFine;
+        private static Vector3 policeSpot;
 
         private static void TeleportToPolice(BalulaGame game)
         {
@@ -330,6 +333,7 @@ namespace BalulaMoto.EditorTools
             look.y = 0f;
             if (look.sqrMagnitude < 0.01f) look = Vector3.forward;
             game.Director.SpawnPlayer(new Vector3(best.x, 0.3f, best.z), Quaternion.LookRotation(look.normalized, Vector3.up));
+            policeSpot = spot;
             moneyBeforeFine = game.Session != null ? game.Session.Profile.argent : 0;
             report.AppendLine("=== police : " + pp.PostCount + " postes dans la ville ; poste le plus proche, carrefour " + j.ToString("F0") + ", agent " + spot.ToString("F0") +
                               " ; agents réalistes (avatar en tenue congolaise, fusil) " + PoliceAgent.Realistic + " ===");
@@ -344,7 +348,24 @@ namespace BalulaMoto.EditorTools
 
         private static void ShootPolice(BalulaGame game)
         {
-            Transform a = NearestAgent(game, 80f);
+            Transform a = PolicePatrol.Instance != null ? PolicePatrol.Instance.NearestOfficer(policeSpot, 30f) : null;
+            if (a == null) a = NearestAgent(game, 80f);
+            RaycastVehicle plr = game.Director != null ? game.Director.Player : null;
+            if (a != null && plr != null)
+            {
+                // la moto du joueur ne doit pas cacher l'agent : on la recule à 11 m
+                Vector3 away = plr.transform.position - a.position;
+                away.y = 0f;
+                if (away.magnitude < 8f)
+                {
+                    if (away.sqrMagnitude < 0.01f) away = -a.forward;
+                    away.y = 0f;
+                    away.Normalize();
+                    Vector3 np = a.position + away * 11f;
+                    game.Director.SpawnPlayer(new Vector3(np.x, 0.3f, np.z), Quaternion.LookRotation(-away, Vector3.up));
+                    report.AppendLine("   moto du joueur reculée à 11 m de l'agent pour les photos");
+                }
+            }
             report.AppendLine("Agents en place autour du joueur : " + (PolicePatrol.Instance != null ? PolicePatrol.Instance.ActiveOfficers : 0));
             if (a == null) { report.AppendLine("   aucun agent à moins de 80 m"); return; }
             Vector3 c = a.position + Vector3.up * 1.0f;
@@ -550,6 +571,23 @@ namespace BalulaMoto.EditorTools
         }
 
         private static GameObject bajajShow;
+        private static AIVehicle photoTri;
+        private static string photoTriTag = "depart";
+
+        /// <summary>Tricycle de la circulation ajouté à l'étape précédente : chauffeur et passagers sont maintenant assis.</summary>
+        private static void ShootPhotoTricycle()
+        {
+            if (photoTri == null) return;
+            Transform bt = photoTri.transform;
+            Vector3 bc = bt.position + Vector3.up * 0.95f;
+            Shoot(photoTriTag + "_tricycle_trois_quarts", bc + bt.forward * 4.6f + bt.right * 3.2f + Vector3.up * 0.5f, bc);
+            Shoot(photoTriTag + "_tricycle_face", bc + bt.forward * 4.8f + Vector3.up * 0.25f, bc);
+            Shoot(photoTriTag + "_tricycle_cote", bc + bt.right * 5.2f, bc);
+            Shoot(photoTriTag + "_tricycle_arriere", bc - bt.forward * 4.6f - bt.right * 2.4f + Vector3.up * 0.4f, bc);
+            Shoot(photoTriTag + "_tricycle_interieur", bt.TransformPoint(new Vector3(1.6f, 1.75f, -0.4f)), bt.TransformPoint(new Vector3(0f, 0.8f, -0.4f)));
+            Describe("Tricycle de la circulation", photoTri.gameObject, bc + bt.right * 5.2f);
+            photoTri = null;
+        }
 
         /// <summary>Bajaj RE du joueur (modèle de MATULA DESIGN) posé près du départ, avec le chauffeur et 5 passagers assis.</summary>
         private static void BuildBajajShowcase(BalulaGame game)
@@ -560,8 +598,16 @@ namespace BalulaMoto.EditorTools
             if (pl == null || def == null) { report.AppendLine("=== Bajaj RE du joueur : définition ou joueur absent ==="); return; }
             Transform t = pl.transform;
             bajajShow = new GameObject("Photo_BajajRE");
-            bajajShow.transform.position = t.position + t.forward * 9f + Vector3.up * 0.02f;
-            bajajShow.transform.rotation = Quaternion.LookRotation(t.right, Vector3.up);
+            Vector3 fwd = t.forward, side = t.right;
+            fwd.y = 0f;
+            side.y = 0f;
+            if (fwd.sqrMagnitude < 0.01f) fwd = Vector3.forward;
+            if (side.sqrMagnitude < 0.01f) side = Vector3.Cross(Vector3.up, fwd);
+            Vector3 basePos = t.position + fwd.normalized * 9f;
+            RaycastHit gh;
+            basePos.y = Physics.Raycast(basePos + Vector3.up * 30f, Vector3.down, out gh, 60f, ~(1 << RaycastVehicle.PlayerLayer)) ? gh.point.y + 0.02f : t.position.y;
+            bajajShow.transform.position = basePos;
+            bajajShow.transform.rotation = Quaternion.LookRotation(side.normalized, Vector3.up);
             VehicleRig rig = VehicleBuilder.BuildVisual(bajajShow.transform, def, null, true);
             int seated = 0;
             foreach (Transform seat in rig.Seats)
@@ -791,13 +837,9 @@ namespace BalulaMoto.EditorTools
                     AIVehicle tri = TrafficManager.Instance.Spawn(AIVehicleType.TricycleTaxi, busPath, busS, 0f);
                     tri.Special = true;
                     Transform bt = tri.transform;
-                    report.AppendLine("Tricycle de la circulation ajouté pour la photo à " + bt.position.ToString("F0") + " — modèle Bajaj RE fourni : " + (VehicleBuilder.BajajModel != null) + ", roues : " + tri.Wheels.Count + ", longueur " + tri.Length.ToString("0.0") + " m");
-                    Vector3 bc = bt.position + Vector3.up * 0.95f;
-                    Shoot(tag + "_tricycle_trois_quarts", bc + bt.forward * 4.6f + bt.right * 3.2f + Vector3.up * 0.5f, bc);
-                    Shoot(tag + "_tricycle_face", bc + bt.forward * 4.8f + Vector3.up * 0.25f, bc);
-                    Shoot(tag + "_tricycle_cote", bc + bt.right * 5.2f, bc);
-                    Shoot(tag + "_tricycle_arriere", bc - bt.forward * 4.6f - bt.right * 2.4f + Vector3.up * 0.4f, bc);
-                    Describe("Tricycle de la circulation (Bajaj RE)", tri.gameObject, bc + bt.right * 5.2f);
+                    report.AppendLine("Tricycle de la circulation ajouté pour la photo à " + bt.position.ToString("F0") + " — modèle du tricycle : " + (VehicleBuilder.BajajModel != null) + ", roues : " + tri.Wheels.Count + ", longueur " + tri.Length.ToString("0.0") + " m (photos après installation des passagers)");
+                    photoTri = tri;
+                    photoTriTag = tag;
                 }
             }
             // Circulation : le plus proche de chaque type
