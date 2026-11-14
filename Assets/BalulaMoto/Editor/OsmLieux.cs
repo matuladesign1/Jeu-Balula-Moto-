@@ -40,14 +40,6 @@ namespace BalulaMoto.EditorTools
         // ------------------------------------------------------------------
         // Outils de géométrie
         // ------------------------------------------------------------------
-        private static float SegDist(Vector2 p, Vector2 a, Vector2 b)
-        {
-            Vector2 ab = b - a;
-            float l2 = ab.sqrMagnitude;
-            float t = l2 < 1e-6f ? 0f : Mathf.Clamp01(Vector2.Dot(p - a, ab) / l2);
-            return Vector2.Distance(p, a + ab * t);
-        }
-
         private static bool InPoly(List<Vector2> poly, Vector2 p)
         {
             bool inside = false;
