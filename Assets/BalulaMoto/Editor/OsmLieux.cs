@@ -742,7 +742,7 @@ namespace BalulaMoto.EditorTools
             }
             // 2) Pavés sur toute l'esplanade (sous les rues de desserte, la pelouse et les terrains)
             Vector2Int cell = Cell(e.M);
-            FinePolygon(Batch(areas, cell.x + "_" + cell.y + "_pave"), poly, -0.006f, 22f);
+            FinePolygon(Batch(areas, cell.x + "_" + cell.y + "_pave"), poly, 0.013f, 22f);
             // 3) Ce qu'il faut éviter : rues, modèle du monument, bâtiments gardés, eau
             List<Lot> taken = new List<Lot>();
             List<Vector3> blds = new List<Vector3>();
@@ -863,7 +863,7 @@ namespace BalulaMoto.EditorTools
                         if (!lotFree(lot, 2.5f)) continue;
                         List<Vector2> shape = round ? Circle(c, 5.2f, 20) : Chamfer(lot, 1.4f);
                         Vector2Int lc = Cell(c);
-                        Batch(areas, lc.x + "_" + lc.y + "_vert").Polygon(shape, 0.02f);
+                        Batch(areas, lc.x + "_" + lc.y + "_vert").Polygon(shape, 0.045f);
                         RingCurb(curb, round ? Circle(c, 5.4f, 20) : Chamfer(new Lot { C = c, X = e.X, Hx = lot.Hx + 0.2f, Hz = lot.Hz + 0.2f }, 1.5f), 0.16f, 0.14f);
                         taken.Add(lot);
                         lawns++;
@@ -888,7 +888,7 @@ namespace BalulaMoto.EditorTools
                     List<Vector2> sec = Sector(e.M, rIn, rIn + 9f, s * 45f + 4f, s * 45f + 41f, 6);
                     if (!SectorFree(sec, free)) continue;
                     Vector2Int lc = Cell(e.M);
-                    Batch(areas, lc.x + "_" + lc.y + "_vert").Polygon(sec, 0.02f);
+                    Batch(areas, lc.x + "_" + lc.y + "_vert").Polygon(sec, 0.045f);
                     RingCurb(curb, new List<Vector2>(sec), 0.16f, 0.14f);
                     lawns++;
                 }
@@ -904,7 +904,7 @@ namespace BalulaMoto.EditorTools
                         foreach (Vector2 p in sec) sc += p;
                         sc /= sec.Count;
                         Vector2Int lc = Cell(sc);
-                        Batch(areas, lc.x + "_" + lc.y + "_vert").Polygon(sec, 0.02f);
+                        Batch(areas, lc.x + "_" + lc.y + "_vert").Polygon(sec, 0.045f);
                         RingCurb(curb, new List<Vector2>(sec), 0.16f, 0.14f);
                         lawns++;
                         treeSpots.Add(new Vector3(sc.x, 5.5f + (float)rnd.NextDouble() * 2.5f, sc.y));
@@ -996,9 +996,9 @@ namespace BalulaMoto.EditorTools
                 {
                     float x0 = -lot.Hx + 2f * lot.Hx * i / nx, x1 = -lot.Hx + 2f * lot.Hx * (i + 1) / nx;
                     float z0 = -lot.Hz + 2f * lot.Hz * j / nz, z1 = -lot.Hz + 2f * lot.Hz * (j + 1) / nz;
-                    surf.QuadFacing(V3(lot.P(x0 - 1f, z0 - 1f), 0.026f), V3(lot.P(x1 + 1f, z0 - 1f), 0.026f), V3(lot.P(x1 + 1f, z1 + 1f), 0.026f), V3(lot.P(x0 - 1f, z1 + 1f), 0.026f), uv, uv, uv, uv, Vector3.up);
+                    surf.QuadFacing(V3(lot.P(x0 - 1f, z0 - 1f), 0.05f), V3(lot.P(x1 + 1f, z0 - 1f), 0.05f), V3(lot.P(x1 + 1f, z1 + 1f), 0.05f), V3(lot.P(x0 - 1f, z1 + 1f), 0.05f), uv, uv, uv, uv, Vector3.up);
                 }
-            const float W = 0.12f, Y = 0.034f;
+            const float W = 0.12f, Y = 0.062f;
             float hx = lot.Hx, hz = lot.Hz;
             Vector2 c00 = lot.P(-hx, -hz), c10 = lot.P(hx, -hz), c11 = lot.P(hx, hz), c01 = lot.P(-hx, hz);
             LineSeg(line, c00, c10, W, Y); LineSeg(line, c10, c11, W, Y); LineSeg(line, c11, c01, W, Y); LineSeg(line, c01, c00, W, Y);
@@ -1118,7 +1118,10 @@ namespace BalulaMoto.EditorTools
                             // Entrée contrôlée : milieu du passage et direction de la rue qui entre
                             Vector2 g0 = fp[runStart], g1 = b;
                             Vector2 gc = (g0 + g1) * 0.5f;
-                            Vector2 rd = NearestRoadDir(axes, gc);
+                            int gateRank;
+                            Vector2 rd = NearestRoadDir(axes, gc, out gateRank);
+                            // Barrière et policiers seulement sur les vraies rues (pas sur une desserte ou une piste)
+                            if (gateRank < 3) { runStart = -1; continue; }
                             Vector2 inward = InPoly(poly, gc + rd * 6f) ? rd : -rd;
                             lieux.Add(new ImportedArea { kind = "porte", name = "Entrée de la cité Motel Fikin", c = gc, x = inward, hx = Vector2.Distance(g0, g1) * 0.5f, osm = false });
                             gates++;
@@ -1193,8 +1196,9 @@ namespace BalulaMoto.EditorTools
                   .Append(" école(s) générique(s) (emplacement choisi par le jeu, aucune école de la cité dans OSM) ; destination des clients à l'intérieur.\n");
         }
 
-        private static Vector2 NearestRoadDir(List<ImportedRoad> axes, Vector2 p)
+        private static Vector2 NearestRoadDir(List<ImportedRoad> axes, Vector2 p, out int rank)
         {
+            rank = 0;
             float best = float.MaxValue;
             Vector2 dir = Vector2.right;
             foreach (ImportedRoad r in axes)
@@ -1208,6 +1212,7 @@ namespace BalulaMoto.EditorTools
                     if (v.sqrMagnitude < 0.01f) continue;
                     best = d;
                     dir = v.normalized;
+                    rank = r.rank;
                 }
             }
             return dir;
