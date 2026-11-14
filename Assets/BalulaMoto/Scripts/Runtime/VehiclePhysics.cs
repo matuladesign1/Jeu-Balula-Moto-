@@ -29,6 +29,8 @@ namespace BalulaMoto.Runtime
         public List<Renderer> IndicatorsRight = new List<Renderer>();
         public Light HeadLamp;
         public GameObject Driver;
+        /// <summary>Modèles fournis : emplacement de la plaque arrière et de l'autocollant (côté gauche), sinon positions par défaut.</summary>
+        public Transform PlateAnchor, StickerAnchor;
     }
 
     public class WheelState

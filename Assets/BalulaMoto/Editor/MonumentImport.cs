@@ -28,8 +28,11 @@ namespace BalulaMoto.EditorTools
             mi.isReadable = vehicle;
             mi.meshCompression = ModelImporterMeshCompression.Off;
             mi.weldVertices = true;
-            // Les fichiers n'ont pas de normales : faces nettes (angle de lissage faible)
-            mi.importNormals = ModelImporterNormals.Calculate;
+            // Fichiers sans normales : faces nettes (angle de lissage faible) ; fichiers qui fournissent leurs normales
+            // (Bajaj RE : bords arrondis) : normales du fichier
+            bool hasNormals = false;
+            try { hasNormals = assetPath.EndsWith(".obj") && System.IO.File.ReadAllText(assetPath).Contains("\nvn "); } catch (System.Exception) { }
+            mi.importNormals = hasNormals ? ModelImporterNormals.Import : ModelImporterNormals.Calculate;
             mi.normalSmoothingAngle = vehicle ? 40f : 30f;
             mi.importTangents = ModelImporterTangents.None;
             mi.materialImportMode = ModelImporterMaterialImportMode.ImportStandard;

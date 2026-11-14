@@ -176,6 +176,9 @@ namespace BalulaMoto.EditorTools
             steps.Add(() => { StartGame(game); return true; });
             Wait(32f, 60);
             steps.Add(() => { ShootAround(game, "depart"); ShootStopAndSigns(game, "depart"); return true; });
+            steps.Add(() => { BuildBajajShowcase(game); return true; });
+            Wait(2f, 20);
+            steps.Add(() => { ShootBajajShowcase(); return true; });
             // Police : poste le plus proche, agents, piéton bousculé devant l'agent, arrêt, amende payée
             steps.Add(() => { TeleportToPolice(game); return true; });
             Wait(8f, 30);
@@ -540,6 +543,49 @@ namespace BalulaMoto.EditorTools
             Shoot("riviere_tranchee_de_haut", c + Vector3.up * 45f + dir * 0.5f, c);
         }
 
+        private static GameObject bajajShow;
+
+        /// <summary>Bajaj RE du joueur (modèle de MATULA DESIGN) posé près du départ, avec le chauffeur et 5 passagers assis.</summary>
+        private static void BuildBajajShowcase(BalulaGame game)
+        {
+            report.AppendLine();
+            RaycastVehicle pl = game.Director != null ? game.Director.Player : null;
+            VehicleDef def = game.Db != null ? game.Db.Vehicle("bajaj_re") : null;
+            if (pl == null || def == null) { report.AppendLine("=== Bajaj RE du joueur : définition ou joueur absent ==="); return; }
+            Transform t = pl.transform;
+            bajajShow = new GameObject("Photo_BajajRE");
+            bajajShow.transform.position = t.position + t.forward * 9f + Vector3.up * 0.02f;
+            bajajShow.transform.rotation = Quaternion.LookRotation(t.right, Vector3.up);
+            VehicleRig rig = VehicleBuilder.BuildVisual(bajajShow.transform, def, null, true);
+            int seated = 0;
+            foreach (Transform seat in rig.Seats)
+            {
+                GameObject h = VehicleBuilder.BuildHuman(seat, Vector3.zero, seated % 2 == 0 ? "civil" : "pagne", true, 300 + seated, false);
+                if (h != null) seated++;
+            }
+            Bounds b = new Bounds(bajajShow.transform.position, Vector3.zero);
+            foreach (Renderer r in bajajShow.GetComponentsInChildren<Renderer>()) if (r.GetComponentInParent<HumanAvatar>() == null) b.Encapsulate(r.bounds);
+            float headTop = 0f;
+            foreach (HumanAvatar h in bajajShow.GetComponentsInChildren<HumanAvatar>())
+                foreach (Renderer r in h.GetComponentsInChildren<Renderer>()) headTop = Mathf.Max(headTop, r.bounds.max.y - bajajShow.transform.position.y);
+            report.AppendLine("=== Bajaj RE du joueur : modèle fourni " + (VehicleBuilder.BajajModel != null) + ", roues " + rig.Wheels.Count + ", places " + rig.Seats.Count + " (" + seated + " passagers posés), chauffeur " + (rig.Driver != null) +
+                              ", taille " + b.size.x.ToString("0.00") + " × " + b.size.y.ToString("0.00") + " × " + b.size.z.ToString("0.00") + " m, sommet des têtes à " + headTop.ToString("0.00") + " m (toit à 1,70 m, dessous à 1,52 m) ===");
+        }
+
+        private static void ShootBajajShowcase()
+        {
+            if (bajajShow == null) return;
+            Transform bt = bajajShow.transform;
+            Vector3 c = bt.position + Vector3.up * 0.9f;
+            Shoot("bajaj_joueur_trois_quarts_avant", c + bt.forward * 4.4f - bt.right * 3.0f + Vector3.up * 0.6f, c);
+            Shoot("bajaj_joueur_cote", c - bt.right * 5.0f + Vector3.up * 0.1f, c);
+            Shoot("bajaj_joueur_arriere", c - bt.forward * 4.4f + bt.right * 2.6f + Vector3.up * 0.5f, c);
+            Shoot("bajaj_joueur_interieur", c + bt.forward * 2.2f + Vector3.up * 1.6f - bt.right * 0.9f, c - Vector3.up * 0.2f);
+            Describe("Bajaj RE du joueur", bajajShow, c - bt.right * 5.0f);
+            UnityEngine.Object.Destroy(bajajShow);
+            bajajShow = null;
+        }
+
         private static bool jamMade;
 
         private static void JamTest(BalulaGame game)
@@ -715,7 +761,7 @@ namespace BalulaMoto.EditorTools
             Shoot(tag + "_chauffeur_face", p + t.forward * 3.6f + Vector3.up * 1.6f, p + Vector3.up * 1.15f);
             Describe("Véhicule du joueur et chauffeur", player.gameObject, t.position + t.right * 2.6f);
 
-            // Un bus TRANSCO (modèle de MATULA DESIGN) arrêté sur la voie la plus proche : face, trois-quarts, côté, arrière
+            // Un tricycle de la circulation (Bajaj RE de MATULA DESIGN) arrêté sur la voie la plus proche : face, trois-quarts, côté, arrière
             if (TrafficManager.Instance != null)
             {
                 TrafficPath busPath = null;
@@ -733,16 +779,16 @@ namespace BalulaMoto.EditorTools
                 }
                 if (busPath != null)
                 {
-                    AIVehicle bus = TrafficManager.Instance.Spawn(AIVehicleType.BusTransco, busPath, busS, 0f);
-                    bus.Special = true;
-                    Transform bt = bus.transform;
-                    report.AppendLine("Bus TRANSCO ajouté pour la photo à " + bt.position.ToString("F0") + " — modèle fourni : " + (VehicleBuilder.TranscoModel != null) + ", roues : " + bus.Wheels.Count + ", longueur " + bus.Length.ToString("0.0") + " m");
-                    Vector3 bc = bt.position + Vector3.up * 1.6f;
-                    Shoot(tag + "_bus_transco_trois_quarts", bc + bt.forward * 11f + bt.right * 7f + Vector3.up * 0.6f, bc);
-                    Shoot(tag + "_bus_transco_face", bc + bt.forward * 9f + Vector3.up * 0.2f, bt.position + bt.forward * 5.6f + Vector3.up * 1.7f);
-                    Shoot(tag + "_bus_transco_cote", bc + bt.right * 12f, bc);
-                    Shoot(tag + "_bus_transco_arriere", bc - bt.forward * 11f - bt.right * 5f + Vector3.up * 0.5f, bc);
-                    Describe("Bus TRANSCO", bus.gameObject, bc + bt.right * 12f);
+                    AIVehicle tri = TrafficManager.Instance.Spawn(AIVehicleType.TricycleTaxi, busPath, busS, 0f);
+                    tri.Special = true;
+                    Transform bt = tri.transform;
+                    report.AppendLine("Tricycle de la circulation ajouté pour la photo à " + bt.position.ToString("F0") + " — modèle Bajaj RE fourni : " + (VehicleBuilder.BajajModel != null) + ", roues : " + tri.Wheels.Count + ", longueur " + tri.Length.ToString("0.0") + " m");
+                    Vector3 bc = bt.position + Vector3.up * 0.95f;
+                    Shoot(tag + "_tricycle_trois_quarts", bc + bt.forward * 4.6f + bt.right * 3.2f + Vector3.up * 0.5f, bc);
+                    Shoot(tag + "_tricycle_face", bc + bt.forward * 4.8f + Vector3.up * 0.25f, bc);
+                    Shoot(tag + "_tricycle_cote", bc + bt.right * 5.2f, bc);
+                    Shoot(tag + "_tricycle_arriere", bc - bt.forward * 4.6f - bt.right * 2.4f + Vector3.up * 0.4f, bc);
+                    Describe("Tricycle de la circulation (Bajaj RE)", tri.gameObject, bc + bt.right * 5.2f);
                 }
             }
             // Circulation : le plus proche de chaque type

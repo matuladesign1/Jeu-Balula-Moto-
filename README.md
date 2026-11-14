@@ -22,6 +22,10 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
 - **Carte** : mini-carte et carte plein écran avec légende.
 - **Sauvegardes automatiques** (carrière et libre séparées).
 
+### Nouveautés de la version 4.3.1
+
+- **Tricycle Bajaj RE de MATULA DESIGN** : le tricycle « Bajaj RE » du joueur et tous les tricycles de la circulation utilisent désormais le modèle fourni (caisse bleue, bâche crème, vitres, rétroviseurs, feux, plaque jaune). Hauteur ramenée à celle du vrai Bajaj RE (1,71 m), roues au diamètre réel, intérieur aménagé pour le chauffeur et 5 passagers assis ; l'essuie-glace balaie le pare-brise quand il pleut.
+
 ### Nouveautés de la version 4.3
 
 - **Policiers dans les rues** : agents à pied aux carrefours (dessin fourni par MATULA DESIGN). Si vous bousculez un piéton ou accrochez une voiture devant un agent, il siffle, vient au véhicule, vous payez l'amende et vous repartez.

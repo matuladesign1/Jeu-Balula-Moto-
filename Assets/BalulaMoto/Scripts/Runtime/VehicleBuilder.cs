@@ -123,9 +123,11 @@ namespace BalulaMoto.Runtime
             if (def.Kind == VehicleKind.Moto) BuildMoto(rig, def, ov, main, second, rim, withDriver);
             else BuildTricycle(rig, def, ov, main, second, rim, withDriver);
             string plate = ov != null && !string.IsNullOrEmpty(ov.plaque) ? ov.plaque : "BLM-0000-KN";
-            AddPlate(rig.Body, plate, def.Kind == VehicleKind.Moto ? new Vector3(0f, 0.7f, -def.longueurM * 0.5f + 0.04f) : new Vector3(0f, 0.55f, -def.longueurM * 0.5f - 0.02f));
+            Vector3 platePos = def.Kind == VehicleKind.Moto ? new Vector3(0f, 0.7f, -def.longueurM * 0.5f + 0.04f) : new Vector3(0f, 0.55f, -def.longueurM * 0.5f - 0.02f);
+            if (rig.PlateAnchor != null) platePos = rig.PlateAnchor.localPosition;
+            AddPlate(rig.Body, plate, platePos);
             if (ov != null && !string.IsNullOrEmpty(ov.autocollant) && ov.autocollant != "Aucun")
-                AddSticker(rig.Body, ov.autocollant, def);
+                AddSticker(rig.Body, ov.autocollant, def, rig.StickerAnchor);
             return rig;
         }
 
@@ -164,11 +166,12 @@ namespace BalulaMoto.Runtime
             Prims.Label(body, text, pos + new Vector3(0f, 0f, -0.01f), 0.011f, Black, false);
         }
 
-        private static void AddSticker(Transform body, string sticker, VehicleDef def)
+        private static void AddSticker(Transform body, string sticker, VehicleDef def, Transform anchor)
         {
             float x = def.Kind == VehicleKind.Moto ? 0.18f : def.largeurM * 0.5f + 0.03f;
             float y = def.Kind == VehicleKind.Moto ? 0.88f : 0.95f;
             float z = def.Kind == VehicleKind.Moto ? 0.28f : -0.3f;
+            if (anchor != null) { x = Mathf.Abs(anchor.localPosition.x); y = anchor.localPosition.y; z = anchor.localPosition.z; }
             GameObject l = Prims.Label(body, sticker, new Vector3(x, y, z), 0.012f, Color.white, false);
             l.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
             GameObject r = Prims.Label(body, sticker, new Vector3(-x, y, z), 0.012f, Color.white, false);
@@ -271,6 +274,8 @@ namespace BalulaMoto.Runtime
             bool cargo = d.style == "tricycle_cargo";
             bool bajaj = d.style == "tricycle_bajaj";
             float front = L * 0.5f;
+            // Bajaj RE : modèle fourni par MATULA DESIGN (ModelVehicles.cs) ; le tricycle dessiné par le jeu reste en secours
+            if (d.id == "bajaj_re" && BuildModelTricycle(rig, d, main, second, rim, withDriver)) return;
 
             Wheel(rig, b, "RoueAV", new Vector3(0f, r, wb * 0.55f), r, 0.12f, rim);
             Wheel(rig, b, "RoueARG", new Vector3(-track, r, -wb * 0.45f), r, 0.13f, rim);
@@ -573,6 +578,10 @@ namespace BalulaMoto.Runtime
 
             if (type == AIVehicleType.TricycleTaxi)
             {
+                // Tous les tricycles de la circulation : Bajaj RE de MATULA DESIGN (ModelVehicles.cs), sinon le tricycle dessiné
+                GameObject mt = BuildModelTricycleTraffic(root, rnd, seed, out length, brakeLights, hazards, wheels);
+                if (mt != null) return mt;
+                length = L;
                 // Tricycle-taxi : une roue avant, deux roues arrière, cabine à toit de bâche, banquette arrière
                 wheels.Add(TrafficWheel(t, new Vector3(0f, r, 1.05f), r, 0.12f));
                 foreach (float sx in new[] { -1f, 1f }) wheels.Add(TrafficWheel(t, new Vector3(sx * 0.55f, r, -0.85f), r, 0.14f));

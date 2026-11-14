@@ -1,0 +1,88 @@
+newmtl Body_Blue_Reference
+Kd 0.1284 0.5064 0.8095
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Bumper_Black_Grey
+Kd 0.2060 0.2209 0.2478
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Canopy_Off_White_Beige
+Kd 0.8860 0.8703 0.8323
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Window_Glass_Tinted
+Kd 0.3811 0.4731 0.5064
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Tyre_Rubber
+Kd 0.1121 0.1232 0.1334
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Metal_Silver
+Kd 0.6800 0.7014 0.7220
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Tail_Lamp_Red
+Kd 0.7674 0.1121 0.1428
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Indicator_Amber
+Kd 1.0000 0.5271 0.1284
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Headlamp_White
+Kd 0.9163 0.9309 0.9163
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Plate_Yellow
+Kd 1.0000 0.8267 0.1284
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Seat_Light_Grey
+Kd 0.7858 0.7797 0.7548
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
