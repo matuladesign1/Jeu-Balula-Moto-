@@ -164,18 +164,54 @@ namespace BalulaMoto.EditorTools
         private static void Plan(BalulaGame game)
         {
             steps.Clear();
+            steps.Add(() => { Header(); PrepareUI(); return true; });
+            Wait(0f, 8);
             steps.Add(() =>
             {
-                Header();
+                ShootUI("menu_accueil");
                 ShootMain("menu_garage");
                 foreach (HumanAvatar h in Compat.FindAll<HumanAvatar>())
                     if (h != null && (h.transform.position - GarageScene.Origin).sqrMagnitude < 400f)
                         Describe("Chauffeur du garage", h.gameObject, Camera.main != null ? Camera.main.transform.position : h.transform.position);
                 return true;
             });
+            // Garage du menu : plateau tournant, moto centrale puis les deux Honda, onglet chauffeur
+            steps.Add(() => { game.UI.OpenShowroom(false); return true; });
+            // Menu : le jeu est en pause (temps arrêté), on attend des images et non des secondes de jeu
+            Wait(0f, 24);
+            foreach (string vid in new[] { "tvs_hlx150", "honda_cb750_four", "honda_classique", "bajaj_re" })
+            {
+                string v = vid;
+                steps.Add(() => { if (!game.UI.Showroom.SelectVehicle(v)) report.AppendLine("Garage : modèle absent " + v); return true; });
+                Wait(0f, 10);
+                steps.Add(() => { PrepareUI(); return true; });
+                Wait(0f, 8);
+                steps.Add(() => { ShootUI("garage_plateau_" + v); return true; });
+            }
+            steps.Add(() => { game.UI.Showroom.ShowDriverTab(); return true; });
+            Wait(0f, 10);
+            steps.Add(() => { PrepareUI(); return true; });
+            Wait(0f, 8);
+            steps.Add(() => { ShootUI("garage_chauffeur"); game.UI.Close(game.UI.Showroom); return true; });
+            Wait(0f, 8);
             steps.Add(() => { StartGame(game); return true; });
             Wait(32f, 60);
-            steps.Add(() => { ShootAround(game, "depart"); ShootStopAndSigns(game, "depart"); return true; });
+            steps.Add(() => { ShootAround(game, "depart"); ShootStopAndSigns(game, "depart"); ShootPlayerMoto(game); return true; });
+            // Modèles de MATULA DESIGN dans la ville (novembre 2026)
+            steps.Add(() => { TeleportToRoadNamed(game, "lumumba"); return true; });
+            Wait(14f, 40);
+            steps.Add(() => { ShootModels(game, "lumumba"); return true; });
+            steps.Add(() => { TeleportToGreenStrip(game); return true; });
+            Wait(12f, 40);
+            steps.Add(() => { ShootGreenStrip(game); return true; });
+            steps.Add(() => { TeleportToRoadNamed(game, "huilerie"); return true; });
+            Wait(12f, 40);
+            steps.Add(() => { ShootModels(game, "huilerie"); return true; });
+            steps.Add(() => { TeleportToDirtStreet(game); return true; });
+            Wait(12f, 40);
+            steps.Add(() => { ShootModels(game, "quartier"); DustRun(game, true); return true; });
+            Wait(2.5f, 15);
+            steps.Add(() => { ShootDust(game); DustRun(game, false); return true; });
             Wait(1.5f, 12);
             steps.Add(() => { ShootPhotoTricycle(); return true; });
             steps.Add(() => { BuildBajajShowcase(game); return true; });
@@ -199,18 +235,12 @@ namespace BalulaMoto.EditorTools
                 Wait(12f, 30);
                 steps.Add(() => { ShootMonument(game, mn); return true; });
             }
-            // Rivière et pont les plus proches du centre
-            steps.Add(() => { TeleportToWater(game); return true; });
-            Wait(10f, 30);
-            steps.Add(() => { ShootStreet(game, "riviere"); ShootRiver(game); return true; });
+            // (rivière et chantier : vérifiés dans les livraisons précédentes, photos retirées pour garder la durée)
             // Embouteillage sur une rue goudronnée (créé près du joueur pour la photo)
             steps.Add(() => { JamTest(game); return true; });
             Wait(6f, 30);
             steps.Add(() => { ShootJam(game); return true; });
-            // Chantier le plus proche (route en travaux)
-            steps.Add(() => { TeleportToWorks(game); return true; });
-            Wait(10f, 30);
-            steps.Add(() => { ShootStreet(game, "chantier"); return true; });
+
             // Une grande avenue de jour, puis la même de nuit (lampadaires, fenêtres, phares)
             steps.Add(() => { Teleport(game, 0); return true; });
             Wait(22f, 40);
@@ -779,6 +809,183 @@ namespace BalulaMoto.EditorTools
                               ", distance " + Vector3.Distance(from, pos).ToString("0") + " m");
         }
 
+        /// <summary>Moto du joueur (moto centrale du jeu) vue de près.</summary>
+        private static void ShootPlayerMoto(BalulaGame game)
+        {
+            RaycastVehicle pl = game.Director != null ? game.Director.Player : null;
+            if (pl == null) return;
+            Transform t = pl.transform;
+            Vector3 c = t.position + Vector3.up * 0.65f;
+            Shoot("moto_centrale_trois_quarts", c + t.forward * 2.6f + t.right * 1.9f + Vector3.up * 0.35f, c);
+            Shoot("moto_centrale_profil", c + t.right * 3.2f + Vector3.up * 0.1f, c);
+            Shoot("moto_centrale_arriere", c - t.forward * 2.8f - t.right * 1.4f + Vector3.up * 0.5f, c);
+            report.AppendLine("Moto du joueur : " + (game.Session != null && game.Session.ActiveDef != null ? game.Session.ActiveDef.nom + " (modèle " + game.Session.ActiveDef.modele3d + ")" : "?"));
+        }
+
+        /// <summary>Le joueur est posé sur la rue dont le nom contient le mot donné (la plus longue).</summary>
+        private static void TeleportToRoadNamed(BalulaGame game, string key)
+        {
+            report.AppendLine();
+            ImportedWorld map = Compat.FindFirst<ImportedWorld>();
+            if (map == null || game.Director == null) { report.AppendLine("=== " + key + " : pas de carte ==="); return; }
+            ImportedRoad best = null;
+            float bestLen = 0f;
+            foreach (ImportedRoad r in map.roads)
+            {
+                if (r.rank < 3 || string.IsNullOrEmpty(r.name) || !TextUtil.Normalize(r.name).Contains(key)) continue;
+                float len = 0f;
+                for (int i = 0; i < r.pts.Count - 1; i++) len += Vector2.Distance(r.pts[i], r.pts[i + 1]);
+                if (len > bestLen) { bestLen = len; best = r; }
+            }
+            if (best == null) { report.AppendLine("=== " + key + " : rue introuvable dans la carte ==="); return; }
+            int k = best.pts.Count / 2;
+            Vector2 a = best.pts[Mathf.Max(0, k - 1)], b = best.pts[Mathf.Min(best.pts.Count - 1, k + 1)];
+            Vector2 d = (b - a).normalized;
+            Vector2 p = best.pts[k] + new Vector2(d.y, -d.x) * Mathf.Min(3.2f, best.width * 0.3f);
+            game.Director.SpawnPlayer(new Vector3(p.x, 0.3f, p.y), Quaternion.LookRotation(new Vector3(d.x, 0f, d.y), Vector3.up));
+            report.AppendLine("=== " + best.name + " (" + bestLen.ToString("0") + " m, largeur " + best.width.ToString("0.0") + " m, rang " + best.rank + ") : joueur posé au milieu ===");
+        }
+
+        private static Vector3 greenInner, greenOuter, greenAlong;
+        private static bool greenFound;
+
+        /// <summary>Le joueur est posé sur le grand boulevard Lumumba, au droit du milieu de l'espace vert.</summary>
+        private static void TeleportToGreenStrip(BalulaGame game)
+        {
+            report.AppendLine();
+            CityFill cf = CityFill.Instance;
+            greenFound = cf != null && cf.GreenPieces > 0 && cf.GreenSample(cf.GreenPieces / 2, out greenInner, out greenOuter, out greenAlong);
+            if (!greenFound || game.Director == null)
+            {
+                report.AppendLine("=== Espace vert de Lumumba : aucune bande trouvée entre le grand et le petit boulevard (" + (cf != null ? cf.GreenPieces : -1) + " morceaux) ===");
+                return;
+            }
+            Vector3 across = (greenOuter - greenInner).normalized;
+            Vector3 pos = greenInner - across * 2.5f + Vector3.up * 0.3f;
+            game.Director.SpawnPlayer(pos, Quaternion.LookRotation(greenAlong, Vector3.up));
+            report.AppendLine("=== Espace vert de Lumumba : " + cf.GreenPieces + " morceaux (" + (cf.GreenLength / 1000f).ToString("0.00") + " km) ; largeur ici " +
+                              Vector3.Distance(greenInner, greenOuter).ToString("0.0") + " m ; joueur sur le grand boulevard ===");
+        }
+
+        private static void ShootGreenStrip(BalulaGame game)
+        {
+            if (!greenFound) return;
+            Vector3 across = (greenOuter - greenInner).normalized;
+            Vector3 mid = (greenInner + greenOuter) * 0.5f;
+            Shoot("lumumba_espace_vert_depuis_le_boulevard", greenInner - across * 4f - greenAlong * 10f + Vector3.up * 2.2f, mid + greenAlong * 6f + Vector3.up * 0.8f);
+            Shoot("lumumba_espace_vert_vu_d_en_haut", mid - greenAlong * 16f + Vector3.up * 14f, mid + greenAlong * 6f);
+            Shoot("lumumba_cloture_fer_noir", greenInner + across * 1.0f - greenAlong * 3f + Vector3.up * 1.5f, greenInner + across * 2.2f + greenAlong * 3f + Vector3.up * 0.8f);
+        }
+
+        /// <summary>Rue de terre (non goudronnée) assez longue, proche du joueur.</summary>
+        private static void TeleportToDirtStreet(BalulaGame game)
+        {
+            report.AppendLine();
+            ImportedWorld map = Compat.FindFirst<ImportedWorld>();
+            if (map == null || game.Director == null || game.Director.Player == null) return;
+            Vector3 from = game.Director.Player.transform.position;
+            ImportedRoad best = null;
+            float bd = float.MaxValue;
+            foreach (ImportedRoad r in map.roads)
+            {
+                if (r.rank != 3 || r.surface == (int)SurfaceKind.Goudron || r.surface == (int)SurfaceKind.GoudronDegrade || r.pts.Count < 3) continue;
+                float len = 0f;
+                for (int i = 0; i < r.pts.Count - 1; i++) len += Vector2.Distance(r.pts[i], r.pts[i + 1]);
+                if (len < 220f) continue;
+                Vector2 m = r.pts[r.pts.Count / 2];
+                float dd = (new Vector2(from.x, from.z) - m).sqrMagnitude;
+                if (dd < bd) { bd = dd; best = r; }
+            }
+            if (best == null) { report.AppendLine("=== quartier : aucune rue de terre ==="); return; }
+            int k = best.pts.Count / 2;
+            Vector2 d = (best.pts[k + 1] - best.pts[k - 1]).normalized;
+            Vector2 p = best.pts[k] + new Vector2(d.y, -d.x) * 1.2f;
+            game.Director.SpawnPlayer(new Vector3(p.x, 0.3f, p.y), Quaternion.LookRotation(new Vector3(d.x, 0f, d.y), Vector3.up));
+            report.AppendLine("=== Quartier : rue de terre « " + best.name + " » (surface " + (SurfaceKind)best.surface + ") ===");
+        }
+
+        /// <summary>Photos des modèles posés autour du joueur : maisons, immeubles, barrières, étals, parkings, voitures, motos.</summary>
+        private static void ShootModels(BalulaGame game, string tag)
+        {
+            RaycastVehicle pl = game.Director != null ? game.Director.Player : null;
+            if (pl == null) return;
+            Vector3 pp = pl.transform.position;
+            CityFill cf = CityFill.Instance;
+            if (cf != null)
+                report.AppendLine("   Ville : " + cf.ModelHouses + " maisons de modèle, " + cf.Towers + " immeubles, " + cf.Barriers + " barrières, " + cf.Stalls + " étals, " +
+                                  cf.ParkedVehicles + " véhicules garés (cases chargées : " + cf.LoadedCells + ")");
+            if (cf != null)
+                report.AppendLine("   Boulevards (10 m libres devant les maisons) : " + cf.BoulevardCount + " tronçons ; espace vert de Lumumba : " + cf.GreenPieces + " morceaux, " +
+                                  (cf.GreenLength / 1000f).ToString("0.00") + " km");
+            if (CrowdSystem.Instance != null) report.AppendLine("   Vendeurs aux étals : " + CrowdSystem.Instance.StallVendors + " ; piétons : " + CrowdSystem.Instance.Count);
+            ShootStreet(game, tag);
+            HashSet<string> done = new HashSet<string>();
+            for (int i = CityFill.RecentSpots.Count - 1; i >= 0; i--)
+            {
+                CityFill.Spot sp = CityFill.RecentSpots[i];
+                if (done.Contains(sp.Kind) || (sp.P - pp).sqrMagnitude > 160f * 160f) continue;
+                done.Add(sp.Kind);
+                Vector3 f = sp.Face.sqrMagnitude > 0.01f ? sp.Face.normalized : Vector3.forward;
+                Vector3 r = Vector3.Cross(Vector3.up, f);
+                switch (sp.Kind)
+                {
+                    case "immeuble": Shoot(tag + "_immeuble", sp.P + f * 30f + r * 12f + Vector3.up * 6f, sp.P + Vector3.up * 14f); break;
+                    case "cottage":
+                    case "maison": Shoot(tag + "_" + sp.Kind, sp.P + f * 17f + r * 7f + Vector3.up * 5f, sp.P + Vector3.up * 2.2f); break;
+                    case "barriere": Shoot(tag + "_barrieres", sp.P + r * 14f + f * 4f + Vector3.up * 2.4f, sp.P + Vector3.up * 0.5f); break;
+                    case "etal": Shoot(tag + "_etal", sp.P + f * 4.2f + r * 1.6f + Vector3.up * 1.7f, sp.P + Vector3.up * 0.9f); break;
+                    case "parking": Shoot(tag + "_parking", sp.P + f * 11f + r * 5f + Vector3.up * 4.5f, sp.P + Vector3.up * 0.6f); break;
+                    case "mobilier": Shoot(tag + "_mobilier", sp.P + f * 4f + r * 2f + Vector3.up * 1.6f, sp.P + Vector3.up * 0.5f); break;
+                    case "bande_verte": Shoot(tag + "_espace_vert", sp.P - f * 9f + r * 9f + Vector3.up * 3.2f, sp.P + Vector3.up * 0.9f); break;
+                }
+            }
+            // Voitures génériques et motos des modèles fournis dans la circulation
+            if (game.Traffic != null)
+            {
+                Dictionary<string, int> types = new Dictionary<string, int>();
+                bool car = false, moto = false;
+                foreach (AIVehicle v in game.Traffic.Vehicles)
+                {
+                    if (v == null) continue;
+                    string k = v.name.StartsWith("PNJ_MotoTaxi_") ? v.name.Substring(4) : v.Type.ToString();
+                    int n;
+                    types.TryGetValue(k, out n);
+                    types[k] = n + 1;
+                    Transform t = v.transform;
+                    if (!car && VehicleBuilder.IsCarModelType(v.Type) && (t.position - pp).sqrMagnitude < 120f * 120f)
+                    {
+                        car = true;
+                        Shoot(tag + "_voiture_" + v.Type, t.position + t.forward * 5.5f + t.right * 3.5f + Vector3.up * 1.6f, t.position + Vector3.up * 0.7f);
+                    }
+                    if (!moto && v.name.StartsWith("PNJ_MotoTaxi_") && (t.position - pp).sqrMagnitude < 120f * 120f)
+                    {
+                        moto = true;
+                        Shoot(tag + "_" + v.name.Substring(4), t.position + t.forward * 3f + t.right * 2.2f + Vector3.up * 1.2f, t.position + Vector3.up * 0.8f);
+                    }
+                }
+                StringBuilder sb = new StringBuilder("   Circulation :");
+                foreach (KeyValuePair<string, int> kv in types) sb.Append(' ').Append(kv.Key).Append('×').Append(kv.Value);
+                report.AppendLine(sb.ToString());
+            }
+            int walkingPolice = 0;
+            foreach (AgentRonde r in Compat.FindAll<AgentRonde>()) if (r != null) walkingPolice++;
+            report.AppendLine("   Policiers en ronde : " + walkingPolice + " ; jour de pluie : " + (game.Session != null && WorldEnvironment.RainyDay(game.Session.Profile.jour)));
+        }
+
+        private static void DustRun(BalulaGame game, bool on)
+        {
+            GameplayDirector.TestInput = on ? new DriveInput { Throttle = 1f } : null;
+        }
+
+        private static void ShootDust(BalulaGame game)
+        {
+            RaycastVehicle pl = game.Director != null ? game.Director.Player : null;
+            if (pl == null) return;
+            Transform t = pl.transform;
+            report.AppendLine("   Poussière : surface " + pl.CurrentSurface + ", " + pl.SpeedKmh.ToString("0") + " km/h, particules émises " + (DustFx.Instance != null ? DustFx.Instance.Emitted : -1));
+            Shoot("poussiere_derriere_la_moto", t.position - t.forward * 7f + t.right * 2.5f + Vector3.up * 2.2f, t.position + Vector3.up * 0.6f);
+        }
+
         private static void TeleportToWorks(BalulaGame game)
         {
             ImportedWorld map = Compat.FindFirst<ImportedWorld>();
@@ -1046,16 +1253,42 @@ namespace BalulaMoto.EditorTools
             Render(name, cam);
         }
 
-        private static void Shoot(string name, Vector3 pos, Vector3 look)
+        private static RenderMode uiPrevMode;
+        private static bool uiPrepared;
+
+        /// <summary>Étape 1 d'une photo avec l'interface : le canevas passe en mode caméra sur la caméra photo,
+        /// activée et dessinant dans la texture, pour que l'interface soit dans l'image.</summary>
+        private static void PrepareUI()
         {
+            Canvas c = UIManager.Instance != null ? UIManager.Instance.Canvas : null;
+            if (c == null) { uiPrepared = false; return; }
             Camera cam = SnapCamera();
-            cam.transform.position = pos;
-            Vector3 d = look - pos;
-            cam.transform.rotation = d.sqrMagnitude > 1e-4f ? Quaternion.LookRotation(d.normalized, Vector3.up) : Quaternion.identity;
-            Render(name, cam);
+            EnsureTarget();
+            cam.targetTexture = rt;
+            cam.aspect = (float)W / H;
+            cam.cullingMask |= (1 << 5) | (1 << c.gameObject.layer);
+            cam.enabled = true;
+            uiPrevMode = c.renderMode;
+            c.renderMode = RenderMode.ScreenSpaceCamera;
+            c.worldCamera = cam;
+            c.planeDistance = cam.nearClipPlane + 0.6f;
+            uiPrepared = true;
         }
 
-        private static void Render(string name, Camera cam)
+        /// <summary>Étape 2 (quelques images plus tard) : photo avec l'interface, puis le canevas revient en surimpression.</summary>
+        private static void ShootUI(string name)
+        {
+            Canvas c = UIManager.Instance != null ? UIManager.Instance.Canvas : null;
+            if (!uiPrepared || snap == null || c == null) { report.AppendLine("   (interface non préparée : photo sans interface)"); ShootMain(name); return; }
+            Canvas.ForceUpdateCanvases();
+            Render(name, snap);
+            snap.enabled = false;
+            c.renderMode = uiPrevMode;
+            c.worldCamera = null;
+            uiPrepared = false;
+        }
+
+        private static void EnsureTarget()
         {
             if (rt == null)
             {
@@ -1064,6 +1297,11 @@ namespace BalulaMoto.EditorTools
                 rt.Create();
             }
             if (tex == null) tex = new Texture2D(W, H, TextureFormat.RGB24, false);
+        }
+
+        private static void Render(string name, Camera cam)
+        {
+            EnsureTarget();
             cam.targetTexture = rt;
             cam.aspect = (float)W / H;
             cam.Render();

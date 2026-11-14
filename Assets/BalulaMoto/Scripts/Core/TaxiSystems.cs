@@ -72,6 +72,9 @@ namespace BalulaMoto.Core
 
     public static class ClientGenerator
     {
+        /// <summary>Distance de route maximale d'une course (km), même pour les longues courses.</summary>
+        public const float MaxRoadKm = 1.5f;
+
         /// <summary>
         /// Génère un client à "origin" pour le véhicule donné. Respecte la capacité réelle du véhicule
         /// et l'édit de Kinshasa (avril 2026) : pas de mineurs ni de femmes enceintes sur les taxis-motos.
@@ -93,14 +96,15 @@ namespace BalulaMoto.Core
             }
             ClientType type = types.Count > 0 ? types[rng.WeightedIndex(weights)] : null;
 
-            // Destination : surtout des petites courses de quartier (comme à Kinshasa), parfois une course moyenne,
-            // rarement une longue. Distances « à vol d'oiseau » ; la distance routière ajoute environ 30 %.
-            //   courte  : 0,45 à 1,7 km (≈ 0,6 à 2,2 km de route)   — 65 % des clients
-            //   moyenne : 1,7 à 3,5 km (≈ 2,2 à 4,5 km de route)    — 25 %
-            //   longue  : 3,5 à 7 km   (≈ 4,5 à 9 km de route)      — 10 %
-            double[][] bands = { new[] { 450.0, 1700.0 }, new[] { 1700.0, 3500.0 }, new[] { 3500.0, 7000.0 } };
+            // Destination : des courses de quartier. Même les plus longues ne dépassent pas 1,5 km de route (demande de
+            // MATULA DESIGN, novembre 2026). Distances « à vol d'oiseau » ; la distance routière ajoute le détour (≈ 30 %).
+            //   courte  : 0,3 à 0,58 km (≈ 0,4 à 0,75 km de route)   — 55 % des clients
+            //   moyenne : 0,58 à 0,9 km (≈ 0,75 à 1,17 km de route)  — 30 %
+            //   longue  : 0,9 à 1,15 km (≈ 1,17 à 1,5 km de route)   — 15 %
+            double maxStraight = MaxRoadKm * 1000.0 / Math.Max(1f, rules.facteurDetour);
+            double[][] bands = { new[] { 300.0, maxStraight * 0.5 }, new[] { maxStraight * 0.5, maxStraight * 0.78 }, new[] { maxStraight * 0.78, maxStraight } };
             float roll = rng.Value();
-            int band = roll < 0.65f ? 0 : (roll < 0.9f ? 1 : 2);
+            int band = roll < 0.55f ? 0 : (roll < 0.85f ? 1 : 2);
             List<PlaceRef> candidates = new List<PlaceRef>();
             List<int> destWeights = new List<int>();
             for (int attempt = 0; attempt < 3 && candidates.Count == 0; attempt++)
@@ -118,14 +122,14 @@ namespace BalulaMoto.Core
             }
             if (candidates.Count == 0)
             {
-                // Secours : la destination la plus proche à plus de 300 m
+                // Secours : la destination la plus proche à plus de 250 m
                 PlaceRef best = null;
                 double bestD = double.MaxValue;
                 foreach (PlaceRef p in places)
                 {
                     if (p == origin || p.Id == origin.Id) continue;
                     double d = origin.DistanceTo(p);
-                    if (d >= 300 && d < bestD) { bestD = d; best = p; }
+                    if (d >= 250 && d < bestD) { bestD = d; best = p; }
                 }
                 if (best == null) return null;
                 candidates.Add(best);

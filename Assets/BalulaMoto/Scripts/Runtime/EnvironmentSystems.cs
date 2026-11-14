@@ -105,17 +105,40 @@ namespace BalulaMoto.Runtime
         }
 
         /// <summary>Saison des pluies à Kinshasa : environ octobre à mai ; saison sèche : juin à septembre.</summary>
-        private WeatherKind RandomWeather(int day)
+        private static bool RainySeason(int day)
         {
             int month = ((day - 1) / 30 + 10) % 12; // la partie commence en novembre
-            bool rainySeason = month <= 4 || month >= 9;
+            return month <= 4 || month >= 9;
+        }
+
+        private static bool RainRoll(int day)
+        {
+            double r = new System.Random(day * 7919 + 17).NextDouble();
+            return r < (RainySeason(day) ? 0.34 : 0.05);
+        }
+
+        /// <summary>Jour de pluie (tirage stable par jour de jeu) : environ un jour sur trois en saison des pluies, très
+        /// rarement en saison sèche, et jamais trois jours de pluie de suite. Les autres jours, il ne pleut pas.</summary>
+        public static bool RainyDay(int day)
+        {
+            if (!RainRoll(day)) return false;
+            return !(day > 2 && RainRoll(day - 1) && RainRoll(day - 2));
+        }
+
+        private WeatherKind RandomWeather(int day)
+        {
             float r = Random.value;
-            if (rainySeason)
+            if (RainyDay(day))
             {
-                if (r < 0.35f) return WeatherKind.Soleil;
-                if (r < 0.6f) return WeatherKind.Nuageux;
-                if (r < 0.82f) return WeatherKind.Pluie;
-                if (r < 0.92f) return WeatherKind.Orage;
+                if (r < 0.2f) return WeatherKind.Soleil;
+                if (r < 0.55f) return WeatherKind.Nuageux;
+                if (r < 0.87f) return WeatherKind.Pluie;
+                return WeatherKind.Orage;
+            }
+            if (RainySeason(day))
+            {
+                if (r < 0.55f) return WeatherKind.Soleil;
+                if (r < 0.93f) return WeatherKind.Nuageux;
                 return WeatherKind.Brouillard;
             }
             if (r < 0.5f) return WeatherKind.Soleil;

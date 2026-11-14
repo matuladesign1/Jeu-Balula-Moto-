@@ -7,8 +7,8 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
 
 ## Ce qui est jouable
 
-- **Menu principal (garage)** : Rouler (continuer), Nouvelle partie, Acheter, Améliorer, Personnaliser, Chauffeur, Missions, Garage, Mode libre, Paramètres, Crédits, Quitter.
-- **Deux véhicules de départ** : moto TVS HLX 150 bleue (REF-KIN-001) ou tricycle jaune et noir 5 places : 2 à côté du chauffeur + 3 derrière (REF-KIN-002).
+- **Menu principal (garage)** : trois cartes (Carrière, Mode libre, Garage), Rouler, Boutique, Nouvelle partie, Paramètres, Crédits, Quitter. Le **garage** présente le véhicule sur un plateau tournant (vitesse, accélération, freinage, maniabilité, réservoir, places, état, prix) avec Améliorer, Boutique, Acheter / Rouler et l'onglet Chauffeur ; missions, personnalisation et atelier restent accessibles pendant la partie.
+- **Deux véhicules de départ** : la moto centrale « Kin Classic 150 » (modèle « moto1 » de MATULA DESIGN, à la place de l'ancienne TVS HLX 150 — REF-KIN-001) ou le tricycle 5 places : 2 à côté du chauffeur + 3 derrière (REF-KIN-002).
 - **Conduite** : physique à roues (suspension, adhérence selon goudron / terre / boue / poussière / nids-de-poule / pluie), freins avant et arrière séparés sur moto, marche arrière (tricycle) et recul aux pieds (moto), chutes et tricycle renversé, usure progressive.
 - **Clients** : ils font signe aux arrêts ; on négocie le prix (« Combien jusqu'à… ? »), en français, lingala ou mixte ; contre-offres, clients qui partent ; note de 1 à 5 étoiles selon le prix, le temps, la sécurité, la conduite, le confort et le respect ; pourboires.
 - **Économie en FC** : carburant (station, point de vente, Kadafi avec risque de mauvaise qualité), panne sèche (Kadafi livré ou pousser), atelier (moteur, pneus, freins, vidange, suspension, lavage, carrosserie), documents du véhicule (fictifs).
@@ -21,6 +21,41 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
 - **Caméras** : arrière fixe, rapprochée, 1re personne, tableau de bord (tricycle), libre (glisser le doigt).
 - **Carte** : mini-carte et carte plein écran avec légende.
 - **Sauvegardes automatiques** (carrière et libre séparées).
+
+### Nouveautés de la version 4.4.0
+
+- **Maisons et immeubles fournis par MATULA DESIGN** dans la ville : la maison « cottage » le long des rues goudronnées
+  (bien plus nombreuse sur le boulevard Lumumba), la maison « fhouse » dans les quartiers, avenues et rues de terre (jamais
+  au bord du goudron), et les **cinq immeubles** au bord de presque toutes les rues (surtout les goudronnées). Chaque maison
+  a sa parcelle (mur ou clôture, portail) ; les immeubles ont une cour, des fenêtres allumées la nuit et des collisions.
+- **Barrières rouges et blanches au milieu** des boulevards Lumumba, Sendwe, Huilerie et 24 Novembre (repérés par
+  leur nom dans OpenStreetMap), avec une ouverture à chaque carrefour.
+- **Boulevards dégagés** : sur tous les boulevards, 10 m restent libres entre la chaussée et les maisons ou bâtiments
+  (maisons du jeu et bâtiments OpenStreetMap trop proches retirés ; les rues ne sont pas déplacées).
+- **Boulevard Lumumba** : entre le grand boulevard et le petit boulevard parallèle, plus aucune maison — un espace vert
+  (pelouse et arbres) fermé par une clôture de barreaux de fer noirs, avec un trottoir le long des deux chaussées et une
+  ouverture à chaque rue qui traverse. La bande est reconnue d'après le tracé OpenStreetMap (à vérifier sur place).
+- **Moto centrale** : le modèle « moto1 » remplace l'ancienne moto de départ (même emplacement de sauvegarde, rien à
+  racheter) ; elle roule aussi dans la circulation.
+- **Honda CB750 Four et Honda Classique 125** (fichiers de MATULA DESIGN) : dans la circulation, garées sur les
+  parkings et **en vente dans la boutique**. Acheter ne demande jamais de vendre sa moto.
+- **Voitures** : trois voitures génériques (coupé, citadine, SUV) dessinées pour le jeu, sans logo ni marque, à la place
+  des fichiers Dodge, Lexus et Nissan, dans la circulation et sur les **parkings** ajoutés au bord des goudrons.
+- **Mobilier de rue** sur une partie des goudrons : bancs, bennes, fûts, cônes, glissières, auvents, cartons.
+- **Vendeurs à leurs tables** dans toutes les rues : 2 à 3 étals à chaque carrefour et devant des parcelles (tables,
+  nappes, marchandises, parasols ou auvents, tabourets), avec les vendeurs debout derrière.
+- **Nouveau menu et nouveau garage**, inspirés des captures envoyées, adaptés au jeu et avec peu de boutons.
+- **Poussière** derrière les véhicules dans les avenues de terre et sur les trottoirs, par temps sec (pas après la pluie).
+- **Policiers animés** : les agents des carrefours font leur ronde à pied autour du carrefour (pauses, discussions), et
+  des policiers marchent dans toutes les rues comme les autres habitants.
+- **Piétons prudents** : ils fuient un véhicule qui fonce sur eux, et ne restent jamais sur le goudron (seulement sur les
+  trottoirs et dans les avenues de terre).
+- **Pluie moins fréquente** : environ un jour sur trois en saison des pluies, rarement en saison sèche, jamais trois jours
+  de pluie d'affilée.
+- **Courses longues limitées à 1,5 km**.
+- **Restent à vérifier** : licences des fichiers 3D d'origine ; identité exacte de la « Honda classique » ; fiches
+  techniques et prix estimés. Le fichier « Boulevard.skp » (format SketchUp 2026) ne peut pas être lu ici : un export
+  .dae, .fbx ou .obj est nécessaire. Le fichier 9 (licence CC BY-NC, non commerciale) n'a pas été ajouté.
 
 ### Nouveautés de la version 4.3.1
 

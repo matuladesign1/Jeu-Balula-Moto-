@@ -11,12 +11,16 @@ namespace BalulaMoto.Runtime
         public static GarageScene Instance;
         public static readonly Vector3 Origin = new Vector3(-7000f, 0f, -7000f);
 
-        private Transform motoSlot, riderSlot;
-        private GameObject moto, rider;
-        private string motoKey, riderKey;
+        private Transform motoSlot, riderSlot, turntable, tableSlot;
+        private GameObject moto, rider, shown;
+        private string motoKey, riderKey, shownKey;
+        private bool showroom;
 
         public Vector3 CameraPosition { get { return Origin + new Vector3(-0.9f, 1.55f, -3.5f); } }
         public Vector3 CameraLook { get { return Origin + new Vector3(-0.15f, 0.95f, 0.8f); } }
+        /// <summary>Garage du menu (sélection du véhicule) : le plateau tournant au centre, la fiche à gauche de l'écran.</summary>
+        public Vector3 ShowroomCameraPosition { get { return Origin + new Vector3(-1.05f, 1.6f, -3.4f); } }
+        public Vector3 ShowroomCameraLook { get { return Origin + new Vector3(-0.55f, 0.62f, 1.0f); } }
 
         public static GarageScene Create()
         {
@@ -149,6 +153,65 @@ namespace BalulaMoto.Runtime
             riderSlot.SetParent(t, false);
             riderSlot.localPosition = new Vector3(1.75f, 0f, 0.35f);
             riderSlot.localRotation = Quaternion.Euler(0f, 205f, 0f);
+
+            // Plateau tournant (tôle striée) : le véhicule choisi y tourne dans le garage du menu
+            turntable = new GameObject("Plateau").transform;
+            turntable.SetParent(t, false);
+            turntable.localPosition = new Vector3(0.45f, 0f, 1.0f);
+            Material plate = TexMat("tole", new Color(0.32f, 0.33f, 0.36f), new Vector2(6f, 6f), 0.55f);
+            GameObject disc = Prims.Cyl(turntable, "Disque", new Vector3(0f, 0.03f, 0f), 3.4f, 0.06f, Color.gray);
+            disc.GetComponent<Renderer>().sharedMaterial = plate;
+            Prims.Cyl(turntable, "Bord", new Vector3(0f, 0.015f, 0f), 3.5f, 0.03f, new Color(0.12f, 0.12f, 0.13f));
+            tableSlot = new GameObject("PlaceSurPlateau").transform;
+            tableSlot.SetParent(turntable, false);
+            tableSlot.localPosition = new Vector3(0f, 0.06f, 0f);
+            turntable.gameObject.SetActive(false);
+        }
+
+        /// <summary>Garage du menu : plateau tournant visible (vrai) ou moto exposée devant le rideau (faux).</summary>
+        public void SetShowroom(bool on)
+        {
+            showroom = on;
+            if (turntable != null) turntable.gameObject.SetActive(on);
+            if (moto != null) moto.SetActive(!on);
+            if (!on && shown != null) { Destroy(shown); shown = null; shownKey = null; }
+            // Le chauffeur reste debout à côté du plateau
+            if (riderSlot != null) riderSlot.localPosition = on ? new Vector3(2.05f, 0f, 0.15f) : new Vector3(1.75f, 0f, 0.35f);
+        }
+
+        /// <summary>Véhicule posé sur le plateau tournant (possédé ou modèle du magasin).</summary>
+        public void ShowVehicle(VehicleDef def, OwnedVehicle ov)
+        {
+            if (def == null || tableSlot == null) return;
+            string key = def.id + "|" + (ov != null ? ov.instanceId + ov.couleurPrincipale + ov.couleurSecondaire + ov.jantes + ov.autocollant + ov.plaque : "neuf");
+            if (key == shownKey && shown != null) return;
+            if (shown != null) Destroy(shown);
+            shown = VehicleBuilder.BuildPreview(def, ov);
+            shown.transform.SetParent(tableSlot, false);
+            shown.transform.localPosition = new Vector3(0f, 0f, def.IsMoto ? 0f : -0.1f);
+            shown.transform.localRotation = Quaternion.identity;
+            foreach (Collider c in shown.GetComponentsInChildren<Collider>()) c.enabled = false;
+            foreach (Rigidbody r in shown.GetComponentsInChildren<Rigidbody>()) r.isKinematic = true;
+            shownKey = key;
+        }
+
+        /// <summary>Change seulement le chauffeur debout (onglet CHAUFFEUR du garage).</summary>
+        public void RefreshRider()
+        {
+            string av = GameSettings.DriverAvatar ?? "";
+            if (av == riderKey && rider != null) return;
+            if (rider != null) Destroy(rider);
+            rider = HumanLibrary.SpawnNamed(av, riderSlot, Vector3.zero, "chauffeur", false, 5, false);
+            if (rider == null) rider = VehicleBuilder.BuildHuman(riderSlot, Vector3.zero, "chauffeur", false, 5, false);
+            rider.transform.localRotation = Quaternion.identity;
+            foreach (Animator a in rider.GetComponentsInChildren<Animator>()) a.updateMode = AnimatorUpdateMode.UnscaledTime;
+            riderKey = av;
+        }
+
+        private void Update()
+        {
+            // Le plateau tourne en temps réel (le menu met le jeu en pause)
+            if (showroom && turntable != null) turntable.Rotate(0f, Time.unscaledDeltaTime * 18f, 0f, Space.Self);
         }
 
         /// <summary>Met à jour la moto exposée (véhicule actif de la dernière partie) et le chauffeur choisi.</summary>
@@ -181,6 +244,7 @@ namespace BalulaMoto.Runtime
                     // Tricycle plus long : on le recule un peu pour qu'il tienne dans le cadre
                     motoSlot.localPosition = def.IsMoto ? new Vector3(0.65f, 0f, 0.9f) : new Vector3(0.2f, 0f, 1.6f);
                 }
+                if (moto != null) moto.SetActive(!showroom);
             }
             string av = GameSettings.DriverAvatar ?? "";
             if (av != riderKey || rider == null)

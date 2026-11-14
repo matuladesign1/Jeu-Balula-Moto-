@@ -252,15 +252,19 @@ namespace BalulaMoto.Runtime
         {
             // Kinshasa : beaucoup de taxis jaunes, de minibus et de motos-taxis ; bus TRANSCO partout (8 %)
             float r = Random.value;
-            if (r < 0.21f) return AIVehicleType.TaxiJaune;
-            if (r < 0.36f) return AIVehicleType.MinibusJaune;
-            if (r < 0.56f) return AIVehicleType.MotoTaxi;
-            if (r < 0.65f) return AIVehicleType.Berline;
-            if (r < 0.69f) return AIVehicleType.MinibusBlanc;
-            if (r < 0.77f) return AIVehicleType.BusTransco;
-            if (r < 0.80f) return AIVehicleType.CamionRemorque;
-            if (r < 0.84f) return AIVehicleType.CamionCiterne;
-            if (r < 0.89f) return AIVehicleType.Pickup;
+            if (r < 0.19f) return AIVehicleType.TaxiJaune;
+            if (r < 0.32f) return AIVehicleType.MinibusJaune;
+            if (r < 0.52f) return AIVehicleType.MotoTaxi;
+            if (r < 0.57f) return AIVehicleType.Berline;
+            // Voitures génériques (coupé, citadine, SUV) : dans toutes les rues et sur le goudron
+            if (r < 0.61f) return AIVehicleType.VoitureCoupe;
+            if (r < 0.66f) return AIVehicleType.VoitureCitadine;
+            if (r < 0.70f) return AIVehicleType.VoitureSUV;
+            if (r < 0.73f) return AIVehicleType.MinibusBlanc;
+            if (r < 0.80f) return AIVehicleType.BusTransco;
+            if (r < 0.83f) return AIVehicleType.CamionRemorque;
+            if (r < 0.86f) return AIVehicleType.CamionCiterne;
+            if (r < 0.90f) return AIVehicleType.Pickup;
             if (r < 0.95f) return AIVehicleType.QuatreQuatre;
             return AIVehicleType.TricycleTaxi;
         }

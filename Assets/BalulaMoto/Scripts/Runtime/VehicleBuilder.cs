@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace BalulaMoto.Runtime
 {
-    public enum AIVehicleType { TaxiJaune, MinibusJaune, BusTransco, MinibusBlanc, PoliceKabasele, CamionRemorque, MotoTaxi, Berline, CamionCiterne, Pickup, QuatreQuatre, TricycleTaxi }
+    public enum AIVehicleType { TaxiJaune, MinibusJaune, BusTransco, MinibusBlanc, PoliceKabasele, CamionRemorque, MotoTaxi, Berline, CamionCiterne, Pickup, QuatreQuatre, TricycleTaxi, VoitureCoupe, VoitureCitadine, VoitureSUV }
 
     /// <summary>Personnage (maquette) : membres articulés pour les gestes simples.</summary>
     public class HumanFigure : MonoBehaviour
@@ -183,6 +183,8 @@ namespace BalulaMoto.Runtime
         // ------------------------------------------------------------------
         private static void BuildMoto(VehicleRig rig, VehicleDef d, OwnedVehicle ov, Color main, Color second, Color rim, bool withDriver)
         {
+            // Motos des modèles fournis par MATULA DESIGN (ModelMotos.cs) ; la moto dessinée par le jeu reste en secours
+            if (!string.IsNullOrEmpty(d.modele3d) && BuildModelMoto(rig, d, ov, main, second, rim, withDriver)) return;
             Transform b = rig.Body;
             float r = d.rayonRoueM, wb = d.empattementM, L = d.longueurM;
             bool sport = d.style == "sport", trail = d.style == "trail", longSeat = d.style == "boxer" || d.passagers >= 2;
@@ -539,12 +541,25 @@ namespace BalulaMoto.Runtime
                 case AIVehicleType.Pickup: L = 5.3f; W = 1.85f; H = 1.85f; r = 0.38f; body = new[] { new Color(0.94f, 0.94f, 0.93f), new Color(0.7f, 0.71f, 0.73f), new Color(0.1f, 0.1f, 0.11f), new Color(0.55f, 0.08f, 0.08f) }[rnd.Next(4)]; break;
                 case AIVehicleType.QuatreQuatre: L = 4.9f; W = 1.9f; H = 1.9f; r = 0.4f; body = new[] { new Color(0.07f, 0.07f, 0.08f), new Color(0.95f, 0.95f, 0.95f), new Color(0.45f, 0.47f, 0.5f), new Color(0.1f, 0.15f, 0.3f) }[rnd.Next(4)]; break;
                 case AIVehicleType.TricycleTaxi: L = 2.9f; W = 1.3f; H = 1.95f; r = 0.27f; body = new[] { new Color(0.97f, 0.78f, 0.1f), new Color(0.1f, 0.5f, 0.2f), new Color(0.12f, 0.3f, 0.7f) }[rnd.Next(3)]; break;
+                case AIVehicleType.VoitureCoupe: L = 5.0f; W = 1.92f; H = 1.42f; r = 0.35f; body = CarPaints[rnd.Next(CarPaints.Length)]; break;
+                case AIVehicleType.VoitureCitadine: L = 3.8f; W = 1.66f; H = 1.52f; r = 0.29f; body = CarPaints[rnd.Next(CarPaints.Length)]; break;
+                case AIVehicleType.VoitureSUV: L = 4.5f; W = 1.84f; H = 1.6f; r = 0.36f; body = CarPaints[rnd.Next(CarPaints.Length)]; break;
                 default: L = 4.4f; W = 1.75f; H = 1.45f; r = 0.32f; body = rnd.Next(2) == 0 ? new Color(0.85f, 0.86f, 0.88f) : new Color(0.15f, 0.16f, 0.18f); break;
             }
             length = L;
 
             if (type == AIVehicleType.MotoTaxi)
             {
+                // Motos des modèles fournis (Honda classique, Honda CB750, moto centrale) ; la moto dessinée par le jeu reste
+                // la plus courante
+                int pick = rnd.Next(100);
+                string motoModel = pick < 26 ? "HondaClassique" : (pick < 42 ? "HondaCB750" : (pick < 56 ? "MotoCentrale" : null));
+                if (motoModel != null)
+                {
+                    GameObject mm = BuildModelMotoTraffic(root, motoModel, rnd, seed, out length, brakeLights, hazards, wheels);
+                    if (mm != null) return mm;
+                    length = L;
+                }
                 wheels.Add(TrafficWheel(t, new Vector3(0f, r, 0.65f), r, 0.1f));
                 wheels.Add(TrafficWheel(t, new Vector3(0f, r, -0.65f), r, 0.1f));
                 // Moto-taxi : cadre, moteur, réservoir, selle longue, fourche, guidon, phare
@@ -614,6 +629,15 @@ namespace BalulaMoto.Runtime
                 brakeLights.Add(Lamp(t, "Stop", new Vector3(0.5f, 0.6f, -1.1f), new Vector3(0.12f, 0.08f, 0.04f), RedLight));
                 AddTrafficBody(root, new Vector3(1.3f, 1.9f, 2.9f), new Vector3(0f, 0.95f, 0f));
                 return root;
+            }
+
+            // Voitures génériques (ModelCars.cs) ; en secours, une berline dessinée par le jeu
+            if (IsCarModelType(type))
+            {
+                GameObject mc = BuildModelCar(root, CarModelFor(type), body, out length, brakeLights, hazards, wheels);
+                if (mc != null) return mc;
+                length = L;
+                type = AIVehicleType.Berline;
             }
 
             // Bus TRANSCO : modèle fourni par MATULA DESIGN (ModelVehicles.cs), le bus dessiné par le jeu reste en secours

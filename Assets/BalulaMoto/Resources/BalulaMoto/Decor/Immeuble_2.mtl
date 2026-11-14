@@ -1,0 +1,27 @@
+newmtl Imm2_Facade
+Kd 0.8600 0.8800 0.9000
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+map_Kd Immeuble_2_Imm2_Facade.jpg
+
+newmtl Imm2_Socle
+Kd 1.0000 1.0000 1.0000
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+map_Kd Immeuble_2_Imm2_Socle.jpg
+
+newmtl Imm2_Toit
+Kd 0.8000 0.8000 0.7800
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+map_Kd Immeuble_2_Imm2_Toit.jpg
+

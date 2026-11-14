@@ -459,6 +459,8 @@ namespace BalulaMoto.Runtime
         {
             public Vector3 Junction;
             public Vector3 P1, P2;
+            /// <summary>Direction de la ronde de chaque agent (le long de la rue principale, en s'éloignant du carrefour).</summary>
+            public Vector3 A1, A2;
             public Quaternion R1, R2;
             public bool Two;
             public GameObject G1, G2;
@@ -553,7 +555,7 @@ namespace BalulaMoto.Runtime
                 Vector2 p2 = j - na * (hwa + 1.5f) + da * back;
                 if (!ClearOf(map, rs, p1) || !ClearOf(map, rs, p2)) continue;
                 Vector3 J = new Vector3(j.x, 0f, j.y);
-                Post post = new Post { Junction = J, P1 = new Vector3(p1.x, 0f, p1.y), P2 = new Vector3(p2.x, 0f, p2.y) };
+                Post post = new Post { Junction = J, P1 = new Vector3(p1.x, 0f, p1.y), P2 = new Vector3(p2.x, 0f, p2.y), A1 = new Vector3(-da.x, 0f, -da.y), A2 = new Vector3(da.x, 0f, da.y) };
                 post.R1 = Quaternion.LookRotation(Flat(J - post.P1));
                 post.R2 = Quaternion.LookRotation(Flat(J - post.P2));
                 post.Two = (c.Value & 0x7fffffffL) % 3 == 0 || map.roads[ra].rank >= 5;
@@ -669,6 +671,9 @@ namespace BalulaMoto.Runtime
                         if (p.G1 != null || (p.Junction - pp).sqrMagnitude > BuildDist * BuildDist) continue;
                         p.G1 = PoliceAgent.Create(transform, new Vector3(p.P1.x, GroundAt(p.P1), p.P1.z), p.R1, i * 2 + 1);
                         if (p.Two) p.G2 = PoliceAgent.Create(transform, new Vector3(p.P2.x, GroundAt(p.P2), p.P2.z), p.R2, i * 2 + 2);
+                        // Les agents ne restent pas figés : ils font leur ronde le long du trottoir (animés)
+                        AgentRonde.Attach(p.G1, p.A1, p.Junction, i * 2 + 1);
+                        AgentRonde.Attach(p.G2, p.A2, p.Junction, i * 2 + 2);
                         built.Add(i);
                     }
                 }
@@ -725,6 +730,7 @@ namespace BalulaMoto.Runtime
         {
             if (officer == null || vehicle == null) return;
             if (moving != null && moving != officer) Release();
+            AgentRonde.SetPaused(officer, true);
             moving = officer;
             home = officer.position;
             homeRot = officer.rotation;
@@ -761,6 +767,7 @@ namespace BalulaMoto.Runtime
         {
             yield return new WaitForSecondsRealtime(moveDur + 0.1f);
             if (moving == m) moving = null;
+            AgentRonde.SetPaused(m, false);
         }
 
         /// <summary>Position du poste le plus proche (pour les photos de contrôle).</summary>
@@ -775,6 +782,80 @@ namespace BalulaMoto.Runtime
                 if (d < bd) { bd = d; junction = post.Junction; officerSpot = post.P1; found = true; }
             }
             return found;
+        }
+    }
+
+    /// <summary>Agent de faction qui fait sa ronde : il marche le long du trottoir de la rue principale (en s'éloignant
+    /// du carrefour, jamais sur la chaussée), s'arrête, discute ou attend, puis repart. Animé comme les autres passants.</summary>
+    public class AgentRonde : MonoBehaviour
+    {
+        public Vector3 Home, Along, Junction;
+        public float Range = 14f;
+        private Vector3 target;
+        private float timer, speed;
+        private bool walking, paused;
+        private System.Random rnd;
+
+        public static void Attach(GameObject officer, Vector3 along, Vector3 junction, int seed)
+        {
+            if (officer == null || officer.GetComponent<HumanAvatar>() == null) return;
+            AgentRonde r = officer.AddComponent<AgentRonde>();
+            r.Home = officer.transform.position;
+            r.Along = along.sqrMagnitude > 0.01f ? along.normalized : officer.transform.right;
+            r.Junction = junction;
+            r.rnd = new System.Random(seed * 7919 + 13);
+            r.timer = 1f + (float)r.rnd.NextDouble() * 6f;
+            r.speed = 1.05f + (float)r.rnd.NextDouble() * 0.3f;
+            r.target = r.Home;
+        }
+
+        public static void SetPaused(Transform officer, bool on)
+        {
+            if (officer == null) return;
+            AgentRonde r = officer.GetComponent<AgentRonde>();
+            if (r == null) return;
+            r.paused = on;
+            if (!on)
+            {
+                // Retour du contrôle : nouvelle ronde depuis l'endroit où il se trouve
+                r.walking = false;
+                r.timer = 2f + (float)r.rnd.NextDouble() * 3f;
+            }
+        }
+
+        private void Update()
+        {
+            if (paused) return;
+            float dt = Time.deltaTime;
+            if (dt <= 0f) return;
+            if (!walking)
+            {
+                timer -= dt;
+                if (timer > 0f) return;
+                float k = (float)rnd.NextDouble() * Range;
+                target = Home + Along * k;
+                target.y = Home.y;
+                walking = true;
+                PoliceAgent.SetAction(transform, HumanAction.Walk);
+                return;
+            }
+            Vector3 d = target - transform.position;
+            d.y = 0f;
+            float dist = d.magnitude;
+            if (dist < 0.12f)
+            {
+                walking = false;
+                timer = 4f + (float)rnd.NextDouble() * 9f;
+                int a = rnd.Next(10);
+                PoliceAgent.SetAction(transform, a < 3 ? HumanAction.Talk : (a < 7 ? HumanAction.Wait : HumanAction.Idle));
+                // À l'arrêt, l'agent surveille le carrefour
+                Vector3 look = Junction - transform.position;
+                look.y = 0f;
+                if (look.sqrMagnitude > 0.5f) transform.rotation = Quaternion.LookRotation(look);
+                return;
+            }
+            transform.position += d / dist * Mathf.Min(dist, speed * dt);
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(d), Mathf.Clamp01(dt * 6f));
         }
     }
 }

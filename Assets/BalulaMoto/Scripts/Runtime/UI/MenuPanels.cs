@@ -8,133 +8,116 @@ using UnityEngine.UI;
 namespace BalulaMoto.Runtime
 {
     // =====================================================================
-    // Menu principal
+    // Menu principal (sélection du mode) : cartes de mode à gauche, cadre d'information sur le garage 3D à droite,
+    // BOUTIQUE et ROULER en bas — d'après les captures envoyées par MATULA DESIGN, avec peu de boutons
     // =====================================================================
     public class MainMenuPanel : UIPanel
     {
-        private Button continueButton;
-        private Text savesText, worldText, moneyText, levelText, vehicleText, fuelText, rideLabel;
-        private readonly List<Image> fuelSegments = new List<Image>();
-        private static readonly Color Tile = new Color(0.04f, 0.05f, 0.08f, 0.84f);
+        private MenuStyle.Header header;
+        private int selected;
+        private readonly Text[] tags = new Text[3];
+        private readonly Image[] frames = new Image[3];
+        private readonly Image[] tagBacks = new Image[3];
+        private Text infoTitle, infoText, vehicleText, worldText, savesText;
+        private Button rideButton;
+        private float lastClick;
+        private int lastCard = -1;
+        private static readonly string[] Titles = { "CARRIÈRE", "MODE LIBRE", "GARAGE" };
+        private static readonly string[] Subs = { "Courses, réputation et provinces", "Roulez librement dans Kinshasa", "Motos, tricycles et chauffeur" };
+        private static readonly string[] Infos =
+        {
+            "Devenez le meilleur chauffeur de taxi-moto de Kinshasa : prenez des clients, négociez le prix, respectez le code de la route, gagnez votre réputation et achetez de nouvelles motos et de nouveaux tricycles.",
+            "Roulez sans objectif dans les rues réelles de Kinshasa, de jour comme de nuit : explorez les boulevards, les avenues et les quartiers à votre rythme.",
+            "Choisissez votre véhicule sur le plateau du garage MATULA : caractéristiques, achat de nouveaux modèles, améliorations et chauffeur."
+        };
 
         protected override void Build()
         {
             Closable = false;
-            // Le garage 3D est visible derrière : seulement un voile à gauche pour la lisibilité des boutons
-            Image shadeLeft = UIKit.Box(Root, "VoileGauche", new Color(0f, 0f, 0f, 0.38f), false);
-            shadeLeft.raycastTarget = false;
-            shadeLeft.rectTransform.anchorMin = new Vector2(0f, 0f);
-            shadeLeft.rectTransform.anchorMax = new Vector2(0.3f, 1f);
-            shadeLeft.rectTransform.offsetMin = Vector2.zero;
-            shadeLeft.rectTransform.offsetMax = Vector2.zero;
-
-            // Barre du haut : GARAGE, titre, argent, rang, carburant
-            Image top = UIKit.Box(Root, "BarreHaut", new Color(0.02f, 0.02f, 0.04f, 0.8f), false);
-            top.rectTransform.anchorMin = new Vector2(0f, 1f);
-            top.rectTransform.anchorMax = new Vector2(1f, 1f);
-            top.rectTransform.pivot = new Vector2(0.5f, 1f);
-            top.rectTransform.sizeDelta = new Vector2(0f, 112f);
-            top.rectTransform.anchoredPosition = Vector2.zero;
-            Button garage = UIKit.Button(top.transform, "GARAGE", UIKit.Accent, Color.black, 34, () => RequireGame(() => ui.OpenGarage()));
-            UIKit.Place((RectTransform)garage.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(250f, 80f));
-            Text title = UIKit.Label(top.transform, "BALULA MOTO", 52, UIKit.Accent, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UIKit.Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-150f, -6f), new Vector2(640f, 64f));
-            Text studio = UIKit.Label(top.transform, "MATULA DESIGN · Kinshasa", 22, UIKit.TextDim, TextAnchor.MiddleCenter);
-            UIKit.Place(studio.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-150f, -70f), new Vector2(640f, 32f));
-            moneyText = UIKit.Label(top.transform, "", 40, UIKit.Accent, TextAnchor.MiddleRight, FontStyle.Bold);
-            UIKit.Place(moneyText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-30f, -6f), new Vector2(560f, 54f));
-            levelText = UIKit.Label(top.transform, "", 22, UIKit.Text, TextAnchor.MiddleRight);
-            UIKit.Place(levelText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-30f, -60f), new Vector2(560f, 30f));
-            Text fuelLabel = UIKit.Label(top.transform, "CARBURANT", 18, UIKit.TextDim, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UIKit.Place(fuelLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-480f, -14f), new Vector2(220f, 26f));
-            for (int i = 0; i < 10; i++)
-            {
-                Image seg = UIKit.Box(top.transform, "Segment", new Color(1f, 1f, 1f, 0.15f), false);
-                seg.raycastTarget = false;
-                UIKit.Place(seg.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-480f - (9 - i) * 22f, -44f), new Vector2(16f, 26f));
-                fuelSegments.Add(seg);
-            }
-            fuelText = UIKit.Label(top.transform, "", 18, UIKit.Text, TextAnchor.MiddleLeft);
-            UIKit.Place(fuelText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-480f, -76f), new Vector2(220f, 26f));
-
-            // Colonne gauche : grandes tuiles (comme l'écran de garage de l'exemple)
-            string[] labels = { "ACHETER", "AMÉLIORER", "PERSONNALISER", "CHAUFFEUR", "MISSIONS" };
-            string[] subs = { "Motos et tricycles neufs ou d'occasion", "Moteur, freins, suspension, réservoir", "Couleurs, jantes, autocollants", "Choisissez votre chauffeur", "Courses spéciales et objectifs" };
-            UnityAction[] acts =
-            {
-                () => RequireGame(() => ui.OpenShop()),
-                () => RequireGame(() => { ui.Garage.Preset(1); ui.OpenGarage(); }),
-                () => RequireGame(() => { ui.Garage.Preset(2); ui.OpenGarage(); }),
-                () => ui.Open(ui.Driver),
-                () => RequireGame(() => ui.OpenMissions())
-            };
-            for (int i = 0; i < labels.Length; i++)
-                TileButton(Root, labels[i], subs[i], new Vector2(40f, -150f - i * 128f), acts[i]);
-
-            // En bas à gauche : autres choix
-            string[] small = { "Mode libre", "Paramètres", "Crédits", "Quitter" };
-            UnityAction[] smallActs =
-            {
-                () => BalulaGame.Instance.PlayMode(GameMode.Libre),
-                () => ui.Open(ui.Settings),
-                () => ui.Open(ui.Credits),
-                () => BalulaGame.Instance.Quit()
-            };
+            header = MenuStyle.TopBar(Root, "BALULA MOTO", "MATULA DESIGN · taxi-moto et tricycle dans Kinshasa", null);
+            // Petits boutons de la barre du haut
+            string[] small = { "Paramètres", "Crédits", "Quitter" };
+            UnityAction[] acts = { () => ui.Open(ui.Settings), () => ui.Open(ui.Credits), () => BalulaGame.Instance.Quit() };
             for (int i = 0; i < small.Length; i++)
             {
-                Button b = UIKit.Button(Root, small[i], i == 3 ? new Color(0.6f, 0.12f, 0.1f, 0.9f) : Tile, Color.white, 24, smallActs[i]);
-                UIKit.Place((RectTransform)b.transform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(40f + i * 196f, 30f), new Vector2(184f, 70f));
+                Button b = UIKit.Button(header.Title.transform.parent.parent, small[i], new Color(1f, 1f, 1f, 0.1f), new Color(0.88f, 0.9f, 0.94f), 22, acts[i]);
+                UIKit.Place((RectTransform)b.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-560f - (2 - i) * 172f, -22f), new Vector2(160f, 58f));
             }
 
-            // En bas à droite : ROULER (continuer la dernière partie ou en commencer une)
-            continueButton = UIKit.Button(Root, "ROULER  ►", new Color(0.18f, 0.72f, 0.3f, 0.96f), Color.white, 50, Ride);
-            UIKit.Place((RectTransform)continueButton.transform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-40f, 40f), new Vector2(460f, 140f));
-            rideLabel = UIKit.Label(Root, "", 22, UIKit.Text, TextAnchor.MiddleRight);
-            UIKit.Place(rideLabel.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-44f, 186f), new Vector2(700f, 34f));
-            Button newGame = UIKit.Button(Root, "Nouvelle partie", Tile, UIKit.Accent, 26, () => { ui.NewGame.Mode = GameMode.Carriere; ui.Open(ui.NewGame); });
-            UIKit.Place((RectTransform)newGame.transform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-520f, 40f), new Vector2(260f, 80f));
+            Color[] stripes = { new Color(0.86f, 0.14f, 0.1f), new Color(0.1f, 0.5f, 0.95f), new Color(0.98f, 0.68f, 0.05f) };
+            for (int i = 0; i < 3; i++)
+            {
+                int k = i;
+                MenuStyle.ModeCard(Root, Titles[i], Subs[i], stripes[i], new Vector2(48f, -146f - i * 196f), () => Card(k), out tags[i], out frames[i]);
+                Transform bg = tags[i].transform.parent.Find("FondEtiquette");
+                tagBacks[i] = bg != null ? bg.GetComponent<Image>() : null;
+            }
+            Button newGame = UIKit.Button(Root, "Nouvelle partie", new Color(1f, 1f, 1f, 0.1f), UIKit.Accent, 24, () => { ui.NewGame.Mode = selected == 1 ? GameMode.Libre : GameMode.Carriere; ui.Open(ui.NewGame); });
+            UIKit.Place((RectTransform)newGame.transform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(48f, -146f - 3 * 196f + 6f), new Vector2(250f, 56f));
 
-            // Fiche du véhicule exposé et informations sur la carte
-            vehicleText = UIKit.Label(Root, "", 26, Color.white, TextAnchor.LowerCenter, FontStyle.Bold);
-            UIKit.Place(vehicleText.rectTransform, new Vector2(0.62f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 230f), new Vector2(900f, 80f));
+            // Cadre d'information : le garage 3D (moto et chauffeur) reste visible au travers
+            Image frame = UIKit.Box(Root, "CadreInfo", new Color(1f, 1f, 1f, 0.02f));
+            frame.raycastTarget = false;
+            frame.rectTransform.anchorMin = Vector2.zero;
+            frame.rectTransform.anchorMax = Vector2.one;
+            frame.rectTransform.offsetMin = new Vector2(612f, 160f);
+            frame.rectTransform.offsetMax = new Vector2(-46f, -132f);
+            Outline fo = frame.gameObject.AddComponent<Outline>();
+            fo.effectColor = new Color(1f, 1f, 1f, 0.85f);
+            fo.effectDistance = new Vector2(3f, 3f);
+            infoTitle = UIKit.Label(frame.transform, "", 64, Color.white, TextAnchor.UpperCenter);
+            UIKit.Place(infoTitle.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(900f, 90f));
+            Outline to = infoTitle.gameObject.AddComponent<Outline>();
+            to.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            to.effectDistance = new Vector2(3f, -3f);
+            Image strip = UIKit.Box(frame.transform, "Info", new Color(0f, 0f, 0f, 0.62f), false);
+            strip.raycastTarget = false;
+            strip.rectTransform.anchorMin = new Vector2(0f, 0f);
+            strip.rectTransform.anchorMax = new Vector2(1f, 0f);
+            strip.rectTransform.pivot = new Vector2(0.5f, 0f);
+            strip.rectTransform.sizeDelta = new Vector2(0f, 150f);
+            strip.rectTransform.anchoredPosition = Vector2.zero;
+            Text info = UIKit.Label(strip.transform, "INFO", 34, Color.white, TextAnchor.UpperLeft);
+            UIKit.Place(info.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(20f, -8f), new Vector2(200f, 44f));
+            infoText = UIKit.Label(strip.transform, "", 23, Color.white, TextAnchor.UpperLeft, FontStyle.Bold);
+            UIKit.Stretch(infoText.rectTransform, 20, 52, 20, 8);
+            vehicleText = UIKit.Label(frame.transform, "", 26, Color.white, TextAnchor.LowerRight, FontStyle.Bold);
+            UIKit.Place(vehicleText.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-18f, 160f), new Vector2(760f, 80f));
             Outline vo = vehicleText.gameObject.AddComponent<Outline>();
             vo.effectColor = new Color(0f, 0f, 0f, 0.85f);
-            savesText = UIKit.Label(Root, "", 20, UIKit.TextDim, TextAnchor.UpperRight);
-            UIKit.Place(savesText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-30f, -122f), new Vector2(700f, 60f));
-            worldText = UIKit.Label(Root, "", 18, UIKit.TextDim, TextAnchor.LowerCenter);
-            UIKit.Place(worldText.rectTransform, new Vector2(0.45f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 120f), new Vector2(640f, 100f));
+
+            // Boutons du bas : BOUTIQUE (modèles à acheter) et ROULER
+            MenuStyle.BigButton(Root, "BOUTIQUE", false, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 14f), new Vector2(400f, 112f), () => ui.OpenShowroom(true));
+            rideButton = MenuStyle.BigButton(Root, "ROULER", true, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(0f, 14f), new Vector2(430f, 112f), Go);
+            savesText = UIKit.Label(Root, "", 19, UIKit.TextDim, TextAnchor.LowerCenter);
+            UIKit.Place(savesText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(40f, 74f), new Vector2(900f, 60f));
+            worldText = UIKit.Label(Root, "", 17, UIKit.TextDim, TextAnchor.LowerCenter);
+            UIKit.Place(worldText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(40f, 18f), new Vector2(900f, 56f));
         }
 
-        private static void TileButton(RectTransform root, string label, string sub, Vector2 pos, UnityAction a)
+        private void Card(int k)
         {
-            Button b = UIKit.Button(root, "", Tile, Color.white, 20, a);
-            UIKit.Place((RectTransform)b.transform, new Vector2(0f, 1f), new Vector2(0f, 1f), pos, new Vector2(470f, 112f));
-            Image stripe = UIKit.Box(b.transform, "Bande", UIKit.Accent, false);
-            stripe.raycastTarget = false;
-            UIKit.Place(stripe.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0f), new Vector2(10f, 112f));
-            Text t = UIKit.Label(b.transform, label, 40, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UIKit.Place(t.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(30f, -8f), new Vector2(430f, 56f));
-            Text st = UIKit.Label(b.transform, sub, 19, UIKit.TextDim, TextAnchor.MiddleLeft);
-            UIKit.Place(st.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(30f, -66f), new Vector2(430f, 34f));
-            Text old = b.GetComponentInChildren<Text>();
-            if (old != null && old != t && old != st && string.IsNullOrEmpty(old.text)) old.gameObject.SetActive(false);
+            bool twice = k == lastCard && Time.unscaledTime - lastClick < 0.45f;
+            lastCard = k;
+            lastClick = Time.unscaledTime;
+            selected = k;
+            ShowSelection();
+            if (twice) Go();
         }
 
-        private void Ride()
+        private void ShowSelection()
         {
-            if (SaveService.Exists(SaveService.LastSlot)) BalulaGame.Instance.ContinueLast();
-            else { ui.NewGame.Mode = GameMode.Carriere; ui.Open(ui.NewGame); }
+            for (int i = 0; i < 3; i++) if (frames[i] != null) frames[i].GetComponent<Outline>().effectColor = new Color(1f, 0.82f, 0.1f, i == selected ? 1f : 0f);
+            infoTitle.text = Titles[selected];
+            infoText.text = Infos[selected];
+            MenuStyle.SetBigLabel(rideButton, selected == 2 ? "OUVRIR" : "ROULER");
         }
 
-        private void RequireGame(System.Action then)
+        private void Go()
         {
             BalulaGame g = BalulaGame.Instance;
-            if (g.Session == null)
-            {
-                if (!SaveService.Exists(SaveService.LastSlot)) { ui.Toast("Commencez d'abord une nouvelle partie (bouton ROULER)."); return; }
-                g.ContinueLast();
-            }
-            if (g.Session != null) then();
+            if (selected == 2) { ui.OpenShowroom(false); return; }
+            g.PlayMode(selected == 1 ? GameMode.Libre : GameMode.Carriere);
         }
 
         public override void Refresh()
@@ -142,12 +125,17 @@ namespace BalulaMoto.Runtime
             BalulaGame g = BalulaGame.Instance;
             bool hasSave = SaveService.Exists(SaveService.LastSlot);
             PlayerProfile p = hasSave ? SaveService.Load(SaveService.LastSlot) : null;
-            UIKit.SetButtonText(continueButton, p != null ? "ROULER  ►" : "COMMENCER  ►");
-            rideLabel.text = p != null ? "Continuer : " + (p.Mode == GameMode.Libre ? "mode libre" : "carrière") + " · jour " + p.jour : "Aucune partie : une nouvelle carrière commence";
-            savesText.text = "Carrière : " + SaveService.Summary(SaveService.SlotCareer) + "\nLibre : " + SaveService.Summary(SaveService.SlotFree);
-            moneyText.text = p != null ? Cdf.Format(p.argent) : "— FC";
-            levelText.text = p != null ? (string.IsNullOrEmpty(p.nomJoueur) ? "" : p.nomJoueur + "  ·  ") + "Niveau " + p.niveau + "  ·  " + TextUtil.Stars(p.Reputation()) : "Nouveau chauffeur";
-            float frac = 0f;
+            if (p != null && lastCard < 0) selected = p.Mode == GameMode.Libre ? 1 : 0;
+            PlayerProfile career = SaveService.Exists(SaveService.SlotCareer) ? SaveService.Load(SaveService.SlotCareer) : null;
+            PlayerProfile free = SaveService.Exists(SaveService.SlotFree) ? SaveService.Load(SaveService.SlotFree) : null;
+            SetTag(0, career != null ? "REPRENDRE" : "NOUVEAU", career != null ? new Color(0.1f, 0.55f, 0.15f) : new Color(0.86f, 0.12f, 0.1f));
+            SetTag(1, free != null ? "REPRENDRE" : "", new Color(0.1f, 0.55f, 0.15f));
+            SetTag(2, "", Color.clear);
+            ShowSelection();
+            savesText.text = "Carrière : " + SaveService.Summary(SaveService.SlotCareer) + "    ·    Libre : " + SaveService.Summary(SaveService.SlotFree);
+            header.Money.text = p != null ? Cdf.Format(p.argent) : "0 FC";
+            header.Level.text = p != null ? p.niveau.ToString() : "1";
+            header.Rank.text = p != null ? TextUtil.Stars(p.Reputation()) : "";
             string vehicleLine = "";
             if (g != null && g.Db != null)
             {
@@ -156,27 +144,28 @@ namespace BalulaMoto.Runtime
                 if (def != null && ov != null)
                 {
                     VehicleStats st = VehicleStatsCalculator.Compute(def, ov, g.Db.Economy);
-                    frac = st.TankL > 0f ? Mathf.Clamp01(ov.carburantL / st.TankL) : 0f;
-                    fuelText.text = ov.carburantL.ToString("0.0").Replace('.', ',') + " / " + st.TankL.ToString("0") + " L";
-                    vehicleLine = def.nom + "\n" + UIKit.Colored(st.MaxSpeedKmh.ToString("0") + " km/h · état " + ov.OverallCondition().ToString("0") + " % · " + ov.plaque, UIKit.TextDim);
+                    vehicleLine = def.nom + "\n" + UIKit.Colored(st.MaxSpeedKmh.ToString("0") + " km/h · état " + ov.OverallCondition().ToString("0") + " % · carburant " +
+                                  ov.carburantL.ToString("0.0").Replace('.', ',') + " / " + st.TankL.ToString("0") + " L", new Color(0.85f, 0.87f, 0.9f));
                 }
-                else fuelText.text = "";
-                if (GarageScene.Instance != null) GarageScene.Instance.Show(g.Db, p);
+                if (GarageScene.Instance != null)
+                {
+                    GarageScene.Instance.SetShowroom(false);
+                    GarageScene.Instance.Show(g.Db, p);
+                }
                 if (g.Cam != null && GarageScene.Instance != null) g.Cam.SetMenuShot(GarageScene.Instance.CameraPosition, GarageScene.Instance.CameraLook);
             }
             vehicleText.text = vehicleLine;
-            int lit = Mathf.CeilToInt(frac * fuelSegments.Count - 0.01f);
-            for (int i = 0; i < fuelSegments.Count; i++)
-            {
-                float t = i / (float)(fuelSegments.Count - 1);
-                Color c = t < 0.25f ? UIKit.Red : (t < 0.5f ? new Color(1f, 0.75f, 0.1f) : new Color(0.45f, 0.85f, 0.2f));
-                fuelSegments[i].color = i < lit ? c : new Color(1f, 1f, 1f, 0.13f);
-            }
             if (g != null && g.World != null)
+                worldText.text = g.World.IsTestTrack ? "Monde actuel : piste d'essai (ce n'est pas Kinshasa)." : "Carte : " + g.World.Name + " · " + g.World.Attribution;
+        }
+
+        private void SetTag(int i, string text, Color bg)
+        {
+            tags[i].text = text;
+            if (tagBacks[i] != null)
             {
-                worldText.text = g.World.IsTestTrack
-                    ? "Monde actuel : piste d'essai (ce n'est pas Kinshasa)."
-                    : "Carte : " + g.World.Name + " · " + g.World.Attribution;
+                tagBacks[i].gameObject.SetActive(!string.IsNullOrEmpty(text));
+                tagBacks[i].color = bg;
             }
         }
     }
@@ -493,6 +482,7 @@ namespace BalulaMoto.Runtime
                 "<b>Bus TRANSCO, tricycle et policiers</b> : modèle 3D du bus fourni par MATULA DESIGN ; tricycle (type Bajaj RE) modélisé pour le jeu d'après les photos du créateur ; policiers : avatar Microsoft Rocketbox (licence MIT) habillé d'après la photo du créateur (tenue, béret), fusil modélisé pour le jeu (designs commerciaux respectés, sans logo ni insigne officiel, sans partenariat avec TRANSCO, Bajaj ni la Police nationale) ; murs de parcelles, berges et eau des rivières dessinés pour le jeu d'après les photos du créateur (aucune photo copiée).\n\n" +
                 "<b>Monuments</b> : modèles 3D du Stade des Martyrs et de la Tour de l'Échangeur fournis par MATULA DESIGN, posés aux emplacements indiqués par le créateur ; terrains clôturés, arbres, poteaux électriques, lampadaires et plaques de rues générés par le jeu (noms des rues : OpenStreetMap).\n\n" +
                 "<b>Affiches publicitaires, stations-service et garage</b> : marques fictives (Unités Mbote, Mayi Malamu, Banque Lisanga, carburant « BALULA ÉNERGIE »…) et textures créées pour le jeu ; toute ressemblance avec une marque réelle serait fortuite. Les parcelles, boutiques et immeubles placés entre les rues sont génériques et ne représentent pas des bâtiments réels.\n\n" +
+                "<b>Décors et véhicules fournis en novembre 2026</b> : maison « cottage », maison « fhouse », cinq immeubles, barrières de séparation (repeintes en rouge et blanc), moto centrale (« moto1 »), Honda CB750 et Honda classique : fichiers 3D fournis par MATULA DESIGN, convertis et allégés pour le téléphone (licences des fichiers d'origine à vérifier par le créateur). Mobilier de rue d'après « Source Engine Street Objects » de Leafia dev (licence CC-BY-4.0). Voitures de la circulation : trois modèles génériques dessinés par le jeu, sans logo ni marque. Étals des vendeurs, parkings et poussière créés pour le jeu.\n\n" +
                 "<b>Lieux du créateur</b> : positions issues des liens Google Maps fournis par le créateur (coordonnées uniquement, aucune image reprise).\n\n" +
                 "<b>Véhicules</b> : les modèles sont inspirés de véhicules réels du marché congolais. Les noms de marques (TVS, Bajaj, Honda, Yamaha, Haojue…) appartiennent à leurs propriétaires ; ce jeu n'est ni affilié ni approuvé par eux. Les caractéristiques indiquées « à vérifier » sont des estimations.\n\n" +
                 "<b>Police et amendes</b> : situations et montants fictifs, à but ludique. Le jeu ne représente pas de corruption et n'encourage aucune infraction.\n\n" +

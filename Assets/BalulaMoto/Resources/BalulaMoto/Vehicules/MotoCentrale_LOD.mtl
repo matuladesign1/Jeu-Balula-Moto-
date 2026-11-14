@@ -1,0 +1,128 @@
+newmtl metal_silver
+Kd 0.8200 0.8300 0.8500
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl flash
+Kd 1.0000 0.5500 0.0500
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl tire
+Kd 0.0500 0.0500 0.0500
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl metal_engine
+Kd 0.6200 0.6300 0.6400
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl metal_black
+Kd 0.0400 0.0400 0.0450
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl gauge_rpm_black
+Kd 0.0600 0.0600 0.0700
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl gauge_rpm_silver
+Kd 0.7000 0.7100 0.7200
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl gauge_km_black
+Kd 0.0600 0.0600 0.0700
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl gauge_km_metal
+Kd 0.7000 0.7100 0.7200
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl front_light
+Kd 0.9000 0.9000 0.8600
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl light_back
+Kd 0.6000 0.0400 0.0300
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl mirror
+Kd 0.7500 0.8200 0.9000
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl plate_black
+Kd 0.0500 0.0500 0.0500
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl plate_white
+Kd 0.9500 0.9500 0.9300
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl leather
+Kd 0.0600 0.0500 0.0500
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl metal_red
+Kd 0.6200 0.0200 0.0200
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+

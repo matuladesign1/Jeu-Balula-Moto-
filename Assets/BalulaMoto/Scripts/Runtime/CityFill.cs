@@ -8,12 +8,13 @@ using UnityEngine;
 
 namespace BalulaMoto.Runtime
 {
-    public class CityFill : MonoBehaviour
+    public partial class CityFill : MonoBehaviour
     {
         public static CityFill Instance;
 
         private struct Seg { public int Road; public int Index; }
-        private struct Sg { public Vector2 A, B; public float Hw; }
+        /// <summary>Segment de rue proche : Clear = espace à laisser libre devant les maisons (10 m sur les boulevards).</summary>
+        private struct Sg { public Vector2 A, B; public float Hw, Clear; }
         private readonly Dictionary<long, List<Sg>> waterGrid = new Dictionary<long, List<Sg>>();
         private List<Sg> curWater;
 
@@ -75,10 +76,11 @@ namespace BalulaMoto.Runtime
             new Color(0.08f, 0.08f, 0.09f), new Color(0.65f, 0.1f, 0.1f), new Color(0.55f, 0.32f, 0.2f), new Color(0.6f, 0.62f, 0.64f),
             new Color(0.7f, 0.7f, 0.68f), new Color(0.07f, 0.09f, 0.12f), new Color(0.2f, 0.45f, 0.15f), new Color(0.35f, 0.25f, 0.15f),
             new Color(0.8f, 0.8f, 0.78f), new Color(0.62f, 0.5f, 0.38f), new Color(0.97f, 0.97f, 0.95f), new Color(0.88f, 0.5f, 0.12f),
-            new Color(0.45f, 0.45f, 0.47f), new Color(0.27f, 0.55f, 0.2f), new Color(0.95f, 0.78f, 0.1f), new Color(0.82f, 0.2f, 0.12f)
+            new Color(0.45f, 0.45f, 0.47f), new Color(0.27f, 0.55f, 0.2f), new Color(0.95f, 0.78f, 0.1f), new Color(0.82f, 0.2f, 0.12f),
+            new Color(0.3f, 0.52f, 0.17f), new Color(0.36f, 0.58f, 0.2f), new Color(0.035f, 0.035f, 0.04f)
         };
         private const int WallFirst = 0, WallCount = 6, GateFirst = 6, GateCount = 4, RoofRust = 10, RoofGray = 11, Concrete = 12,
-            Window = 13, Leaves = 14, Trunk = 15, Cap = 16, Shutter = 20, Leaves2 = 21;
+            Window = 13, Leaves = 14, Trunk = 15, Cap = 16, Shutter = 20, Leaves2 = 21, Lawn = 24, Lawn2 = 25, Iron = 26;
         private static readonly int[] SignColors = { 22, 23, 6, 7, 19, 9, 18 };
         private const int AtlasCols = 8;
 
@@ -177,6 +179,10 @@ namespace BalulaMoto.Runtime
                 }
             }
             BuildSigns();
+            // Modèles de MATULA DESIGN (maisons, immeubles, barrières, mobilier, étals, parkings : CityFillModels.cs)
+            InitModels();
+            PlanModels();
+            PlanBoulevards();
             // Emprise des cours d'eau (eau + berges) : ni parcelle, ni poteau, ni panneau dedans
             if (map.waterSegs != null && map.waterHw != null)
                 for (int i = 0; i < map.waterSegs.Count && i < map.waterHw.Count; i++)
@@ -515,6 +521,7 @@ namespace BalulaMoto.Runtime
                 if (c.Mesh != null) Destroy(c.Mesh);
                 cells.Remove(k);
                 placedByCell.Remove(k);
+                stallsByCell.Remove(k);
             }
         }
 
@@ -557,7 +564,7 @@ namespace BalulaMoto.Runtime
                     if (!placedByCell.TryGetValue(Key(cx + dx, cz + dz), out l)) continue;
                     foreach (Obb o in l) if (RectCircle(o, q, r)) return true;
                 }
-            return false;
+            return InLawn(q, r, cx, cz);
         }
 
         // ------------------------------------------------------------------
@@ -620,14 +627,18 @@ namespace BalulaMoto.Runtime
             return Mathf.Min(d, SegSeg(la, lb, c3, c0));
         }
 
-        private bool Fits(Obb o, List<Sg> roads, List<Vector3> blds, float roadMargin, int cx, int cz)
+        private bool Fits(Obb o, List<Sg> roads, List<Vector3> blds, float roadMargin, int cx, int cz, bool building = false)
         {
             float diag = Mathf.Sqrt(o.Hx * o.Hx + o.Hz * o.Hz);
             foreach (Sg s in roads)
             {
-                if (PointSeg(o.C, s.A, s.B) > s.Hw + roadMargin + diag) continue;
-                if (RectSeg(o, s.A, s.B) < s.Hw + roadMargin) return false;
+                // Maisons et bâtiments : 10 m libres devant les boulevards
+                float m = building ? Mathf.Max(roadMargin, s.Clear) : roadMargin;
+                if (PointSeg(o.C, s.A, s.B) > s.Hw + m + diag) continue;
+                if (RectSeg(o, s.A, s.B) < s.Hw + m) return false;
             }
+            // Bande verte du boulevard Lumumba (entre le grand et le petit boulevard) : rien n'y est construit
+            if (InGreen(o, cx, cz)) return false;
             foreach (Vector3 b in blds)
                 if (RectCircle(o, new Vector2(b.x, b.z), b.y + 0.6f)) return false;
             // Aucune parcelle sur une rivière ni sur ses berges : les maisons restent le long du tracé, en retrait
@@ -823,7 +834,7 @@ namespace BalulaMoto.Runtime
                     {
                         if (!nearSeen.Add(((long)s.Road << 24) ^ s.Index)) continue;
                         ImportedRoad rd = map.roads[s.Road];
-                        near.Add(new Sg { A = rd.pts[s.Index], B = rd.pts[s.Index + 1], Hw = rd.width * 0.5f });
+                        near.Add(new Sg { A = rd.pts[s.Index], B = rd.pts[s.Index + 1], Hw = rd.width * 0.5f, Clear = IsBoulevardRoad(s.Road) ? BoulevardRules.Setback : 0f });
                     }
                 }
             curWater = null;
@@ -886,13 +897,24 @@ namespace BalulaMoto.Runtime
                     {
                         System.Random rr = new System.Random(Hash(ri, sideI, row, 1));
                         float along = 1.5f + (float)rr.NextDouble() * 4f;
-                        float back = half + 3.0f + row * 19.2f;
+                        // Boulevards : 10 m libres entre la chaussée et la première rangée de maisons
+                        float back = half + (IsBoulevardRoad(ri) ? BoulevardRules.Setback + 0.4f : 3.0f) + row * 19.2f;
                         int k = 0;
                         while (along < total - 4f)
                         {
                             float w = 11f + (float)rr.NextDouble() * 7f;
                             float d = 14f + (float)rr.NextDouble() * 8f;
                             if (avenue && row == 0) d = 12f + (float)rr.NextDouble() * 6f;
+                            // Modèle de MATULA DESIGN (cottage, maison, immeuble) ou parking : la parcelle prend ses dimensions
+                            int model = PickModel(ri, road, row, rr);
+                            bool parking = false;
+                            if (model >= 0) ModelLot(model, rr, out w, out d);
+                            else if (row == 0 && Goudron(road) && parkedCars.Count > 0 && rr.Next(100) < 7)
+                            {
+                                parking = true;
+                                w = 12f + (float)rr.NextDouble() * 5f;
+                                d = 7.6f;
+                            }
                             int seed = Hash(ri, sideI * 8 + row, k++, 3);
                             float start = along;
                             along += w + 0.3f + (float)rr.NextDouble() * 1.2f;
@@ -904,18 +926,28 @@ namespace BalulaMoto.Runtime
                             if (!bounds.Contains(p + inward * (back + d * 0.5f))) continue;
                             for (int attempt = 0; attempt < 3; attempt++)
                             {
+                                // Modèles et parkings : dimensions fixes (pas de parcelle raccourcie)
+                                if ((model >= 0 || parking) && attempt > 0) break;
                                 float depth = d - attempt * 3f;
-                                if (depth < 10f) break;
+                                if (depth < 10f && model < 0 && !parking) break;
                                 Vector2 c = p + inward * (back + attempt * 4f + depth * 0.5f);
                                 Obb o = new Obb { C = c, X = dir, Z = inward, Hx = w * 0.5f, Hz = depth * 0.5f };
-                                if (!Fits(o, near, blds, 0.8f, cx, cz)) continue;
+                                if (!Fits(o, near, blds, 0.8f, cx, cz, true)) continue;
                                 placed.Add(o);
                                 System.Random pr = new System.Random(seed);
                                 // Repère direct (droite, haut, avant) : droite × haut = avant (vers l'intérieur de la parcelle)
                                 Vector2 xr = dir * side;
-                                if (avenue && row == 0 && attempt == 0 && pr.Next(10) < 7) ShopParcel(md, go.transform, c, xr, inward, w, depth, road.rank, pr);
+                                if (model >= 0) ModelParcel(md, go.transform, c, xr, inward, w, depth, model, pr);
+                                else if (parking) ParkingParcel(md, go.transform, c, xr, inward, w, depth, pr);
+                                else if (avenue && row == 0 && attempt == 0 && pr.Next(10) < 7) ShopParcel(md, go.transform, c, xr, inward, w, depth, road.rank, pr);
                                 else Parcel(md, go.transform, c, xr, inward, w, depth, pr);
                                 cell.Parcels++;
+                                // Étal de vendeur devant la parcelle (trottoir, contre le mur de façade)
+                                if (row == 0 && attempt == 0 && pr.Next(100) < (Goudron(road) ? 16 : 10))
+                                {
+                                    Vector2 sp = p + inward * (half + 2.2f) + dir * (((float)pr.NextDouble() - 0.5f) * (w - 3f));
+                                    if (!OnRoad(sp, near, 1.0f) && !InWater(sp, 0.5f)) Stall(md, cellKey, sp, -inward, pr);
+                                }
                                 break;
                             }
                         }
@@ -958,7 +990,7 @@ namespace BalulaMoto.Runtime
                         {
                             Obb o = new Obb { C = q, X = dv, Z = inward, Hx = size.x * 0.5f, Hz = size.y * 0.5f };
                             sizeIndex++;
-                            if (!Fits(o, near, blds, 0.8f, cx, cz)) continue;
+                            if (!Fits(o, near, blds, 0.8f, cx, cz, true)) continue;
                             placed.Add(o);
                             System.Random pr = new System.Random(Hash(cx, cz, gx * 32 + gz, sizeIndex));
                             float sd = Vector2.Dot(new Vector2(-dv.y, dv.x), inward) > 0f ? 1f : -1f;
@@ -969,13 +1001,21 @@ namespace BalulaMoto.Runtime
                     }
             }
 
-            // 3) Poteaux électriques, fils, lampadaires et plaques de rue
+            // 3) Barrières des boulevards, mobilier urbain, étals aux carrefours (modèles de MATULA DESIGN)
+            Medians(cx, cz, bounds, go);
+            GreenStrips(md, go.transform, cellKey);
+            RoadItems(bounds, roadsHere, near, blds, cx, cz, placed, go);
+            CornerStalls(cellKey, near, blds, cx, cz, placed, md);
+
+            // 4) Poteaux électriques, fils, lampadaires et plaques de rue
             StreetFurniture(bounds, roadsHere, near, md, go);
             Signs(cellKey, near, md, go.transform);
             curLum.Emit(go.transform, "Lumieres", Night.LightMaterial);
             if (curHalo != null) curHalo.Emit(go.transform, "Halos", Night.HaloMaterial);
             curLum = null;
             curHalo = null;
+            // Modèles de la case fusionnés par matériau
+            if (batch.Instances > 0) batch.Emit(go.transform, "Modeles", GameSettings.Quality > 0);
 
             if (md.V.Count > 0)
             {

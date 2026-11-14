@@ -61,6 +61,8 @@ namespace BalulaMoto.Runtime
             if (imported != null) Roadworks.Create(worldRoot, imported);
             // Policiers à pied aux carrefours (modèle de MATULA DESIGN) : sifflet, arrêt et amende en cas d'infraction
             if (imported != null) PolicePatrol.Create(worldRoot, imported);
+            // Poussière soulevée par les véhicules sur les avenues de terre et les trottoirs (temps sec)
+            DustFx.Create(worldRoot);
             // Plan de la ville pour la mini-carte et la carte plein écran
             CityMap.Build(imported, World);
             Cam.SetMenuOrbit(World.MenuCenter, 70f);
@@ -134,7 +136,12 @@ namespace BalulaMoto.Runtime
             Session.MissionCompleted += OnMissionCompleted;
             Session.NewDay += OnNewDay;
             WeatherKind w;
-            if (!string.IsNullOrEmpty(profile.meteo) && Enum.TryParse(profile.meteo, out w)) Env.SetWeather(w, true);
+            if (!string.IsNullOrEmpty(profile.meteo) && Enum.TryParse(profile.meteo, out w))
+            {
+                // Pas de pluie les jours secs (la pluie ne tombe plus tous les jours)
+                if ((w == WeatherKind.Pluie || w == WeatherKind.Orage) && !WorldEnvironment.RainyDay(profile.jour)) w = WeatherKind.Nuageux;
+                Env.SetWeather(w, true);
+            }
 
             Director = new GameObject("Deroulement").AddComponent<GameplayDirector>();
             Director.Begin(Session, World, Env, Cam, Traffic);

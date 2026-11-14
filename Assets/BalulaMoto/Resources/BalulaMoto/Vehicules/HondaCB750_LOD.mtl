@@ -1,0 +1,264 @@
+newmtl 0Ingranaggio
+Kd 0.2500 0.2500 0.2700
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl engine
+Kd 0.6600 0.6700 0.6800
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl PlasticaGrigia
+Kd 0.3000 0.3000 0.3200
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl CarterHonda
+Kd 0.7000 0.7100 0.7200
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl catena
+Kd 0.1200 0.1100 0.1000
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Manubrio
+Kd 0.7800 0.7900 0.8000
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl frame
+Kd 0.0300 0.0300 0.0350
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Fanale
+Kd 0.8500 0.8600 0.8200
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl 11 - Default
+Kd 0.0500 0.0500 0.0500
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl VerniceNera
+Kd 0.0400 0.0400 0.0450
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl 0CarrozzeriaLP
+Kd 0.6200 0.0500 0.0500
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Specchio
+Kd 0.8000 0.8100 0.8300
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl PlasticaNera
+Kd 0.0600 0.0600 0.0650
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl 0minuteria
+Kd 0.7200 0.7300 0.7400
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl raggi
+Kd 0.7500 0.7600 0.7800
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Frecce
+Kd 1.0000 0.5500 0.0500
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl steel
+Kd 0.3500 0.3600 0.3800
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Tachimetri
+Kd 0.0800 0.0800 0.0900
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl terminali
+Kd 0.8000 0.8100 0.8300
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl CromMed
+Kd 0.8000 0.8100 0.8300
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl PlasticaBianca
+Kd 0.8500 0.8500 0.8300
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl CarterTestata
+Kd 0.6000 0.6100 0.6200
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Gomma
+Kd 0.0400 0.0400 0.0400
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Pedale
+Kd 0.1500 0.1500 0.1600
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl tela
+Kd 0.1000 0.1000 0.1000
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl aria
+Kd 0.0800 0.0800 0.0900
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl Cerchi
+Kd 0.8000 0.8100 0.8300
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl CromeVarie
+Kd 0.7800 0.7900 0.8000
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl stop
+Kd 0.6000 0.0400 0.0300
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl VetroClear
+Kd 0.2000 0.2200 0.2500
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl cruscotto
+Kd 0.0600 0.0600 0.0700
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl 0Pneumatici
+Kd 0.0500 0.0500 0.0500
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl 0BulloniBig
+Kd 0.7000 0.7100 0.7200
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+

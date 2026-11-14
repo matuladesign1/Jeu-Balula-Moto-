@@ -1,0 +1,18 @@
+newmtl Rouge
+Kd 0.8000 0.0700 0.0600
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+map_Kd Barriere_B_Rouge.jpg
+
+newmtl Blanc
+Kd 0.9600 0.9600 0.9400
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+map_Kd Barriere_B_Blanc.jpg
+

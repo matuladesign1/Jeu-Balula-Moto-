@@ -33,6 +33,7 @@ namespace BalulaMoto.Runtime
         public ConfirmPanel Confirm;
         public MapPanel Map;
         public DriverPanel Driver;
+        public ShowroomPanel Showroom;
 
         private readonly List<UIPanel> openModals = new List<UIPanel>();
         private readonly List<UIPanel> all = new List<UIPanel>();
@@ -99,6 +100,7 @@ namespace BalulaMoto.Runtime
             Confirm = Add(new ConfirmPanel());
             Map = Add(new MapPanel());
             Driver = Add(new DriverPanel());
+            Showroom = Add(new ShowroomPanel());
 
             // Bulle de dialogue (client, police, vendeurs)
             commentBox = UIKit.Box(SafeRoot, "Bulle", new Color(0.05f, 0.06f, 0.1f, 0.88f));
@@ -186,6 +188,13 @@ namespace BalulaMoto.Runtime
         public void OpenProvinces() { Open(Provinces); }
         public void OpenShop() { Open(Shop); }
         public void OpenGarage() { Open(Garage); }
+
+        /// <summary>Garage du menu (plateau tournant) ; catalog = directement sur les modèles à acheter.</summary>
+        public void OpenShowroom(bool catalog)
+        {
+            Showroom.StartOnCatalog = catalog;
+            Open(Showroom);
+        }
         public void OpenWorkshop() { Open(Workshop); }
         public void OpenEmptyTank() { if (!EmptyTank.IsOpen) Open(EmptyTank); }
         public void OpenNegotiation() { Open(Negotiation); }

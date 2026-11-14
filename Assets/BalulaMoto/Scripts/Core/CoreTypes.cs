@@ -207,6 +207,8 @@ namespace BalulaMoto.Core
         public string couleurSecondaire;
         public string style;
         public string prefabRessource;
+        /// <summary>Modèle 3D fourni (Resources/BalulaMoto/Vehicules/…, voir ModelMotos.cs) ; vide = véhicule dessiné par le jeu.</summary>
+        public string modele3d;
         public string referencePhoto;
         public string noteCapacite;
         public string statutDonnees;

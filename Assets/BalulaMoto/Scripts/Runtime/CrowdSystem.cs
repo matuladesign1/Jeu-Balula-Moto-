@@ -1,6 +1,8 @@
 // BALULA MOTO — foule : piétons réalistes sur les trottoirs autour du joueur (bulle de densité qui suit le
 // joueur), groupes qui discutent, vendeuses avec bassine sur la tête ou accroupies devant leur marchandise,
-// téléphones, parapluies sous la pluie, écart quand une moto arrive trop près. Densité selon l'heure.
+// vendeurs derrière leurs étals, policiers qui marchent comme les autres passants, téléphones, parapluies sous la
+// pluie. Les piétons restent sur les trottoirs le long du goudron (jamais debout sur la chaussée goudronnée ; ils
+// marchent librement dans les avenues de terre) et s'écartent en hâte quand un véhicule fonce sur eux.
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -28,6 +30,14 @@ namespace BalulaMoto.Runtime
             public float GroundY, GroundTimer;
             /// <summary>Bousculé par le joueur : immobile le temps de tomber et de se relever.</summary>
             public float Stun;
+            /// <summary>Trottoir : côté opposé à la chaussée (+1/-1 selon la droite de la marche), distance du trottoir au
+            /// bord de la chaussée, rue goudronnée ou non (mis à jour à chaque segment).</summary>
+            public float AwaySign = 1f, LaneEdge = 1.3f;
+            public bool LanePaved;
+            public int InfoSeg = -1, InfoDir;
+            /// <summary>Fuite devant un véhicule qui arrive droit sur lui (secondes restantes).</summary>
+            public float Flee, FleeSide;
+            public bool Police;
         }
 
         // Personnes bousculées : écart, chute vers l'extérieur, puis elles se relèvent
@@ -387,6 +397,7 @@ namespace BalulaMoto.Runtime
             lastPlayer = pp;
 
             UpdateStops(pp);
+            UpdateStallVendors(pp);
             UpdateShoves(dt);
             spawnTimer -= Time.unscaledDeltaTime;
             if (spawnTimer <= 0f && peds.Count < target)
@@ -583,7 +594,8 @@ namespace BalulaMoto.Runtime
             if (r < 44) { woman = true; return HumanLibrary.Woman(rnd); }
             if (r < 82) return Pick("Hommes");
             if (r < 90) { outfit = "travail"; return Pick("Ouvriers"); }
-            if (r < 98) return Pick("Enfants");
+            if (r < 95) return Pick("Enfants");
+            // Policiers à pied, comme les autres passants, sur toutes les rues et le goudron
             outfit = "police";
             return Pick("Police");
         }
@@ -602,7 +614,13 @@ namespace BalulaMoto.Runtime
             GameObject prefab = PickWalker(out outfit, out woman);
             Ped p = Create(prefab, pos, woman && rnd.Next(10) < 6 ? "pagne" : outfit);
             if (p == null) return;
-            if (woman && p.Av != null && !p.Av.Child && rnd.Next(100) < 22)
+            if (outfit == "police" && p.Av != null)
+            {
+                // Tenue bleu de nuit, béret et fusil en bandoulière (comme les agents des carrefours)
+                PoliceKit.Equip(p.Av);
+                p.Police = true;
+            }
+            else if (woman && p.Av != null && !p.Av.Child && rnd.Next(100) < 22)
             {
                 HumanProps.Basin(p.Av, rnd);
                 p.Slow = true;
@@ -621,8 +639,16 @@ namespace BalulaMoto.Runtime
             p.BaseSide = 0.4f + (float)rnd.NextDouble() * 0.9f;
             p.Side = p.BaseSide;
             p.Static = false;
+            p.Flee = 0f;
             Lane l = lanes[p.Lane];
             Vector3 fwd = SegmentDir(l, p.Seg) * p.Dir;
+            // Côté chaussée : le passant se place du côté extérieur du trottoir (pas sur le goudron)
+            LaneInfo(p, Vector3.Lerp(l.P[p.Seg], l.P[p.Seg + 1], p.T), new Vector3(fwd.z, 0f, -fwd.x));
+            if (p.LanePaved && p.BaseSide * p.AwaySign < 0.6f - p.LaneEdge)
+            {
+                p.BaseSide = p.AwaySign * (0.6f - p.LaneEdge + (float)rnd.NextDouble() * 0.6f);
+                p.Side = p.BaseSide;
+            }
             Vector3 pos = Vector3.Lerp(l.P[p.Seg], l.P[p.Seg + 1], p.T) + new Vector3(fwd.z, 0f, -fwd.x) * p.Side;
             p.GroundY = Ground(pos, l.P[p.Seg].y);
             pos.y = p.GroundY;
@@ -635,10 +661,15 @@ namespace BalulaMoto.Runtime
             Lane l = lanes[ls.x];
             Vector3 dir = SegmentDir(l, ls.y);
             Vector3 right = new Vector3(dir.z, 0f, -dir.x) * (rnd.Next(2) == 0 ? 1f : -1f);
+            // Du côté opposé à la chaussée : personne ne se tient debout sur le goudron
+            float edge;
+            Vector3 away;
+            bool paved;
+            if (CityFill.NearestCarriageway(pos, out edge, out away, out paved) && paved) right = Vector3.Dot(right, away) >= 0f ? right : -right;
             Vector3 center = pos + right * (1.6f + (float)rnd.NextDouble());
             // Jamais dans une parcelle clôturée : on essaie l'autre côté, sinon pas de groupe ici
             if (CityFill.IsBlocked(center, 1.3f)) center = pos - right * 1.2f;
-            if (CityFill.IsBlocked(center, 1.3f)) return;
+            if (CityFill.IsBlocked(center, 1.3f) || OnPavedRoad(center, 1.0f)) return;
             center.y = Ground(center, pos.y);
             int n = 2 + rnd.Next(2);
             float a0 = (float)rnd.NextDouble() * 360f;
@@ -652,6 +683,7 @@ namespace BalulaMoto.Runtime
                 Ped p = Create(prefab, p0, woman ? "pagne" : outfit);
                 if (p == null) continue;
                 p.Static = true;
+                if (outfit == "police" && p.Av != null) { PoliceKit.Equip(p.Av); p.Police = true; }
                 p.Go.transform.position = p0;
                 Vector3 look = center - p0;
                 look.y = 0f;
@@ -672,9 +704,13 @@ namespace BalulaMoto.Runtime
             Lane l = lanes[ls.x];
             Vector3 dir = SegmentDir(l, ls.y);
             Vector3 right = new Vector3(dir.z, 0f, -dir.x) * (rnd.Next(2) == 0 ? 1f : -1f);
+            float edge;
+            Vector3 away;
+            bool paved;
+            if (CityFill.NearestCarriageway(pos, out edge, out away, out paved) && paved) right = Vector3.Dot(right, away) >= 0f ? right : -right;
             Vector3 p0 = pos + right * 1.8f;
             if (CityFill.IsBlocked(p0, 0.9f)) { right = -right; p0 = pos + right * 1.1f; }
-            if (CityFill.IsBlocked(p0, 0.9f)) return;
+            if (CityFill.IsBlocked(p0, 0.9f) || OnPavedRoad(p0, 0.8f)) return;
             p0.y = Ground(p0, pos.y);
             Ped p = Create(HumanLibrary.Woman(rnd), p0, "pagne");
             if (p == null) return;
@@ -790,10 +826,138 @@ namespace BalulaMoto.Runtime
             StartStanding(p, 1f + (float)rnd.NextDouble() * 3f);
         }
 
+        private void LaneInfo(Ped p, Vector3 basePos, Vector3 right)
+        {
+            p.InfoSeg = p.Seg;
+            p.InfoDir = p.Dir;
+            float edge;
+            Vector3 away;
+            bool paved;
+            if (CityFill.NearestCarriageway(basePos, out edge, out away, out paved))
+            {
+                // Point du trottoir sur la chaussée d'une autre rue (traversée au carrefour) : pas de contrainte
+                p.LanePaved = paved && edge > -0.4f && edge < 6f;
+                p.LaneEdge = edge;
+                p.AwaySign = Vector3.Dot(away, right) >= 0f ? 1f : -1f;
+            }
+            else p.LanePaved = false;
+        }
+
+        /// <summary>Vrai si un véhicule rapide arrive droit sur le point (moins de 1,6 s, à moins de 2 m de sa trajectoire).</summary>
+        private bool Threat(Vector3 pos, out Vector3 flee)
+        {
+            flee = Vector3.zero;
+            TrafficManager tm = TrafficManager.Instance;
+            if (tm == null) return false;
+            if (tm.Player != null && playerSpeed > 2.5f && Approaching(pos, tm.Player.transform.position, tm.Player.transform.forward, playerSpeed, out flee)) return true;
+            for (int i = 0; i < tm.Vehicles.Count; i++)
+            {
+                AIVehicle v = tm.Vehicles[i];
+                if (v == null || v.Speed < 2.5f) continue;
+                Vector3 vp = v.transform.position;
+                float dx = vp.x - pos.x, dz = vp.z - pos.z;
+                if (dx * dx + dz * dz > 20f * 20f) continue;
+                if (Approaching(pos, vp, v.transform.forward, v.Speed, out flee)) return true;
+            }
+            return false;
+        }
+
+        private static bool Approaching(Vector3 pos, Vector3 vp, Vector3 vf, float speed, out Vector3 flee)
+        {
+            flee = Vector3.zero;
+            vf.y = 0f;
+            if (vf.sqrMagnitude < 1e-4f) return false;
+            vf.Normalize();
+            Vector3 rel = pos - vp;
+            rel.y = 0f;
+            float along = Vector3.Dot(rel, vf);
+            if (along < 0f || along > Mathf.Clamp(speed * 1.6f, 6f, 16f)) return false;
+            Vector3 vr = new Vector3(vf.z, 0f, -vf.x);
+            float lat = Vector3.Dot(rel, vr);
+            if (Mathf.Abs(lat) > 2.0f) return false;
+            flee = vr * (lat >= 0f ? 1f : -1f);
+            return true;
+        }
+
+        /// <summary>Vrai si le point est sur une chaussée goudronnée (ou à moins de « margin » mètres de son bord).</summary>
+        private static bool OnPavedRoad(Vector3 p, float margin)
+        {
+            float edge;
+            Vector3 away;
+            bool paved;
+            return CityFill.NearestCarriageway(p, out edge, out away, out paved) && paved && edge < margin;
+        }
+
+        // ------------------------------------------------------------------
+        // Vendeurs derrière leurs étals (tables construites par la ville : CityFillModels.cs)
+        // ------------------------------------------------------------------
+        private readonly Dictionary<long, GameObject> stallVendors = new Dictionary<long, GameObject>();
+        private readonly List<CityFill.StallSpot> stallBuf = new List<CityFill.StallSpot>();
+        private readonly HashSet<long> stallKeep = new HashSet<long>();
+        private readonly List<long> stallDrop = new List<long>();
+        private float stallTimer;
+        public int StallVendors { get { return stallVendors.Count; } }
+
+        private static long StallKey(Vector3 p) { return ((long)Mathf.RoundToInt(p.x * 2f) << 32) ^ (uint)Mathf.RoundToInt(p.z * 2f); }
+
+        private void UpdateStallVendors(Vector3 pp)
+        {
+            stallTimer -= Time.unscaledDeltaTime;
+            if (stallTimer > 0f) return;
+            stallTimer = 0.5f;
+            int max = GameSettings.Quality == 0 ? 6 : (GameSettings.Quality == 1 ? 10 : 14);
+            CityFill.StallsNear(pp, 65f, stallBuf);
+            stallBuf.Sort((a, b) => (a.P - pp).sqrMagnitude.CompareTo((b.P - pp).sqrMagnitude));
+            stallKeep.Clear();
+            int spawned = 0;
+            foreach (CityFill.StallSpot st in stallBuf)
+            {
+                if (stallKeep.Count >= max) break;
+                long key = StallKey(st.P);
+                stallKeep.Add(key);
+                if (stallVendors.ContainsKey(key) || spawned >= 2) continue;
+                spawned++;
+                stallVendors[key] = SpawnStallVendor(st);
+            }
+            stallDrop.Clear();
+            foreach (KeyValuePair<long, GameObject> kv in stallVendors) if (!stallKeep.Contains(kv.Key)) stallDrop.Add(kv.Key);
+            foreach (long k in stallDrop)
+            {
+                if (stallVendors[k] != null) Destroy(stallVendors[k]);
+                stallVendors.Remove(k);
+            }
+        }
+
+        private GameObject SpawnStallVendor(CityFill.StallSpot st)
+        {
+            System.Random vr = new System.Random(st.Seed);
+            bool woman = vr.Next(10) < 6;
+            GameObject prefab = woman ? HumanLibrary.Woman(vr) : Pick("Hommes");
+            if (prefab == null) return null;
+            Vector3 pos = st.P;
+            pos.y = Ground(pos, 0.1f);
+            GameObject go = HumanLibrary.Instantiate(prefab, transform, transform.InverseTransformPoint(pos), woman && vr.Next(10) < 6 ? "pagne" : "vendeur", false, st.Seed & 0xffff, false);
+            go.name = "Vendeur_" + go.name;
+            go.transform.position = pos;
+            go.transform.rotation = Quaternion.LookRotation(st.Face);
+            HumanFigure f = go.GetComponent<HumanFigure>();
+            if (f != null) f.enabled = false;
+            HumanAvatar av = go.GetComponent<HumanAvatar>();
+            if (av != null)
+            {
+                int k = vr.Next(100);
+                HumanAction a = k < 30 ? HumanAction.Idle : (k < 52 ? HumanAction.Wait : (k < 72 ? HumanAction.Talk : (k < 86 ? HumanAction.Idle2 : HumanAction.Phone)));
+                if (av.Anim != null) av.Anim.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+                av.Play(a, 0f, true);
+                if (a == HumanAction.Phone) HumanProps.HandProp(av, false);
+            }
+            return go;
+        }
+
         private void Walk(Ped p, float dt, Vector3 pp)
         {
             Lane l = lanes[p.Lane];
-            float move = p.Speed * dt;
+            float move = p.Speed * dt * (p.Flee > 0f ? 1.75f : 1f);
             int guard = 0;
             while (move > 0f && guard++ < 8)
             {
@@ -818,20 +982,37 @@ namespace BalulaMoto.Runtime
             Vector3 fwd = SegmentDir(l, p.Seg) * p.Dir;
             Vector3 right = new Vector3(fwd.z, 0f, -fwd.x);
             Vector3 basePos = Vector3.Lerp(l.P[p.Seg], l.P[p.Seg + 1], p.T);
+            // Trottoir : de quel côté est la chaussée, et est-elle goudronnée ?
+            if (p.InfoSeg != p.Seg || p.InfoDir != p.Dir) LaneInfo(p, basePos, right);
 
-            // Écart quand le joueur arrive vite à moins de 5 m
-            Vector3 toPlayer = pp - basePos;
-            toPlayer.y = 0f;
+            // Véhicule (joueur ou circulation) qui fonce sur le piéton : il s'écarte en hâte, loin de sa trajectoire
             float dodgeTarget = 0f;
-            if (playerSpeed > 2f && toPlayer.sqrMagnitude < 25f)
+            Vector3 flee;
+            if (p.Flee <= 0.6f && Threat(basePos + right * p.Side, out flee))
             {
-                float side = Vector3.Dot(toPlayer, right);
-                dodgeTarget = side > 0f ? -1.8f : 1.8f;
-                // Pas d'écart vers un mur de parcelle : de l'autre côté, ou un petit pas seulement
-                if (CityFill.IsBlocked(basePos + right * (p.BaseSide + dodgeTarget), 0.35f)) dodgeTarget = -dodgeTarget * 0.6f;
+                if (p.Flee <= 0f && p.Av != null) p.Av.SetPlaybackSpeed(1.75f);
+                p.Flee = 1.4f;
+                float fs = Vector3.Dot(flee, right) >= 0f ? 1f : -1f;
+                // Au bord du goudron, on s'écarte vers l'extérieur (jamais sur la chaussée)
+                if (p.LanePaved && fs != p.AwaySign && p.Side * p.AwaySign < 0.3f) fs = p.AwaySign;
+                p.FleeSide = fs;
             }
-            p.Dodge = Mathf.MoveTowards(p.Dodge, dodgeTarget, dt * (dodgeTarget != 0f ? 4f : 1f));
-            p.Side = Mathf.MoveTowards(p.Side, p.BaseSide + p.Dodge, dt * 2f);
+            if (p.Flee > 0f)
+            {
+                p.Flee -= dt;
+                dodgeTarget = p.FleeSide * 2.4f;
+                if (CityFill.IsBlocked(basePos + right * (p.BaseSide + dodgeTarget), 0.35f)) dodgeTarget = -dodgeTarget * 0.6f;
+                if (p.Flee <= 0f && p.Av != null) p.Av.SetPlaybackSpeed(p.Speed / Mathf.Max(0.1f, p.Slow ? p.Av.WalkCycleSpeed * 0.7f : p.Av.WalkCycleSpeed));
+            }
+            p.Dodge = Mathf.MoveTowards(p.Dodge, dodgeTarget, dt * (dodgeTarget != 0f ? 6f : 1f));
+            float want = p.BaseSide + p.Dodge;
+            // Jamais debout ni en marche sur la chaussée goudronnée : au moins 0,6 m du bord
+            if (p.LanePaved)
+            {
+                float minAway = 0.6f - p.LaneEdge;
+                if (want * p.AwaySign < minAway) want = minAway * p.AwaySign;
+            }
+            p.Side = Mathf.MoveTowards(p.Side, want, dt * (p.Flee > 0f ? 4.5f : 2f));
 
             Vector3 pos = basePos + right * p.Side;
             p.GroundTimer -= dt;

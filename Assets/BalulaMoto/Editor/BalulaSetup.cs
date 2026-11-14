@@ -169,8 +169,8 @@ namespace BalulaMoto.EditorTools
             PlayerSettings.productName = "BALULA MOTO";
             // Version 4.1 (personnages et véhicules enfin visibles, musique, stations-service, camions-citernes,
             // petites courses, chantiers, caniveaux et bordures, terre marron foncé)
-            PlayerSettings.bundleVersion = "4.3.1";
-            PlayerSettings.Android.bundleVersionCode = 44;
+            PlayerSettings.bundleVersion = "4.4.0";
+            PlayerSettings.Android.bundleVersionCode = 45;
             PlayerSettings.iOS.buildNumber = "42";
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, BundleId);
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, BundleId);

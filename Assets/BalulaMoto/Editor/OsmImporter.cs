@@ -957,7 +957,10 @@ namespace BalulaMoto.EditorTools
             List<WorkZone> works = ChooseWorks(roadAxes, roads);
 
             // ---------------- Bâtiments ----------------
-            int skippedStations = 0, skippedRoads = 0;
+            int skippedStations = 0, skippedRoads = 0, skippedBoulevards = 0, skippedGreen = 0;
+            // Boulevards : 10 m libres devant les bâtiments ; boulevard Lumumba : aucune construction entre le grand et
+            // le petit boulevard (espace vert construit par la ville au lancement du jeu)
+            BoulevardIndex bdIndex = new BoulevardIndex(roadAxes);
             if (buildings)
             {
                 System.Random rnd = new System.Random(243);
@@ -986,6 +989,9 @@ namespace BalulaMoto.EditorTools
                     if (InStationLot(lotList, pts, center)) { skippedStations++; continue; }
                     if (enclosures.Count > 0 && InEnclosure(pts, center)) { skippedLand++; continue; }
                     if (OnCarriageway(carriage, carriageHw, pts, center)) { skippedRoads++; continue; }
+                    int bdConflict = bdIndex.Conflict(pts, center);
+                    if (bdConflict == 1) { skippedBoulevards++; continue; }
+                    if (bdConflict == 2) { skippedGreen++; continue; }
                     if (trenchMode && RiverHit(pts, center)) { riverRemoved++; continue; }
                     if (Triangulator.Area(pts) < 0f) pts.Reverse();
                     float h = Height(w, rnd);
@@ -1425,6 +1431,9 @@ namespace BalulaMoto.EditorTools
             report.Append("Stations-service : ").Append(stationLots.Count).Append(" construites (").Append(duplicateFuel.Count).Append(" doublons fusionnés) ; bâtiments OSM écartés : ")
                   .Append(skippedStations).Append(" sur les stations, ").Append(skippedRoads).Append(" posés sur une chaussée. Bords de rues (caniveaux, bordures) : ")
                   .Append((edgeLength / 1000f).ToString("0")).Append(" km (").Append(edgeVerts).Append(" sommets). Chantiers : ").Append(works.Count).Append(".\n");
+            report.Append("Boulevards : ").Append(bdIndex.Boulevards.Count).Append(" tronçons ; bâtiments OSM écartés à moins de 10 m d'un boulevard : ").Append(skippedBoulevards)
+                  .Append(" ; bande verte du boulevard Lumumba (entre grand et petit boulevard) : ").Append(bdIndex.Strips.Count).Append(" morceaux, ")
+                  .Append((bdIndex.StripLength / 1000f).ToString("0.00")).Append(" km, ").Append(skippedGreen).Append(" bâtiments OSM retirés.\n");
             report.Append(roadCount).Append(" routes, ").Append(buildingCount).Append(" bâtiments, ").Append(areaCount).Append(" surfaces (eau/verdure), ").Append(places.Count).Append(" lieux, ").Append(paths.Count).Append(" boucles de circulation, ").Append(walks.Count).Append(" trottoirs.\n");
             report.Append("Lieux de référence :\n").Append(string.Join("\n", refsReport.ToArray()));
             iw.report = report.ToString();
