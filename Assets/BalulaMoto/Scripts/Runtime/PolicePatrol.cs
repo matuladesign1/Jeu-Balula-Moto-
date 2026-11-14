@@ -1,7 +1,7 @@
 // BALULA MOTO — policiers à pied aux carrefours de toute la ville (comme la police de circulation routière à Kinshasa).
 // Agent : personnage réaliste animé, comme les autres habitants (avatar Rocketbox « Police_Male_01 », licence MIT),
-// habillé d'après la photo fournie par MATULA DESIGN : tenue bleu roi de la police congolaise, béret noir, ceinturon
-// et rangers noirs (scripts/police_congolaise.py), fusil d'assaut de type Kalachnikov porté en bandoulière dans le dos
+// habillé d'après les indications de MATULA DESIGN : tenue bleu de nuit, inscription « POLICE » blanche bordée de bleu
+// sur la poche gauche, béret noir, ceinturon et rangers noirs (scripts/police_congolaise.py), fusil d'assaut de type Kalachnikov porté en bandoulière dans le dos
 // (Resources/BalulaMoto/Accessoires/FusilAK, scripts/generer_fusil.py). Aucun insigne officiel n'est reproduit.
 // Si les personnages réalistes manquent, le policier dessiné d'après le script Blender de MATULA DESIGN
 // (Docs/ModelesSources/Police_Officer_RDC_Blender_Export.py, PoliceOfficerModel) sert de secours.

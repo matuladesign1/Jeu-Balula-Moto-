@@ -35,8 +35,8 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
 - **Dans la circulation** : tous les tricycles utilisent ce modèle, en bleu à bâche blanche (le plus souvent), en
   blanc ou en rouge à bâche noire, comme les autres photos.
 - **Policiers réalistes** : les agents aux carrefours sont maintenant des personnages réalistes animés, comme les autres
-  habitants, en tenue de la police congolaise d'après la photo : uniforme bleu roi, béret noir, ceinturon et rangers
-  noirs, fusil d'assaut de type Kalachnikov porté en bandoulière dans le dos. Ils marchent jusqu'au véhicule pour
+  habitants, en tenue de police bleu de nuit avec l'inscription « POLICE » en petites lettres blanches bordées de bleu sur la
+  poche gauche, béret noir, ceinturon et rangers noirs, fusil d'assaut de type Kalachnikov porté en bandoulière dans le dos. Ils marchent jusqu'au véhicule pour
   l'amende puis retournent à leur poste. Les écussons étrangers du modèle d'origine ont été effacés ; aucun insigne
   officiel n'est reproduit (`scripts/police_congolaise.py`, `scripts/generer_fusil.py`).
 

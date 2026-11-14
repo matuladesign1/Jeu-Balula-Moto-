@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """BALULA MOTO — habille l'avatar policier Rocketbox (Police_Male_01, licence MIT) en agent de la police congolaise,
-d'après la photo de référence fournie par MATULA DESIGN (tenue bleue, béret noir, ceinturon et rangers noirs).
+d'après la photo de référence et les indications de MATULA DESIGN (tenue bleu de nuit, inscription « POLICE » sur la
+poche gauche, béret noir, ceinturon et rangers noirs).
 
 Ce que fait le programme (à lancer une seule fois, après scripts/africaniser_avatars.py) :
   * FBX : la casquette à visière du modèle devient un béret noir. Les 172 sommets de la casquette (une coque séparée,
@@ -11,7 +12,8 @@ Ce que fait le programme (à lancer une seule fois, après scripts/africaniser_a
     octet pour octet (outil fbxrw : un aller-retour sans modification redonne le fichier d'origine).
   * Texture de la tête : la casquette (bleue) devient de la laine noire.
   * Texture du corps : les écussons étrangers des manches (drapeau et insigne de la police afghane du pack d'origine)
-    sont effacés, le tissu gris-bleu passe au bleu roi de la tenue congolaise (couleur mesurée sur la photo).
+    sont effacés, le tissu gris-bleu passe au bleu de nuit demandé par MATULA DESIGN, et la poche de poitrine gauche
+    porte l'inscription « POLICE » en petites lettres blanches bordées de bleu (posée en suivant la surface du maillage).
 Aucun insigne officiel n'est reproduit.
 
 Usage : python3 scripts/police_congolaise.py [--apercu dossier]
@@ -260,7 +262,114 @@ def head_texture(g, comp, path):
     Image.fromarray(np.clip(nm, 0, 255).astype(np.uint8)).save(TEX_HEAD_N, quality=92)
 
 
-def body_texture(path):
+def surface_uv(g, mat, x, z):
+    """UV du point de la surface vue de face (rayon vers +Y depuis l'avant) en (x, z) cm, matériau donné."""
+    if not hasattr(g, "_tris"):
+        g._tris = {}
+    if mat not in g._tris:
+        T, TU = [], []
+        for i, p in enumerate(g.polys):
+            if g.MI[i] != mat:
+                continue
+            for t in range(1, len(p) - 1):
+                tri = [p[0], p[t], p[t + 1]]
+                T.append([g.V[a] for a, _ in tri])
+                TU.append([g.UV[g.UVI[k]] for _, k in tri])
+        g._tris[mat] = (np.array(T), np.array(TU))
+    T, TU = g._tris[mat]
+    o = np.array([x, -80.0, z])
+    d = np.array([0.0, 1.0, 0.0])
+    e1 = T[:, 1] - T[:, 0]
+    e2 = T[:, 2] - T[:, 0]
+    h = np.cross(d, e2)
+    a = (e1 * h).sum(1)
+    ok = np.abs(a) > 1e-9
+    f = np.where(ok, 1 / np.where(ok, a, 1), 0)
+    q0 = o - T[:, 0]
+    u = f * (q0 * h).sum(1)
+    q = np.cross(q0, e1)
+    v = f * (q * d).sum(1)
+    t = f * (e2 * q).sum(1)
+    m = ok & (u >= 0) & (v >= 0) & (u + v <= 1) & (t > 0)
+    if not m.any():
+        return None
+    k = np.where(m)[0][np.argmin(t[m])]
+    w = np.array([1 - u[k] - v[k], u[k], v[k]])
+    return (w[:, None] * TU[k]).sum(0)
+
+
+# Inscription « POLICE » sur la poche de poitrine gauche (côté gauche du porteur = x+ dans le FBX), en blanc bordé de bleu
+POCHE_X, POCHE_Z, POCHE_L = 11.0, 130.7, 8.4      # centre et largeur du texte (cm), sous le rabat de la poche
+
+
+def inscription(g, im):
+    from PIL import ImageDraw, ImageFont
+    h, w = im.shape[:2]
+    font_path = None
+    for fp in ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"):
+        if os.path.exists(fp):
+            font_path = fp
+            break
+    PX = 40.0                                     # pixels par cm dans l'image du texte
+    font = ImageFont.truetype(font_path, 200)
+    txt = "POLICE"
+    stroke = 16
+    bb = font.getbbox(txt, stroke_width=stroke)
+    tw, th = bb[2] - bb[0], bb[3] - bb[1]
+    scale = POCHE_L * PX / tw
+    font = ImageFont.truetype(font_path, max(10, int(200 * scale)))
+    stroke = max(2, int(round(16 * scale)))
+    bb = font.getbbox(txt, stroke_width=stroke)
+    tw, th = bb[2] - bb[0], bb[3] - bb[1]
+    W, H = tw + 8, th + 8
+    lay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(lay).text((4 - bb[0], 4 - bb[1]), txt, font=font, fill=(248, 248, 248, 255),
+                             stroke_width=stroke, stroke_fill=(52, 112, 222, 255))
+    L = np.asarray(lay).astype(float)
+    wc, hc = W / PX, H / PX
+    x0, z1 = POCHE_X - wc / 2, POCHE_Z + hc / 2
+    # grille UV (pas de 0,25 cm) sur la zone du texte, interpolée pour chaque pixel du texte
+    gx = np.arange(x0 - 0.25, x0 + wc + 0.5, 0.25)
+    gz = np.arange(z1 - hc - 0.25, z1 + 0.5, 0.25)
+    G = np.zeros((len(gz), len(gx), 2))
+    for j, z in enumerate(gz):
+        for i, x in enumerate(gx):
+            uv = surface_uv(g, 0, x, z)
+            G[j, i] = uv if uv is not None else np.nan
+    if np.isnan(G).any():
+        raise SystemExit("Poche introuvable sur le maillage : inscription non posée.")
+    acc = np.zeros((h, w, 3))
+    accA = np.zeros((h, w))
+    cnt = np.zeros((h, w))
+    jj, ii = np.mgrid[0:H, 0:W]
+    xs = x0 + (ii + 0.5) / PX
+    zs = z1 - (jj + 0.5) / PX
+    fx = (xs - gx[0]) / 0.25
+    fz = (zs - gz[0]) / 0.25
+    i0 = np.clip(np.floor(fx).astype(int), 0, len(gx) - 2)
+    j0 = np.clip(np.floor(fz).astype(int), 0, len(gz) - 2)
+    tx_, tz_ = fx - i0, fz - j0
+    uv = (G[j0, i0] * ((1 - tx_) * (1 - tz_))[..., None] + G[j0, i0 + 1] * (tx_ * (1 - tz_))[..., None]
+          + G[j0 + 1, i0] * ((1 - tx_) * tz_)[..., None] + G[j0 + 1, i0 + 1] * (tx_ * tz_)[..., None])
+    px = np.clip(((uv[..., 0] % 1) * w).astype(int), 0, w - 1)
+    py = np.clip(((1 - uv[..., 1] % 1) * h).astype(int), 0, h - 1)
+    a = L[..., 3] / 255.0
+    np.add.at(cnt, (py, px), 1)
+    np.add.at(accA, (py, px), a)
+    for c in range(3):
+        np.add.at(acc[..., c], (py, px), L[..., c] * a)
+    m = cnt > 0
+    alpha = np.zeros((h, w))
+    alpha[m] = accA[m] / cnt[m]
+    col = np.zeros((h, w, 3))
+    mm = accA > 1e-6
+    col[mm] = acc[mm] / accA[mm][:, None]
+    out = im.astype(float) * (1 - alpha[..., None]) + col * alpha[..., None]
+    print("Inscription POLICE posée sur la poche gauche : %d texels" % int((alpha > 0.05).sum()))
+    return np.clip(out, 0, 255).astype(np.uint8)
+
+
+def body_texture(path, g=None):
     import cv2
     im = np.asarray(Image.open(path).convert("RGB"))
     hsv = cv2.cvtColor(im, cv2.COLOR_RGB2HSV).astype(float)   # H 0-180, S, V 0-255
@@ -273,17 +382,20 @@ def body_texture(path):
     mask = cv2.dilate(mask, np.ones((7, 7), np.uint8))
     im = cv2.inpaint(im, mask, 9, cv2.INPAINT_TELEA)
     print("Écussons étrangers effacés : %d pixels" % (mask > 0).sum())
-    # 2) tissu gris-bleu -> bleu roi (photo : teinte 220°, saturation 0,52 ; texture : 211°, 0,38)
+    # 2) tissu gris-bleu -> bleu de nuit (demande de MATULA DESIGN) : teinte 224°, plus saturé, plus sombre
     hsv = cv2.cvtColor(im, cv2.COLOR_RGB2HSV).astype(float)
     H, S, Vv = hsv[..., 0], hsv[..., 1], hsv[..., 2]
     fab = (H > 92) & (H < 125) & (S > 25) & (Vv > 28)
     wgt = np.clip((S - 25) / 20.0, 0, 1) * np.clip((Vv - 28) / 20.0, 0, 1) * fab
-    H2 = H + 4.5 * wgt
-    S2 = np.clip(S * (1 + 0.38 * wgt), 0, 255)
-    V2 = np.clip(Vv * (1 + 0.12 * wgt), 0, 255)
+    H2 = H + 6.5 * wgt
+    S2 = np.clip(S * (1 + 0.85 * wgt), 0, 255)
+    V2 = np.clip(Vv * (1 - 0.38 * wgt), 0, 255)
     out = cv2.cvtColor(np.stack([H2, S2, V2], -1).astype(np.uint8), cv2.COLOR_HSV2RGB)
-    Image.fromarray(out).save(path, quality=92)
-    print("Tissu de l'uniforme passé au bleu roi : %.0f %% de la texture" % (100.0 * fab.mean()))
+    print("Tissu de l'uniforme passé au bleu de nuit : %.0f %% de la texture" % (100.0 * fab.mean()))
+    # 3) inscription POLICE sur la poche gauche
+    if g is not None:
+        out = inscription(g, out)
+    Image.fromarray(out).save(path, quality=93)
 
 
 def main():
@@ -293,7 +405,7 @@ def main():
     n = f.save(FBX_PATH)
     print("FBX réécrit : %d octets" % n)
     head_texture(g, comp, TEX_HEAD)
-    body_texture(TEX_BODY)
+    body_texture(TEX_BODY, g)
 
 
 if __name__ == "__main__":
