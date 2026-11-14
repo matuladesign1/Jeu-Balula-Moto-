@@ -98,6 +98,12 @@ namespace BalulaMoto.EditorTools
                     }
                     return;
                 }
+                // Une erreur dans le journal peut mettre le mode Jeu en pause (« Error Pause ») : on reprend aussitôt
+                if (EditorApplication.isPaused)
+                {
+                    EditorApplication.isPaused = false;
+                    report.AppendLine("   (mode Jeu mis en pause par l'éditeur à l'étape " + stepIndex + " : reprise)");
+                }
                 BalulaGame game = BalulaGame.Instance;
                 if (game == null || game.UI == null || game.World == null) return;
                 frames++;
@@ -192,6 +198,10 @@ namespace BalulaMoto.EditorTools
             steps.Add(() => { TeleportToWater(game); return true; });
             Wait(10f, 30);
             steps.Add(() => { ShootStreet(game, "riviere"); ShootRiver(game); return true; });
+            // Embouteillage sur une rue goudronnée (créé près du joueur pour la photo)
+            steps.Add(() => { JamTest(game); return true; });
+            Wait(6f, 30);
+            steps.Add(() => { ShootJam(game); return true; });
             // Chantier le plus proche (route en travaux)
             steps.Add(() => { TeleportToWorks(game); return true; });
             Wait(10f, 30);
@@ -528,6 +538,32 @@ namespace BalulaMoto.EditorTools
             Shoot("riviere_depuis_la_berge", c - dir * 22f + nrm * (hw + 3f) + Vector3.up * 1.7f, c + dir * 6f - Vector3.up * 1f);
             Shoot("riviere_berge_de_pres", c + dir * 9f + nrm * (hw + 1.5f) + Vector3.up * 1.6f, c - nrm * hw - Vector3.up * 1.2f);
             Shoot("riviere_tranchee_de_haut", c + Vector3.up * 45f + dir * 0.5f, c);
+        }
+
+        private static bool jamMade;
+
+        private static void JamTest(BalulaGame game)
+        {
+            report.AppendLine();
+            RaycastVehicle player = game.Director != null ? game.Director.Player : null;
+            jamMade = false;
+            if (player == null || game.Traffic == null) return;
+            // Retour au point de départ (grandes avenues goudronnées autour)
+            game.Director.SpawnPlayer(game.World.SpawnPosition, game.World.SpawnRotation);
+            jamMade = game.Traffic.TestJam(game.World.SpawnPosition);
+            report.AppendLine("=== embouteillage : " + (jamMade ? "file créée près du départ" : "aucune rue goudronnée libre trouvée") + " (embouteillages depuis le début : " + game.Traffic.Jams + ") ===");
+        }
+
+        private static void ShootJam(BalulaGame game)
+        {
+            if (!jamMade || game.Traffic == null) return;
+            Vector3 c = game.Traffic.LastJam, dir = game.Traffic.LastJamDir, side = Vector3.Cross(Vector3.up, dir);
+            int close = 0;
+            foreach (AIVehicle v in game.Traffic.Vehicles) if (v != null && (v.transform.position - c).sqrMagnitude < 60f * 60f) close++;
+            report.AppendLine("   véhicules à moins de 60 m du milieu de la file : " + close);
+            Shoot("embouteillage_de_face", c + dir * 42f + side * 3f + Vector3.up * 3.2f, c + Vector3.up * 1f);
+            Shoot("embouteillage_de_haut", c - dir * 30f + side * 14f + Vector3.up * 16f, c + dir * 8f);
+            Shoot("embouteillage_trottoir", c - dir * 6f + side * 7f + Vector3.up * 1.7f, c + dir * 14f + Vector3.up * 1.2f);
         }
 
         private static void TeleportToStop(BalulaGame game)

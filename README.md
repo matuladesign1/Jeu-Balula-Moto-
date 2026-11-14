@@ -22,6 +22,15 @@ Ce dossier contient le code source complet du jeu (Unity 3D + C#), ses données 
 - **Carte** : mini-carte et carte plein écran avec légende.
 - **Sauvegardes automatiques** (carrière et libre séparées).
 
+### Nouveautés de la version 4.3
+
+- **Policiers dans les rues** : agents à pied aux carrefours (dessin fourni par MATULA DESIGN). Si vous bousculez un piéton ou accrochez une voiture devant un agent, il siffle, vient au véhicule, vous payez l'amende et vous repartez.
+- **Bus TRANSCO** (modèle 3D fourni par MATULA DESIGN) dans toute la circulation, avec arrêts et passagers. Design respecté, sans partenariat officiel.
+- **Rivières en tranchée** : eau turquoise plus bas que le sol, berges en pente d'herbe et de terre, parois de béton pour les canaux et caniveaux. Plus aucune maison ni clôture sur l'eau ou sur les berges ; **un pont (trottoirs, parapets) partout où une rue croise l'eau** ; on ne peut plus rouler dans le lit.
+- **Murs de parcelles bruts** : parpaings, ciment gris sale, chaux tachée, inscriptions peintes « Cette parcelle n'est pas à vendre », barbelé en spirale sur certains murs.
+- **Embouteillages** sur quelques rues goudronnées, à toute heure : longues files serrées de minibus et taxis jaunes, motos-taxis et voitures.
+- **Esplanades dégagées** : plus de maisons au bord de l'espace de l'Échangeur ni autour du Stade des Martyrs.
+
 ### Nouveautés de la version 4.2
 
 - **Tous les personnages ont un teint africain** : 21 avatars (5 nouveaux, dont 3 femmes) ; la peau claire des avatars du

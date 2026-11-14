@@ -388,40 +388,43 @@ namespace BalulaMoto.Runtime
             }
         }
 
-        /// <summary>Embouteillage aux heures de pointe : une file de véhicules derrière un bus, un camion ou un
-        /// minibus qui avance au pas. Les suivants se collent derrière (distance de sécurité) et klaxonnent.</summary>
-        private bool TrySpawnJam(Vector3 pp, out int added)
+        /// <summary>Embouteillage sur quelques rues goudronnées (à toute heure, plus souvent aux heures de pointe) : une
+        /// longue file serrée de minibus et taxis jaunes, motos-taxis, voitures, derrière un bus, un camion ou un minibus
+        /// qui avance au pas. Les suivants se collent derrière (distance de sécurité) et klaxonnent.</summary>
+        private bool TrySpawnJam(Vector3 pp, out int added, bool test = false)
         {
             added = 0;
             Camera cam = Camera.main;
-            for (int attempt = 0; attempt < 6; attempt++)
+            for (int attempt = 0; attempt < (test ? 60 : 6); attempt++)
             {
                 float ang = Random.value * Mathf.PI * 2f;
-                float rad = Mathf.Lerp(80f, 230f, Random.value);
+                float rad = test ? Mathf.Lerp(45f, 110f, Random.value) : Mathf.Lerp(80f, 230f, Random.value);
                 Vector3 c = pp + new Vector3(Mathf.Cos(ang) * rad, 0f, Mathf.Sin(ang) * rad);
                 List<SpawnSlot> l;
                 if (!spawnGrid.TryGetValue(SpawnKey(c), out l) || l.Count == 0) continue;
                 SpawnSlot slot = l[Random.Range(0, l.Count)];
                 TrafficPath path = Paths[slot.Path];
-                if (path.Length < 200f) continue;
-                int n = Random.Range(4, 8);
+                // Seulement sur le goudron et les avenues
+                if (path.Length < 200f || !path.Major) continue;
+                int n = Random.Range(8, 14);
                 AIVehicleType[] types = new AIVehicleType[n];
                 float[] ss = new float[n];
                 float r0 = Random.value;
-                types[0] = r0 < 0.35f ? AIVehicleType.BusTransco : (r0 < 0.5f ? AIVehicleType.CamionRemorque : (r0 < 0.65f ? AIVehicleType.CamionCiterne : AIVehicleType.MinibusJaune));
+                types[0] = r0 < 0.3f ? AIVehicleType.BusTransco : (r0 < 0.42f ? AIVehicleType.CamionRemorque : (r0 < 0.52f ? AIVehicleType.CamionCiterne : AIVehicleType.MinibusJaune));
                 ss[0] = slot.S;
                 for (int k = 1; k < n; k++)
                 {
-                    types[k] = RandomType();
-                    ss[k] = ss[k - 1] - (ApproxLength(types[k - 1]) + ApproxLength(types[k])) * 0.5f - Random.Range(2.2f, 3.5f);
+                    float rk = Random.value;
+                    types[k] = rk < 0.38f ? AIVehicleType.MinibusJaune : (rk < 0.6f ? AIVehicleType.TaxiJaune : (rk < 0.78f ? AIVehicleType.MotoTaxi : RandomType()));
+                    ss[k] = ss[k - 1] - (ApproxLength(types[k - 1]) + ApproxLength(types[k])) * 0.5f - Random.Range(1.6f, 2.8f);
                 }
                 bool ok = true;
                 for (int k = 0; k < n && ok; k++)
                 {
                     Vector3 pos = path.PositionAt(Mathf.Repeat(ss[k], path.Length));
                     float d2 = (pos - pp).sqrMagnitude;
-                    if (Player != null && d2 < 60f * 60f) { ok = false; break; }
-                    if (cam != null && Player != null && d2 < 140f * 140f)
+                    if (Player != null && d2 < (test ? 12f * 12f : 60f * 60f)) { ok = false; break; }
+                    if (!test && cam != null && Player != null && d2 < 140f * 140f)
                     {
                         Vector3 to = pos - cam.transform.position;
                         if (to.sqrMagnitude > 1f && Vector3.Dot(cam.transform.forward, to.normalized) > 0.5f) { ok = false; break; }
@@ -432,13 +435,28 @@ namespace BalulaMoto.Runtime
                 if (!ok) continue;
                 for (int k = 0; k < n; k++)
                 {
-                    AIVehicle v = Spawn(types[k], path, Mathf.Repeat(ss[k], path.Length), k == 0 ? Random.Range(2.2f, 4.2f) : CruiseFor(types[k]));
+                    AIVehicle v = Spawn(types[k], path, Mathf.Repeat(ss[k], path.Length), k == 0 ? Random.Range(1.6f, 3.4f) : CruiseFor(types[k]));
                     v.Speed = k == 0 ? 2f : 1.5f;
                 }
                 added = n;
+                Jams++;
+                LastJam = path.PositionAt(Mathf.Repeat(ss[n / 2], path.Length));
+                LastJamDir = path.DirectionAt(Mathf.Repeat(ss[n / 2], path.Length));
                 return true;
             }
             return false;
+        }
+
+        /// <summary>Nombre d'embouteillages créés, milieu et direction du dernier.</summary>
+        public int Jams { get; private set; }
+        public Vector3 LastJam { get; private set; }
+        public Vector3 LastJamDir { get; private set; }
+
+        /// <summary>Essai (photos de contrôle) : crée un embouteillage près du point donné.</summary>
+        public bool TestJam(Vector3 pp)
+        {
+            int added;
+            return TrySpawnJam(pp, out added, true);
         }
 
         private void Update()
@@ -476,7 +494,7 @@ namespace BalulaMoto.Runtime
             if (normal < targetCount)
             {
                 int added;
-                if (rush && Random.value < 0.3f && TrySpawnJam(pp, out added)) normal += added;
+                if (Random.value < (rush ? 0.4f : 0.14f) && TrySpawnJam(pp, out added)) normal += added;
                 // Jusqu'à deux véhicules par passage : la circulation se remplit vite autour du joueur
                 for (int k = 0; k < 4 && normal < targetCount; k++)
                     if (TrySpawnNear(pp)) normal++;
