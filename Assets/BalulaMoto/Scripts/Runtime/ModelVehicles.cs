@@ -210,15 +210,21 @@ namespace BalulaMoto.Runtime
                 for (int i = 0; i < mats.Length; i++) mats[i] = MapBajajMaterial(i < srcMats.Length ? srcMats[i] : null, body, canvas, rim);
                 Matrix4x4 m = toModel * src.transform.localToWorldMatrix;
                 string n = src.name;
-                if (n.StartsWith("Roue_"))
+                if (n.StartsWith("Roue_") && n.LastIndexOf('_') > 5)
                 {
-                    // Roue : pivot au moyeu, elle tourne autour de l'axe X (pneu, moyeu, enjoliveur dedans)
-                    GameObject pg = new GameObject(n);
-                    pg.transform.SetParent(parent, false);
-                    pg.transform.localPosition = m.MultiplyPoint3x4(mesh.bounds.center);
-                    GameObject part = MeshPart(pg.transform, "Roue", mesh, mats, Vector3.zero);
-                    ApplyMatrix(part.transform, Matrix4x4.Translate(-pg.transform.localPosition) * m);
-                    wheelPivots[n] = pg.transform;
+                    // Roue : pivot au moyeu, elle tourne autour de l'axe X ; pneu (et enjoliveur) puis jante (moyeu)
+                    string key = n.Substring(0, n.LastIndexOf('_'));
+                    Transform pivot;
+                    if (!wheelPivots.TryGetValue(key, out pivot))
+                    {
+                        GameObject pg = new GameObject(key);
+                        pg.transform.SetParent(parent, false);
+                        pg.transform.localPosition = m.MultiplyPoint3x4(mesh.bounds.center);
+                        pivot = pg.transform;
+                        wheelPivots[key] = pivot;
+                    }
+                    GameObject part = MeshPart(pivot, n.EndsWith("Jante") ? "Jante" : "Pneu", mesh, mats, Vector3.zero);
+                    ApplyMatrix(part.transform, Matrix4x4.Translate(-pivot.localPosition) * m);
                     continue;
                 }
                 if (n.StartsWith("Essuie"))
@@ -233,7 +239,8 @@ namespace BalulaMoto.Runtime
                 }
                 if (n.StartsWith("Phare") || n.StartsWith("Cligno") || n.StartsWith("Feu"))
                 {
-                    GameObject lp = MeshPart(parent, n, mesh, mats, Vector3.zero);
+                    // Les phares s'appellent « Phare » : la circulation les reconnaît et les allume la nuit
+                    GameObject lp = MeshPart(parent, n.StartsWith("Phare") ? "Phare" : n, mesh, mats, Vector3.zero);
                     ApplyMatrix(lp.transform, m);
                     res.Lamps[n] = lp.GetComponent<Renderer>();
                     continue;

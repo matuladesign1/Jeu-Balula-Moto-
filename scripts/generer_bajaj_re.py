@@ -322,12 +322,18 @@ def ecrire():
             f.write("newmtl %s\nKd %.4f %.4f %.4f\nKa 0 0 0\nKs 0.05 0.05 0.05\nNs 10\nd 1\nillum 2\n\n" % (n, s[0], s[1], s[2]))
     groupes = {}
     for g, mat, m in PARTS:
+        # Une pièce par matériau pour la caisse, pneu et jante séparés pour les roues : la circulation fusionne les
+        # maillages par matériau (une seule couleur par objet) et colore les roues en deux teintes (pneu / jante)
+        if g == "Caisse":
+            g = "Caisse_" + mat
+        elif g.startswith("Roue_"):
+            g = g + ("_Jante" if mat == METAL else "_Pneu")
         groupes.setdefault(g, []).append((mat, m))
     tris = 0
     nv = 0
     with open(os.path.join(DEST, NOM + ".obj"), "w") as f:
         f.write("# %s — Bajaj RE de MATULA DESIGN, d'après son script Blender, converti par scripts/generer_bajaj_re.py\n" % NOM)
-        f.write("# (mètres, Y vers le haut, avant vers +Z dans Unity, sol à 0). Pièces : Caisse, Roue_AV/ARG/ARD, Phare_*,\n")
+        f.write("# (mètres, Y vers le haut, avant vers +Z dans Unity, sol à 0). Pièces : Caisse_*, Roue_AV/ARG/ARD_Pneu/Jante, Phare_*,\n")
         f.write("# Cligno_*, Feu_AR*, Essuie_Glace, Plaque_AR. Normales fournies.\n")
         f.write("mtllib %s.mtl\n" % NOM)
         base = 1
